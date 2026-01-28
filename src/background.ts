@@ -21,6 +21,9 @@ chrome.runtime.onMessage.addListener((message) => {
     else if (message.type === "disconnect") {
         disconnect();
     }
+    else if (message.type === "update-profile") {
+        socket?.send(message.contents);
+    }
 });
 const connect = () => {
     socket = new WebSocket('http://127.0.0.1:6969/ws');

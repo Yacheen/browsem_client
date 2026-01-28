@@ -25,8 +25,9 @@ a:hover {
 body {
   margin: 0;
   display: flex;
-  place-items: center;
-  min-width: 450px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  min-width: 420px;
   min-height: 100vh;
 }
 
@@ -56,6 +57,13 @@ button:focus-visible {
 
 .card {
   padding: 2em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  button {
+      width: 140px;
+  }
 }
 
 #app {
