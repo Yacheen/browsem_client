@@ -104,7 +104,7 @@ export default function App() {
         }
     }, [browsemStore.username, settingsStore.settings]);
 
-
+    // test
 
   return (
       <>
@@ -120,11 +120,16 @@ export default function App() {
             {
                 browsemStore.socketState === 'Connected'
                 ?
-                <div className="server-stats">
+                <div className="top-right">
                     {/* sessions online, sessions in ur general site (yt/twitter/reddit etc.), sessions on ur specific url */}
-                    <p>{browsemStore.onlineSessions} online</p>
-                    <p>{browsemStore.onlineInYourUrl} in your website</p>
-                    <p>{browsemStore.onlineInYourLocation} in your specific URL</p>
+                    <div className="disconnect-btn-container">
+                        <button type="button">Disconnect</button>
+                    </div>
+                    <div className="server-stats">
+                        <p>{browsemStore.onlineSessions} online</p>
+                        <p>{browsemStore.onlineInYourUrl} in your website</p>
+                        <p>{browsemStore.onlineInYourLocation} in your specific URL</p>
+                    </div>
                 </div>
                 :
                 null

@@ -1,18 +1,19 @@
 // for now manage state via storage (thats using zustand), and for content scripts just use another zustand store,
 import { create } from 'zustand';
-type Chatter = {
+export type Chatter = {
     username: string,
     session_id: string,
     pfp_s3_key?: string,
 }
 
 interface CallStoreState {
-    chatters: Chatter,
-    remoteStreams: ,
+    chatters: Chatter[],
+    createdAt: number,
 }
 
 export const useCallStore = create<CallStoreState>()(
-    (set, get) => ({
-
+    () => ({
+        chatters: [],
+        createdAt: 0
     }),
 );

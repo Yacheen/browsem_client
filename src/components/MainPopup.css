@@ -1,0 +1,14 @@
+.main-content {
+    height: 240px;
+    text-align: left;
+    p {
+        margin: 0;
+    }
+    .where-am-i-input {
+        width: 100%;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+}
+

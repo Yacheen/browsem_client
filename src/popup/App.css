@@ -4,6 +4,7 @@
   text-align: center;
   width: 90%;
   margin: 0 auto;
+  padding: 0.5rem;
 }
 
 .logo {
@@ -37,10 +38,6 @@
   }
 }
 
-.card {
-  padding: 2em;
-}
-
 .read-the-docs {
   color: #888;
 }
@@ -48,14 +45,30 @@
     display: flex;
     justify-content: space-between;
     width: 100%;
-    .server-stats {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        justify-content: center;
-        p {
-            align-self: flex-start;
-            margin: 0;
+    margin-bottom: 1rem;
+    h1 {
+        align-self: flex-end;
+        margin-bottom: 0;
+    }
+    .top-right {
+        .disconnect-btn-container {
+            margin-bottom: 1rem;
+            display: flex;
+            button {
+                transition: all ease 0.2s;
+                color: hsl(350, 73%, 64%);
+                align-self: flex-start;
+            }
+        }
+        .server-stats {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            p {
+                align-self: flex-start;
+                margin: 0;
+            }
         }
     }
 }
@@ -65,4 +78,7 @@
     padding: 0;
     padding-top: 0.5rem;
     padding-left: 0.125rem;
+}
+.server-stats button:hover {
+        color: hsl(350, 73%, 44%);
 }
