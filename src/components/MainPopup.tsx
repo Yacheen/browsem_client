@@ -82,9 +82,7 @@ export default function MainPopup() {
                             <p className="read-the-docs where-am-i-text">Where am I?</p>
                     }
                 </div>
-                <div className="where-am-i-input-wrapper">
-                    <input title={currentUrl} className="where-am-i-input" type="text" disabled value={currentUrl} />
-                </div>
+                <input title={currentUrl} className="where-am-i-input" type="text" disabled value={currentUrl} />
                 <div className="channels-and-buttons">
                     <Channels channels={[
                         {channelName: "poop", chatters: [
