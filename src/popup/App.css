@@ -58,6 +58,7 @@
                 transition: all ease 0.2s;
                 color: hsl(350, 73%, 64%);
                 align-self: flex-start;
+                min-width: 80px;
             }
         }
         .server-stats {

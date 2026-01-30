@@ -2,6 +2,7 @@ import { useBrowsemStore } from '@/hooks/browsemStore';
 import { Chatter } from '@/hooks/callStore';
 import { useState } from 'react'
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import Tooltip from '@mui/material/Tooltip';
 import "./Channels.css";
 export type Channel = {
     channelName: string,
@@ -16,12 +17,25 @@ export default function Channels(props: { channels: Channel[] }) {
         {
             props.channels.map(channel => (
                 <div className="channel">
-                    <div className="channel-meta">
-                        <div className="channel-voice-icon">
-                            <VolumeUpIcon />
+                    <Tooltip placement='top-start' title="Join" arrow disableInteractive slotProps={{
+                        popper: {
+                            modifiers: [
+                                {
+                                    name: 'offset',
+                                    options: {
+                                        offset: [25, -10]
+                                    }
+                                }
+                            ]
+                        }
+                    }}>
+                        <div className="channel-meta">
+                            <div className="channel-voice-icon">
+                                <VolumeUpIcon className="channel-icon" />
+                            </div>
+                            <p className="channel-name">{channel.channelName}</p>
                         </div>
-                        <p>{channel.channelName}</p>
-                    </div>
+                    </Tooltip>
                     <div className="channel-chatters">
                         {
                             channel.chatters.map(chatter => (

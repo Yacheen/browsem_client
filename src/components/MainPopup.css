@@ -1,14 +1,62 @@
 .main-content {
-    height: 240px;
     text-align: left;
+    height: 100%;
     p {
         margin: 0;
+    }
+    .where-am-i-header-container {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        .brand-icon-container {
+            display: flex;
+            align-items: center;
+            .brand-icon {
+                margin-right: 0.25rem;
+                img {
+                    width: 24px;
+                }
+                svg {
+                    width: 24px;
+                }
+                width: 24px;
+            }
+        }
     }
     .where-am-i-input {
         width: 100%;
         text-overflow: ellipsis;
         overflow: hidden;
         margin-bottom: 1rem;
+    }
+    .channels-and-buttons {
+        display: flex;
+        justify-content: space-between;
+        height: 100%;
+        gap: 1rem;
+        .main-buttons {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            width: 50%;
+            .new-button {
+                transition: all ease 0.2s;
+                min-width: 100%;
+                color: lightgreen;
+            }
+        }
+    }
+}
+@media (prefers-color-scheme: dark) {
+    .brand-icon {
+        color: hsl(0, 0%, 90%);
+    }
+}
+@media (prefers-color-scheme: light) {
+    .brand-icon {
+        color: hsl(0, 0%, 12%);
     }
 }
 
