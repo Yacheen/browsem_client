@@ -1,3 +1,5 @@
+import { BackgroundMessage } from "./popup/App";
+
 const TEN_SECONDS_MS = 10 * 1000;
 
 let socket: WebSocket | null = null;
@@ -24,6 +26,9 @@ chrome.runtime.onMessage.addListener((message) => {
     else if (message.type === "update-profile") {
         socket?.send(message.contents);
     }
+    else if (message.type === "create-channel") {
+        socket?.send(message.contents);
+    }
 });
 const connect = () => {
     socket = new WebSocket('http://127.0.0.1:6969/ws');
@@ -33,10 +38,10 @@ const connect = () => {
     }
 
     socket.onmessage = (event) => {
-        let message = JSON.parse(event.data);
+        let message: BackgroundMessage = JSON.parse(event.data);
         chrome.runtime.sendMessage({
-            "type": "message",
-            "contents": message,
+            "type": message.type,
+            "contents": message.contents,
         });
     }
 

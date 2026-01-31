@@ -28,7 +28,8 @@ body {
   align-items: flex-start;
   justify-content: flex-start;
   min-width: 420px;
-  min-height: 100vh;
+  min-height: 100%;
+  position: relative;
 }
 
 h1 {
@@ -60,6 +61,8 @@ button:focus-visible {
   flex-direction: column;
   align-items: center;
   gap: 1rem;
+  animation: fadeAndSlideLeft 0.3s;
+  position: relative;
   button {
       width: 140px;
   }
@@ -81,6 +84,16 @@ button:focus-visible {
     color: #747bff;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: hsl(0, 0%, 95%);
   }
+}
+@keyframes fadeAndSlideLeft {
+    from {
+        opacity: 0.5;
+        left: 10%;
+    }
+    to {
+        opacity: 1.0;
+        left: 0%;
+    }
 }

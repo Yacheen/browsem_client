@@ -1,0 +1,19 @@
+.go-back-container-create-username {
+    position: absolute;
+    top: 0.25rem;
+    left: 0.25rem;
+}
+.back-icon {
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+}
+.back-icon:hover {
+    background: hsl(0, 0%, 20%);
+}
+
+@media (prefers-color-scheme: light) {
+    .back-icon:hover {
+        background: hsl(0, 0%, 90%);
+    }
+}

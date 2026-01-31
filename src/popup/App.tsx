@@ -5,21 +5,19 @@ import IntroPopup from '@/components/IntroPopup';
 import MainPopup from '@/components/MainPopup';
 import CreateGuestUsernamePopup from '@/components/CreateGuestUsernamePopup';
 import { useSettingsStore } from '@/hooks/settingsStore';
+import CreateChannel from '@/components/CreateChannel';
 
 export type BackgroundMessage = {
-    // this type field is used exclusively for 
+    // this type field is used exclusively for sending messages back and forth for
+    // the background script and thats it, I think.
+    // any different "types" of msgs will be checked with a typeguard in clientmessage
     type: MessageType,
     contents: ClientMessage
 }
+type MessageType = "Connecting" | "Connected" | "Disconnected";
+type ClientMessage = Disconnected | Connected | ErrorMessage;
 
-type ClientMessage = Disconnected | Connected;
-
-export type Disconnected = {
-    Disconnected: {
-        reason: string
-    }
-};
-
+// general messages
 export type Connected = {
     Connected: {
         sessionId: string,
@@ -27,8 +25,23 @@ export type Connected = {
         username: string,
     }
 };
+export type Disconnected = {
+    Disconnected: {
+        reason: string
+    }
+};
+// errors
+type ErrorMessage = {
+    ErrorMessage: ErrorType
+};
+type ErrorType = NoChannelName | ChannelNameTooLong;
 
-type MessageType = "Connecting" | "Connected" | "Disconnected";
+type NoChannelName = {
+    NoChannelName: string,
+};
+type ChannelNameTooLong = {
+    ChannelNameTooLong: string,
+}
 
 // typeguard fns
 const isConnected = (msg: ClientMessage): msg is Connected => {
@@ -36,6 +49,15 @@ const isConnected = (msg: ClientMessage): msg is Connected => {
 };
 const isDisconnected = (msg: ClientMessage): msg is Disconnected => {
     return (msg as Disconnected).Disconnected !== undefined;
+};
+const isErrorMessage = (msg: ClientMessage): msg is ErrorMessage => {
+    return (msg as ErrorMessage).ErrorMessage !== undefined;
+};
+const isNoChannelName = (msg: ErrorType): msg is NoChannelName => {
+    return (msg as NoChannelName).NoChannelName !== undefined;
+};
+const isChannelNameTooLong = (msg: ErrorType): msg is ChannelNameTooLong => {
+    return (msg as ChannelNameTooLong).ChannelNameTooLong !== undefined;
 };
 
 
@@ -47,15 +69,13 @@ export default function App() {
     const settingsStore = useSettingsStore();
 
     const handleConnectToServer = () => {
-        if (browsemStore.socketState === 'Disconnected') {
-            browsemStore.connect();
-            browsemStore.setCurrentSelection("Connected");
-        }
-        else if (browsemStore.socketState === 'Connected') {
-            browsemStore.disconnect();
-            browsemStore.setCurrentSelection("Intro");
-        }
+        browsemStore.connect();
+        browsemStore.setCurrentSelection("Connected");
     }
+    const handleDisconnectFromServer = () => {
+        browsemStore.disconnect();
+        browsemStore.setCurrentSelection("Intro");
+    };
     const handleCreateGuestUsername = () => {
         browsemStore.setCurrentSelection("CreatingGuestUsername");
     }
@@ -67,13 +87,23 @@ export default function App() {
                 "contents": JSON.stringify({
                     UpdateInfo: {
                         username: browsemStore.username,
-                        settings: settingsStore.settings
+                        settings: settingsStore.settings,
+                        currentUrl: browsemStore.currentUrl,
+                        currentOrigin: new URL(browsemStore.currentUrl).origin,
                     }
                 })
             });
         } 
         else if (isDisconnected(message.contents)) {
             browsemStore.disconnected(message.contents);
+        }
+        else if (isErrorMessage(message.contents)) {
+            if (isNoChannelName(message.contents.ErrorMessage)) {
+                browsemStore.setErrors({ ...browsemStore.errors, noChannelName: message.contents.ErrorMessage.NoChannelName });
+            }
+            else if (isChannelNameTooLong(message.contents.ErrorMessage)) {
+                browsemStore.setErrors({ ...browsemStore.errors, channelNameTooLong: message.contents.ErrorMessage.ChannelNameTooLong });
+            }
         }
     };
 
@@ -87,7 +117,7 @@ export default function App() {
             chrome.runtime.onMessage.removeListener(messageListener);
             messageListenerExists.current = false;
         }
-    }, [browsemStore.username, settingsStore.settings]);
+    }, [browsemStore.username, settingsStore.settings, browsemStore.currentUrl]);
 
     // setting info on ws whenever settings or profile updates are made
     useEffect(() => {
@@ -97,23 +127,29 @@ export default function App() {
                 "contents": JSON.stringify({
                     UpdateInfo: {
                         username: browsemStore.username,
-                        settings: settingsStore.settings
+                        settings: settingsStore.settings,
+                        currentUrl: browsemStore.currentUrl,
+                        currentOrigin: new URL(browsemStore.currentUrl).origin,
                     }
                 })
             });
         }
-    }, [browsemStore.username, settingsStore.settings]);
+    }, [browsemStore.username, settingsStore.settings, browsemStore.currentUrl]);
 
     // test
 
   return (
       <>
-        <div className={browsemStore.socketState === 'Connected' ? "browsem-header-connected" : ''}>
+        <div className={`${browsemStore.socketState === 'Connected' ? "browsem-header-connected" : ''}  ${browsemStore.currentSelection === "Connected" ? 'slide-left-animation' : ''}`}>
             <h1>Browsem</h1>
             {
                 browsemStore.socketState === 'Connected'
                 ?
                     <p className={"connected-as-username"}>Connected as {browsemStore.username}</p>
+                :
+                browsemStore.currentSelection === "Connected"
+                ?
+                    <p>Disconnected. Attempting to reconnect...</p>
                 :
                     null
             }
@@ -123,7 +159,8 @@ export default function App() {
                 <div className="top-right">
                     {/* sessions online, sessions in ur general site (yt/twitter/reddit etc.), sessions on ur specific url */}
                     <div className="disconnect-btn-container">
-                        <button type="button">Disconnect</button>
+                        { /*  if userData, show logout instead. */ }
+                        <button onClick={handleDisconnectFromServer} type="button">Disconnect</button>
                     </div>
                     <div className="server-stats">
                         <p>{browsemStore.onlineSessions} online</p>
@@ -148,6 +185,10 @@ export default function App() {
             browsemStore.currentSelection === 'Connected'
             ?
                 <MainPopup />
+            :
+            browsemStore.currentSelection === 'CreatingChannel'
+            ?
+                <CreateChannel />
             :
                 null
         }

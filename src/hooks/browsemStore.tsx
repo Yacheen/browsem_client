@@ -4,16 +4,23 @@ import { ChromeLocalStorage, ChromeSessionStorage } from 'zustand-chrome-storage
 import { BackgroundMessage, Connected, Disconnected } from '@/popup/App';
 
 type SocketState = 'Connected' | 'Disconnected' | 'Connecting';
-export type CurrentSelection = 'Intro' | 'CreatingGuestUsername' | 'Connected';
+export type CurrentSelection = 'Intro' | 'CreatingGuestUsername' | 'Connected' | 'CreatingChannel';
+type BrowsemErrors = {
+    noChannelName: string | null,
+    channelNameTooLong: string | null,
+};
 
 interface BrowsemStoreState {
     socketState: SocketState,
     currentSelection: CurrentSelection,
     sessionId: string | null,
     username: string,
+    errors: BrowsemErrors,
+    setErrors: (errors: BrowsemErrors) => void,
     onlineSessions: number,
     onlineInYourLocation: number,
     onlineInYourUrl: number,
+    currentUrl: string,
 
     disconnect: () => void,
     disconnected: (message: Disconnected) => void,
@@ -21,6 +28,7 @@ interface BrowsemStoreState {
     connected: (message: Connected) => void,
     setUsername: (username: string) => void,
     setCurrentSelection: (currentSelection: CurrentSelection) => void,
+    setCurrentUrl: (currentUrl: string) => void,
 }
 
 export const useBrowsemStore = create<BrowsemStoreState>()(
@@ -30,9 +38,14 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             currentSelection: 'Intro',
             sessionId: null,
             username: "",
+            errors: {
+                noChannelName: null,
+                channelNameTooLong: null,
+            },
             onlineSessions: 0,
             onlineInYourLocation: 0,
             onlineInYourUrl: 0,
+            currentUrl: "",
             setUsername: (username: string) => {
                 set({ username });
             },
@@ -67,7 +80,13 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
                         set({ socketState: 'Disconnected' });
                     }
                 }
-            }
+            },
+            setCurrentUrl: (currentUrl: string) => {
+                set({ currentUrl });
+            },
+            setErrors: (errors: BrowsemErrors) => {
+                set({ errors });
+            },
         }),
         {
             name: "browsem-session-storage",

@@ -3,6 +3,7 @@
     border-radius: 8px;
     padding: 1rem;
     max-width: 220px;
+    min-width: 220px;
     overflow-y: auto;
     height: 100%;
     min-height: 200px;
@@ -21,6 +22,9 @@
                 transition: all ease 0.2s;
                 position: relative;
                 bottom: 2px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
         }
         .channel-meta:hover .channel-name, .channel-meta:hover .channel-icon {
@@ -35,6 +39,7 @@
                 p {
                     overflow: hidden;
                     text-overflow: ellipsis;
+                    white-space: nowrap;
                 }
                 img {
                     max-width: 1.5rem;
@@ -42,5 +47,10 @@
                 }
             }
         }
+    }
+}
+@media (prefers-color-scheme: light) {
+    .channels-container {
+        background: hsl(0, 0%, 95%);
     }
 }

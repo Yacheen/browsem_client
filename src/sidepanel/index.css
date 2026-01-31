@@ -27,6 +27,7 @@ body {
   display: flex;
   place-items: center;
   min-height: 100vh;
+  position: relative;
 }
 
 h1 {
@@ -69,6 +70,7 @@ button:focus-visible {
     color: #747bff;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: hsl(0, 0%, 15%);
+    background-color: red;
   }
 }

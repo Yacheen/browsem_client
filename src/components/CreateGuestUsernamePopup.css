@@ -1,0 +1,8 @@
+.create-username-container {
+    display: flex;
+    flex-direction: column;
+}
+.username-label {
+    text-align: left;
+    margin-bottom: 0.25rem;
+}

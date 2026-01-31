@@ -1,6 +1,7 @@
 #root {
   max-width: 1280px;
-  min-height: 400px;
+  min-height: 100%;
+  min-height: 340px;
   text-align: center;
   width: 90%;
   margin: 0 auto;
@@ -46,6 +47,8 @@
     justify-content: space-between;
     width: 100%;
     margin-bottom: 1rem;
+    border-bottom: 1px solid hsla(0, 0%, 90%, 0.2);
+    padding-bottom: 0.5rem;
     h1 {
         align-self: flex-end;
         margin-bottom: 0;
@@ -58,7 +61,7 @@
                 transition: all ease 0.2s;
                 color: hsl(350, 73%, 64%);
                 align-self: flex-start;
-                min-width: 80px;
+                width: 100%;
             }
         }
         .server-stats {
@@ -82,4 +85,19 @@
 }
 .server-stats button:hover {
         color: hsl(350, 73%, 44%);
+}
+/* for header when going to main popup */
+.slide-left-animation {
+    position: relative;
+    animation: fadeAndSlideLeft 0.3s;
+}
+@keyframes fadeAndSlideLeft {
+    from {
+        opacity: 0.5;
+        left: 10%;
+    }
+    to {
+        opacity: 1.0;
+        left: 0%;
+    }
 }
