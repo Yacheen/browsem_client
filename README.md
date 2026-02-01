@@ -1,4 +1,4 @@
-# Brosem client - React + Vite + CRXJS
+# Browsem Client - React + Vite + CRXJS
 
 ## Features
 
