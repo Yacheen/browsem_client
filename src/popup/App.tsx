@@ -6,6 +6,8 @@ import MainPopup from '@/components/MainPopup';
 import CreateGuestUsernamePopup from '@/components/CreateGuestUsernamePopup';
 import { useSettingsStore } from '@/hooks/settingsStore';
 import CreateChannel from '@/components/CreateChannel';
+import { ChatterChannel } from '@/components/Channels';
+import { useChannelsStore } from '@/hooks/ChannelsStore';
 
 export type BackgroundMessage = {
     // this type field is used exclusively for sending messages back and forth for
@@ -15,9 +17,12 @@ export type BackgroundMessage = {
     contents: ClientMessage
 }
 type MessageType = "Connecting" | "Connected" | "Disconnected";
-type ClientMessage = Disconnected | Connected | ErrorMessage;
+export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated;
 
 // general messages
+export type ChannelCreated = {
+    ChannelCreated: ChatterChannel
+};
 export type Connected = {
     Connected: {
         sessionId: string,
@@ -34,14 +39,17 @@ export type Disconnected = {
 type ErrorMessage = {
     ErrorMessage: ErrorType
 };
-type ErrorType = NoChannelName | ChannelNameTooLong;
+type ErrorType = NoChannelName | ChannelNameTooLong | ChannelNameExists;
 
+type ChannelNameExists = {
+    ChannelNameExists: string,
+};
 type NoChannelName = {
     NoChannelName: string,
 };
 type ChannelNameTooLong = {
     ChannelNameTooLong: string,
-}
+};
 
 // typeguard fns
 const isConnected = (msg: ClientMessage): msg is Connected => {
@@ -59,6 +67,12 @@ const isNoChannelName = (msg: ErrorType): msg is NoChannelName => {
 const isChannelNameTooLong = (msg: ErrorType): msg is ChannelNameTooLong => {
     return (msg as ChannelNameTooLong).ChannelNameTooLong !== undefined;
 };
+const isChannelNameExists = (msg: ErrorType): msg is ChannelNameExists => {
+    return (msg as ChannelNameExists).ChannelNameExists !== undefined;
+};
+const isChannelCreated = (msg: ClientMessage): msg is ChannelCreated => {
+    return (msg as ChannelCreated).ChannelCreated !== undefined;
+};
 
 
 export default function App() {
@@ -67,6 +81,7 @@ export default function App() {
     const messageListenerExists = useRef(false);
     const browsemStore = useBrowsemStore();
     const settingsStore = useSettingsStore();
+    const channelsStore = useChannelsStore();
 
     const handleConnectToServer = () => {
         browsemStore.connect();
@@ -80,6 +95,7 @@ export default function App() {
         browsemStore.setCurrentSelection("CreatingGuestUsername");
     }
     const messageListener = async (message: BackgroundMessage) => {
+        console.log('message on client: ', message);
         if (isConnected(message.contents)) {
             browsemStore.connected(message.contents);
             chrome.runtime.sendMessage({
@@ -90,6 +106,8 @@ export default function App() {
                         settings: settingsStore.settings,
                         currentUrl: browsemStore.currentUrl,
                         currentOrigin: new URL(browsemStore.currentUrl).origin,
+                        urlsOpened: browsemStore.urlsOpened,
+                        urlOriginsOpened: browsemStore.urlOriginsOpened,
                     }
                 })
             });
@@ -97,12 +115,22 @@ export default function App() {
         else if (isDisconnected(message.contents)) {
             browsemStore.disconnected(message.contents);
         }
+        else if (isChannelCreated(message.contents)) {
+            // transition back to main with a message saying it was created. 
+            let newChannels = [...channelsStore.channels, message.contents.ChannelCreated];
+            channelsStore.setChannels(newChannels);
+            browsemStore.setCurrentSelection("Connected");
+        }
+        // error msges
         else if (isErrorMessage(message.contents)) {
             if (isNoChannelName(message.contents.ErrorMessage)) {
                 browsemStore.setErrors({ ...browsemStore.errors, noChannelName: message.contents.ErrorMessage.NoChannelName });
             }
             else if (isChannelNameTooLong(message.contents.ErrorMessage)) {
                 browsemStore.setErrors({ ...browsemStore.errors, channelNameTooLong: message.contents.ErrorMessage.ChannelNameTooLong });
+            }
+            else if (isChannelNameExists(message.contents.ErrorMessage)) {
+                browsemStore.setErrors({ ...browsemStore.errors, channelNameExists: message.contents.ErrorMessage.ChannelNameExists });
             }
         }
     };
@@ -130,6 +158,8 @@ export default function App() {
                         settings: settingsStore.settings,
                         currentUrl: browsemStore.currentUrl,
                         currentOrigin: new URL(browsemStore.currentUrl).origin,
+                        urlsOpened: browsemStore.urlsOpened,
+                        urlOriginsOpened: browsemStore.urlOriginsOpened,
                     }
                 })
             });

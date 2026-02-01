@@ -8,6 +8,7 @@ export type CurrentSelection = 'Intro' | 'CreatingGuestUsername' | 'Connected' |
 type BrowsemErrors = {
     noChannelName: string | null,
     channelNameTooLong: string | null,
+    channelNameExists: string | null,
 };
 
 interface BrowsemStoreState {
@@ -16,11 +17,12 @@ interface BrowsemStoreState {
     sessionId: string | null,
     username: string,
     errors: BrowsemErrors,
-    setErrors: (errors: BrowsemErrors) => void,
     onlineSessions: number,
     onlineInYourLocation: number,
     onlineInYourUrl: number,
     currentUrl: string,
+    urlsOpened: string[],
+    urlOriginsOpened: string[],
 
     disconnect: () => void,
     disconnected: (message: Disconnected) => void,
@@ -29,6 +31,9 @@ interface BrowsemStoreState {
     setUsername: (username: string) => void,
     setCurrentSelection: (currentSelection: CurrentSelection) => void,
     setCurrentUrl: (currentUrl: string) => void,
+    setErrors: (errors: BrowsemErrors) => void,
+    setUrlsOpened: (urlsOpened: string[]) => void,
+    setUrlOriginsOpened: (urlOriginsOpened: string[]) => void,
 }
 
 export const useBrowsemStore = create<BrowsemStoreState>()(
@@ -41,11 +46,15 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             errors: {
                 noChannelName: null,
                 channelNameTooLong: null,
+                channelNameExists: null
             },
             onlineSessions: 0,
             onlineInYourLocation: 0,
             onlineInYourUrl: 0,
             currentUrl: "",
+            urlsOpened: [],
+            urlOriginsOpened: [],
+
             setUsername: (username: string) => {
                 set({ username });
             },
@@ -86,6 +95,12 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             },
             setErrors: (errors: BrowsemErrors) => {
                 set({ errors });
+            },
+            setUrlsOpened: (urlsOpened: string[]) => {
+                set({ urlsOpened });
+            },
+            setUrlOriginsOpened: (urlOriginsOpened: string[]) => {
+                set({ urlOriginsOpened });
             },
         }),
         {

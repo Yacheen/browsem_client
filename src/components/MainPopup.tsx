@@ -9,6 +9,30 @@ import XIcon from '@mui/icons-material/X';
 import twitchIcon from '../assets/twitch_logo.svg';
 import kickIcon from '../assets/kick_logo.svg';
 import { useCreatingChannelStore } from '@/hooks/CreatingChannelStore';
+const channelsDummy = [
+    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
+        {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
+    ]},
+    {
+        channelName: "KoolKidsKlub",
+        chatters: [
+            {session_id: "69420", username: "yassin", pfp_s3_key: somePfp },
+            {session_id: "69420", username: "alan", pfp_s3_key: somePfp },
+        ]
+    },
+    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
+        {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
+    ]},
+    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
+        {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
+    ]},
+    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
+        {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
+    ]},
+    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
+        {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
+    ]},
+];
 
 export default function MainPopup() {
     const browsemStore = useBrowsemStore();
@@ -30,13 +54,28 @@ export default function MainPopup() {
     useEffect(() => {
         const getCurrentUrl = async () => {
             try {
-                const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true, });
-                let url = tabs[0].url;
-                if (url) {
-                    browsemStore.setCurrentUrl(url);
-                }
-                else {
-                    browsemStore.setCurrentUrl("Could not get url...");
+                // I need all urls, and the current active one
+                // whenever popup opens, it'll change the current active one, however if in a call,
+                // that call's info will remain the same and be a content script, 99% of the stuff
+                // for the call will be within a content script
+
+                const tabs = await chrome.tabs.query({ });
+
+                let urls = tabs.map(tab => (tab.url as string));
+                let urlOrigins = urls.map(url => new URL((url as string)).origin);
+                let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+
+                browsemStore.setUrlOriginsOpened(urlOrigins);
+                browsemStore.setUrlsOpened(urls);
+
+                if (activeTab[0]) {
+                    let url = activeTab[0].url;
+                    if (url) {
+                        browsemStore.setCurrentUrl(url);
+                    }
+                    else {
+                        browsemStore.setCurrentUrl("Could not get url...");
+                    }
                 }
             }
             catch (err) {
@@ -99,30 +138,7 @@ export default function MainPopup() {
                 </div>
                 <input title={browsemStore.currentUrl} className="where-am-i-input" type="text" disabled value={browsemStore.currentUrl} />
                 <div className="channels-and-buttons">
-                    <Channels channels={[
-                        {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-                            {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
-                        ]},
-                        {
-                            channelName: "KoolKidsKlub",
-                            chatters: [
-                                {session_id: "69420", username: "yassin", pfp_s3_key: somePfp },
-                                {session_id: "69420", username: "alan", pfp_s3_key: somePfp },
-                            ]
-                        },
-                        {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-                            {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
-                        ]},
-                        {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-                            {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
-                        ]},
-                        {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-                            {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
-                        ]},
-                        {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-                            {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
-                        ]},
-                    ]} />
+                    <Channels />
                     <div className="main-buttons">
                         <button onClick={handleStartCreatingChannel} className="new-channel-btn">New channel</button>
                     </div>

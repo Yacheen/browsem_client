@@ -1,4 +1,4 @@
-import { BackgroundMessage } from "./popup/App";
+import { BackgroundMessage, ClientMessage } from "./popup/App";
 
 const TEN_SECONDS_MS = 10 * 1000;
 
@@ -38,10 +38,11 @@ const connect = () => {
     }
 
     socket.onmessage = (event) => {
-        let message: BackgroundMessage = JSON.parse(event.data);
+        let message: ClientMessage = JSON.parse(event.data);
+        console.log('message on bg script: ', message);
         chrome.runtime.sendMessage({
-            "type": message.type,
-            "contents": message.contents,
+            "type": "message",
+            "contents": message,
         });
     }
 

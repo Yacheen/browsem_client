@@ -4,18 +4,24 @@ import { useState } from 'react'
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import Tooltip from '@mui/material/Tooltip';
 import "./Channels.css";
+import { useChannelsStore } from '@/hooks/ChannelsStore';
 export type ChatterChannel = {
+    sessionId: string,
     channelName: string,
-    chatters: Chatter[]
-}
+    channelOwner: string,
+    chatters: Chatter[],
+    urlOrigin: string,
+    fullUrl: string,
+};
 
-export default function Channels(props: { channels: ChatterChannel[] }) {
+export default function Channels() {
   const browsemStore = useBrowsemStore();
+  const channelsStore = useChannelsStore();
 
   return (
       <div className="channels-container"> 
         {
-            props.channels.map(channel => (
+            channelsStore.channels.map(channel => (
                 <div className="channel">
                     <Tooltip placement='top' title="Join" arrow disableInteractive slotProps={{
                         // popper: {
