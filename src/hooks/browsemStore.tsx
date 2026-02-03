@@ -17,9 +17,9 @@ interface BrowsemStoreState {
     sessionId: string | null,
     username: string,
     errors: BrowsemErrors,
-    onlineSessions: number,
-    onlineInYourLocation: number,
-    onlineInYourUrl: number,
+    sessionsOnline: number,
+    sessionsInYourOrigin: number,
+    sessionsInYourUrl: number,
     currentUrl: string,
     urlsOpened: string[],
     urlOriginsOpened: string[],
@@ -34,6 +34,7 @@ interface BrowsemStoreState {
     setErrors: (errors: BrowsemErrors) => void,
     setUrlsOpened: (urlsOpened: string[]) => void,
     setUrlOriginsOpened: (urlOriginsOpened: string[]) => void,
+    setBrowsemStats: (sessionsOnline: number, sessionsInYourOrigin: number, sessionsInYourUrl: number) => void,
 }
 
 export const useBrowsemStore = create<BrowsemStoreState>()(
@@ -48,9 +49,9 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
                 channelNameTooLong: null,
                 channelNameExists: null
             },
-            onlineSessions: 0,
-            onlineInYourLocation: 0,
-            onlineInYourUrl: 0,
+            sessionsOnline: 0,
+            sessionsInYourOrigin: 0,
+            sessionsInYourUrl: 0,
             currentUrl: "",
             urlsOpened: [],
             urlOriginsOpened: [],
@@ -76,14 +77,14 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             connected: (message: Connected) => {
                 let state = get().socketState;
                 if (state !== 'Connected') {
-                    set({ socketState: 'Connected', onlineSessions: message.Connected.onlineSessions, sessionId: message.Connected.sessionId });
+                    set({ socketState: 'Connected', sessionsOnline: message.Connected.sessionsOnline, sessionId: message.Connected.sessionId });
                 }
             },
             disconnected: (message: Disconnected) => {
                 let state = get().socketState;
                 if (state !== 'Disconnected') {
                     if (message.Disconnected.reason === "manual disconnect") {
-                        set({ socketState: 'Disconnected', sessionId: null, onlineSessions: 0, onlineInYourUrl: 0, onlineInYourLocation: 0 });
+                        set({ socketState: 'Disconnected', sessionId: null, sessionsOnline: 0, sessionsInYourUrl: 0, sessionsInYourOrigin: 0 });
                     }
                     else {
                         set({ socketState: 'Disconnected' });
@@ -102,6 +103,9 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             setUrlOriginsOpened: (urlOriginsOpened: string[]) => {
                 set({ urlOriginsOpened });
             },
+            setBrowsemStats: (sessionsOnline: number, sessionsInYourUrl: number, sessionsInYourOrigin: number) => {
+                set({ sessionsOnline, sessionsInYourUrl, sessionsInYourOrigin });
+            }
         }),
         {
             name: "browsem-session-storage",

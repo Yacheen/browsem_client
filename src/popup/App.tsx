@@ -17,17 +17,24 @@ export type BackgroundMessage = {
     contents: ClientMessage
 }
 type MessageType = "Connecting" | "Connected" | "Disconnected";
-export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated;
+export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated | BrowsemStats;
 
 // general messages
+export type BrowsemStats = {
+    BrowsemStats: {
+        sessionsOnline: number,
+        sessionsInYourOrigin: number,
+        sessionsInYourUrl: number
+    }
+}
 export type ChannelCreated = {
     ChannelCreated: ChatterChannel
 };
 export type Connected = {
     Connected: {
         sessionId: string,
-        onlineSessions: number
         username: string,
+        sessionsOnline: number,
     }
 };
 export type Disconnected = {
@@ -73,6 +80,9 @@ const isChannelNameExists = (msg: ErrorType): msg is ChannelNameExists => {
 const isChannelCreated = (msg: ClientMessage): msg is ChannelCreated => {
     return (msg as ChannelCreated).ChannelCreated !== undefined;
 };
+const isBrowsemStats = (msg: ClientMessage): msg is BrowsemStats => {
+    return (msg as BrowsemStats).BrowsemStats !== undefined;
+};
 
 
 export default function App() {
@@ -99,18 +109,26 @@ export default function App() {
         if (isConnected(message.contents)) {
             browsemStore.connected(message.contents);
             chrome.runtime.sendMessage({
-                "type": "update-profile",
+                "type": "update-user-info",
                 "contents": JSON.stringify({
                     UpdateInfo: {
                         username: browsemStore.username,
                         settings: settingsStore.settings,
-                        currentUrl: browsemStore.currentUrl,
-                        currentOrigin: new URL(browsemStore.currentUrl).origin,
-                        urlsOpened: browsemStore.urlsOpened,
-                        urlOriginsOpened: browsemStore.urlOriginsOpened,
+                        // currentUrl: browsemStore.currentUrl,
+                        // currentOrigin: new URL(browsemStore.currentUrl).origin,
+                        // urlsOpened: browsemStore.urlsOpened,
+                        // urlOriginsOpened: browsemStore.urlOriginsOpened,
                     }
                 })
             });
+            chrome.runtime.sendMessage({
+                "type": "update-urls",
+            });
+            setTimeout(() => {
+                chrome.runtime.sendMessage({
+                    "type": "get-browsem-stats",
+                });
+            }, 500);
         } 
         else if (isDisconnected(message.contents)) {
             browsemStore.disconnected(message.contents);
@@ -133,6 +151,10 @@ export default function App() {
                 browsemStore.setErrors({ ...browsemStore.errors, channelNameExists: message.contents.ErrorMessage.ChannelNameExists });
             }
         }
+        else if (isBrowsemStats(message.contents)) {
+            let { sessionsOnline, sessionsInYourUrl, sessionsInYourOrigin } = message.contents.BrowsemStats;
+            browsemStore.setBrowsemStats(sessionsOnline, sessionsInYourOrigin, sessionsInYourUrl);
+        }
     };
 
     // handling messages. Does this only handle it while the popup is up?
@@ -145,26 +167,26 @@ export default function App() {
             chrome.runtime.onMessage.removeListener(messageListener);
             messageListenerExists.current = false;
         }
-    }, [browsemStore.username, settingsStore.settings, browsemStore.currentUrl]);
+    }, []);
 
     // setting info on ws whenever settings or profile updates are made
-    useEffect(() => {
-        if (browsemStore.currentSelection === "Connected") {
-            chrome.runtime.sendMessage({
-                "type": "update-profile",
-                "contents": JSON.stringify({
-                    UpdateInfo: {
-                        username: browsemStore.username,
-                        settings: settingsStore.settings,
-                        currentUrl: browsemStore.currentUrl,
-                        currentOrigin: new URL(browsemStore.currentUrl).origin,
-                        urlsOpened: browsemStore.urlsOpened,
-                        urlOriginsOpened: browsemStore.urlOriginsOpened,
-                    }
-                })
-            });
-        }
-    }, [browsemStore.username, settingsStore.settings, browsemStore.currentUrl]);
+    // useEffect(() => {
+    //     if (browsemStore.currentSelection === "Connected") {
+    //         chrome.runtime.sendMessage({
+    //             "type": "update-profile",
+    //             "contents": JSON.stringify({
+    //                 UpdateInfo: {
+    //                     username: browsemStore.username,
+    //                     settings: settingsStore.settings,
+    //                     currentUrl: browsemStore.currentUrl,
+    //                     currentOrigin: new URL(browsemStore.currentUrl).origin,
+    //                     urlsOpened: browsemStore.urlsOpened,
+    //                     urlOriginsOpened: browsemStore.urlOriginsOpened,
+    //                 }
+    //             })
+    //         });
+    //     }
+    // }, []);
 
     // test
 
@@ -193,9 +215,9 @@ export default function App() {
                         <button onClick={handleDisconnectFromServer} type="button">Disconnect</button>
                     </div>
                     <div className="server-stats">
-                        <p>{browsemStore.onlineSessions} online</p>
-                        <p>{browsemStore.onlineInYourUrl} in your website</p>
-                        <p>{browsemStore.onlineInYourLocation} in your specific URL</p>
+                        <p>{browsemStore.sessionsOnline} online</p>
+                        <p>{browsemStore.sessionsInYourOrigin} in your website</p>
+                        <p>{browsemStore.sessionsInYourUrl} in your specific URL</p>
                     </div>
                 </div>
                 :

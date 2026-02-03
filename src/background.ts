@@ -13,7 +13,7 @@ let socket: WebSocket | null = null;
 
 // Toggle socket connection when they click connect as guest, or they have logged in.
 // For now, shall use, continue as guest after db/http is implemented for new tab.
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener(async (message) => {
     if (message.type === "connect") {
         if (socket === null) {
             connect();
@@ -23,17 +23,35 @@ chrome.runtime.onMessage.addListener((message) => {
     else if (message.type === "disconnect") {
         disconnect();
     }
-    else if (message.type === "update-profile") {
+    else if (message.type === "update-user-info") {
         socket?.send(message.contents);
+    }
+    else if (message.type === "update-urls") {
+        await sendUpdateUrlsMessage();
     }
     else if (message.type === "create-channel") {
         socket?.send(message.contents);
     }
+    else if (message.type === "get-browsem-stats") {
+        // let something: GetBrowsemStats = {
+        //     GetBrowsemStats: undefined
+        // };
+        socket?.send(JSON.stringify("GetBrowsemStats"));
+    }
 });
+// (tabId, changeInfo, updatedTab)
+chrome.tabs.onUpdated.addListener(async (...stuff) => {
+    if (stuff[1].url) {
+        await sendUpdateUrlsMessage();
+    }
+})
+chrome.tabs.onRemoved.addListener(async () => {
+    await sendUpdateUrlsMessage();
+})
 const connect = () => {
     socket = new WebSocket('http://127.0.0.1:6969/ws');
 
-    socket.onopen = () => {
+    socket.onopen = async () => {
         chrome.action.setIcon({ path: '../public/logo.png' });
     }
 
@@ -67,6 +85,24 @@ const disconnect = () => {
         socket = null;
     }
 }
+const sendUpdateUrlsMessage = async () => {
+    const tabs = await chrome.tabs.query({ });
+    let urls = tabs.map(tab => (tab.url as string));
+    let urlOrigins = urls.map(url => new URL((url as string)).origin);
+    let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+
+    if (activeTab[0].url) {
+        let updateUrlsMessage = {
+            UpdateUrls: {
+                currentUrl: activeTab[0].url,
+                currentOrigin: new URL(activeTab[0].url).origin,
+                urlsOpened: urls,
+                urlOriginsOpened: urlOrigins,
+            }
+        };
+        socket?.send(JSON.stringify(updateUrlsMessage));
+    }
+}
 // const keepAlive = () => {
 //     const keepAliveIntervalId = setInterval(() => {
 //         if (socket === null) {
@@ -77,4 +113,5 @@ const disconnect = () => {
 //         }
 //         // less than a 30 second ping interval will make the service worker close I think.
 //     }, TEN_SECONDS_MS);
+//
 // }
