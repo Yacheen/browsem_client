@@ -55,7 +55,6 @@
     }
     .top-right {
         .disconnect-btn-container {
-            margin-bottom: 1rem;
             display: flex;
             button {
                 transition: all ease 0.2s;

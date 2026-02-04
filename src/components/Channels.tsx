@@ -5,6 +5,7 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import Tooltip from '@mui/material/Tooltip';
 import "./Channels.css";
 import { useChannelsStore } from '@/hooks/ChannelsStore';
+import { shortenStringWithDots } from '@/utils/functions';
 export type ChatterChannel = {
     sessionId: string,
     channelName: string,
@@ -12,6 +13,7 @@ export type ChatterChannel = {
     chatters: Chatter[],
     urlOrigin: string,
     fullUrl: string,
+    maxChatters: number,
 };
 
 export default function Channels() {
@@ -22,7 +24,7 @@ export default function Channels() {
       <div className="channels-container"> 
         {
             channelsStore.channels.map(channel => (
-                <div className="channel">
+                <div key={channel.sessionId} className="channel">
                     <Tooltip placement='top' title="Join" arrow disableInteractive slotProps={{
                         // popper: {
                         //     modifiers: [
@@ -36,10 +38,15 @@ export default function Channels() {
                         // }
                     }}>
                         <div className="channel-meta">
-                            <div className="channel-voice-icon">
-                                <VolumeUpIcon className="channel-icon" />
+                            <div className="channel-meta-left">
+                                <div className="channel-voice-icon">
+                                    <VolumeUpIcon className="channel-icon" />
+                                </div>
+                                <p title={channel.channelName} className="channel-name">{shortenStringWithDots(channel.channelName, 25)}</p>
                             </div>
-                            <p className="channel-name">{channel.channelName}</p>
+                            <div className="channel-max-chatters">
+                                {channel.chatters.length}/{channel.maxChatters}
+                            </div>
                         </div>
                     </Tooltip>
                     <div className="channel-chatters">

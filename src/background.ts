@@ -1,4 +1,4 @@
-import { BackgroundMessage, ClientMessage } from "./popup/App";
+import { BackgroundMessage, ClientMessage, isConnected, isUrlsUpdated } from "./popup/App";
 
 const TEN_SECONDS_MS = 10 * 1000;
 
@@ -33,10 +33,13 @@ chrome.runtime.onMessage.addListener(async (message) => {
         socket?.send(message.contents);
     }
     else if (message.type === "get-browsem-stats") {
-        // let something: GetBrowsemStats = {
-        //     GetBrowsemStats: undefined
-        // };
-        socket?.send(JSON.stringify("GetBrowsemStats"));
+        await getBrowsemStats();
+    }
+    else if (message.type === "get-channels-by-url") {
+        await getChannelsByUrl();
+    }
+    else if (message.type === "get-channels-by-origin") {
+        await getChannelsByOrigin();
     }
 });
 // (tabId, changeInfo, updatedTab)
@@ -48,6 +51,12 @@ chrome.tabs.onUpdated.addListener(async (...stuff) => {
 chrome.tabs.onRemoved.addListener(async () => {
     await sendUpdateUrlsMessage();
 })
+// onclicked is handled on the components within the useEffect after messagelistener
+// is created, rather than here (message listener removed in cleanup fn)
+// chrome.action.onClicked.addListener(() => {
+//     socket?.send(JSON.stringify("GetChannelsByUrl"));
+//     socket?.send(JSON.stringify("GetBrowsemStats"));
+// })
 const connect = () => {
     socket = new WebSocket('http://127.0.0.1:6969/ws');
 
@@ -57,7 +66,9 @@ const connect = () => {
 
     socket.onmessage = (event) => {
         let message: ClientMessage = JSON.parse(event.data);
-        console.log('message on bg script: ', message);
+        // if (isConnected(message)) {
+        //     await sendUpdateUrlsMessage();
+        // }
         chrome.runtime.sendMessage({
             "type": "message",
             "contents": message,
@@ -101,6 +112,54 @@ const sendUpdateUrlsMessage = async () => {
             }
         };
         socket?.send(JSON.stringify(updateUrlsMessage));
+    }
+}
+const getBrowsemStats = async () => {
+    const tabs = await chrome.tabs.query({ });
+    let urls = tabs.map(tab => (tab.url as string));
+    let urlOrigins = urls.map(url => new URL((url as string)).origin);
+    let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+
+    if (activeTab[0].url) {
+        let message = {
+            GetBrowsemStats: {
+                currentUrl: activeTab[0].url,
+                currentOrigin: new URL(activeTab[0].url).origin,
+            }
+        };
+        socket?.send(JSON.stringify(message));
+    }
+}
+const getChannelsByUrl = async () => {
+    const tabs = await chrome.tabs.query({ });
+    let urls = tabs.map(tab => (tab.url as string));
+    let urlOrigins = urls.map(url => new URL((url as string)).origin);
+    let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+
+    if (activeTab[0].url) {
+        let message = {
+            GetChannelsByUrl: {
+                currentUrl: activeTab[0].url,
+                currentOrigin: new URL(activeTab[0].url).origin,
+            }
+        };
+        socket?.send(JSON.stringify(message));
+    }
+}
+const getChannelsByOrigin = async () => {
+    const tabs = await chrome.tabs.query({ });
+    let urls = tabs.map(tab => (tab.url as string));
+    let urlOrigins = urls.map(url => new URL((url as string)).origin);
+    let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+
+    if (activeTab[0].url) {
+        let message = {
+            GetChannelsByOrigin: {
+                currentUrl: activeTab[0].url,
+                currentOrigin: new URL(activeTab[0].url).origin,
+            }
+        };
+        socket?.send(JSON.stringify(message));
     }
 }
 // const keepAlive = () => {

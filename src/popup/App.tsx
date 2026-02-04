@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/hooks/settingsStore';
 import CreateChannel from '@/components/CreateChannel';
 import { ChatterChannel } from '@/components/Channels';
 import { useChannelsStore } from '@/hooks/ChannelsStore';
+import { getDomainName } from '@/utils/functions';
 
 export type BackgroundMessage = {
     // this type field is used exclusively for sending messages back and forth for
@@ -17,7 +18,7 @@ export type BackgroundMessage = {
     contents: ClientMessage
 }
 type MessageType = "Connecting" | "Connected" | "Disconnected";
-export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated | BrowsemStats;
+export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated | BrowsemStats | ChatterChannels | UrlsUpdated;
 
 // general messages
 export type BrowsemStats = {
@@ -33,7 +34,6 @@ export type ChannelCreated = {
 export type Connected = {
     Connected: {
         sessionId: string,
-        username: string,
         sessionsOnline: number,
     }
 };
@@ -57,37 +57,47 @@ type NoChannelName = {
 type ChannelNameTooLong = {
     ChannelNameTooLong: string,
 };
+type ChatterChannels = {
+    ChatterChannels: ChatterChannel[],
+};
+type UrlsUpdated = {
+    UrlsUpdated: string,
+}
 
 // typeguard fns
-const isConnected = (msg: ClientMessage): msg is Connected => {
+export const isConnected = (msg: ClientMessage): msg is Connected => {
     return (msg as Connected).Connected !== undefined;
 };
-const isDisconnected = (msg: ClientMessage): msg is Disconnected => {
+export const isDisconnected = (msg: ClientMessage): msg is Disconnected => {
     return (msg as Disconnected).Disconnected !== undefined;
 };
-const isErrorMessage = (msg: ClientMessage): msg is ErrorMessage => {
+export const isErrorMessage = (msg: ClientMessage): msg is ErrorMessage => {
     return (msg as ErrorMessage).ErrorMessage !== undefined;
 };
-const isNoChannelName = (msg: ErrorType): msg is NoChannelName => {
+export const isNoChannelName = (msg: ErrorType): msg is NoChannelName => {
     return (msg as NoChannelName).NoChannelName !== undefined;
 };
-const isChannelNameTooLong = (msg: ErrorType): msg is ChannelNameTooLong => {
+export const isChannelNameTooLong = (msg: ErrorType): msg is ChannelNameTooLong => {
     return (msg as ChannelNameTooLong).ChannelNameTooLong !== undefined;
 };
-const isChannelNameExists = (msg: ErrorType): msg is ChannelNameExists => {
+export const isChannelNameExists = (msg: ErrorType): msg is ChannelNameExists => {
     return (msg as ChannelNameExists).ChannelNameExists !== undefined;
 };
-const isChannelCreated = (msg: ClientMessage): msg is ChannelCreated => {
+export const isChannelCreated = (msg: ClientMessage): msg is ChannelCreated => {
     return (msg as ChannelCreated).ChannelCreated !== undefined;
 };
-const isBrowsemStats = (msg: ClientMessage): msg is BrowsemStats => {
+export const isBrowsemStats = (msg: ClientMessage): msg is BrowsemStats => {
     return (msg as BrowsemStats).BrowsemStats !== undefined;
+};
+export const isUrlsUpdated = (msg: ClientMessage): msg is UrlsUpdated => {
+    return (msg as UrlsUpdated).UrlsUpdated !== undefined;
+};
+export const isChatterChannels = (msg: ClientMessage): msg is ChatterChannels => {
+    return (msg as ChatterChannels).ChatterChannels !== undefined;
 };
 
 
 export default function App() {
-    const [loading, setLoading] = useState<boolean>(false);
-    const [connectedUrl, setConnectedUrl] = useState<string | null>();
     const messageListenerExists = useRef(false);
     const browsemStore = useBrowsemStore();
     const settingsStore = useSettingsStore();
@@ -95,7 +105,6 @@ export default function App() {
 
     const handleConnectToServer = () => {
         browsemStore.connect();
-        browsemStore.setCurrentSelection("Connected");
     }
     const handleDisconnectFromServer = () => {
         browsemStore.disconnect();
@@ -106,13 +115,16 @@ export default function App() {
     }
     const messageListener = async (message: BackgroundMessage) => {
         console.log('message on client: ', message);
+        // connected by socket, then send update-user-info & update-urls, THEN fetch urls and browsem stats
+        // u receive a urlsfetched message
         if (isConnected(message.contents)) {
             browsemStore.connected(message.contents);
+            browsemStore.setCurrentSelection("Connected");
             chrome.runtime.sendMessage({
                 "type": "update-user-info",
                 "contents": JSON.stringify({
                     UpdateInfo: {
-                        username: browsemStore.username,
+                        username: useBrowsemStore.getState().username,
                         settings: settingsStore.settings,
                         // currentUrl: browsemStore.currentUrl,
                         // currentOrigin: new URL(browsemStore.currentUrl).origin,
@@ -122,46 +134,64 @@ export default function App() {
                 })
             });
             chrome.runtime.sendMessage({
-                "type": "update-urls",
+                "type": "update-urls"
             });
-            setTimeout(() => {
-                chrome.runtime.sendMessage({
-                    "type": "get-browsem-stats",
-                });
-            }, 500);
         } 
+        else if (isUrlsUpdated(message.contents)) {
+            chrome.runtime.sendMessage({
+                "type": "get-channels-by-url"
+            });
+            chrome.runtime.sendMessage({
+                "type": "get-browsem-stats"
+            });
+        }
         else if (isDisconnected(message.contents)) {
             browsemStore.disconnected(message.contents);
         }
         else if (isChannelCreated(message.contents)) {
+            console.log('channels are currently: ', channelsStore.channels);
             // transition back to main with a message saying it was created. 
-            let newChannels = [...channelsStore.channels, message.contents.ChannelCreated];
+            let newChannels = [...useChannelsStore.getState().channels, message.contents.ChannelCreated];
             channelsStore.setChannels(newChannels);
             browsemStore.setCurrentSelection("Connected");
         }
         // error msges
         else if (isErrorMessage(message.contents)) {
             if (isNoChannelName(message.contents.ErrorMessage)) {
-                browsemStore.setErrors({ ...browsemStore.errors, noChannelName: message.contents.ErrorMessage.NoChannelName });
+                browsemStore.setErrors({ ...useBrowsemStore.getState().errors, noChannelName: message.contents.ErrorMessage.NoChannelName });
             }
             else if (isChannelNameTooLong(message.contents.ErrorMessage)) {
-                browsemStore.setErrors({ ...browsemStore.errors, channelNameTooLong: message.contents.ErrorMessage.ChannelNameTooLong });
+                browsemStore.setErrors({ ...useBrowsemStore.getState().errors, channelNameTooLong: message.contents.ErrorMessage.ChannelNameTooLong });
             }
             else if (isChannelNameExists(message.contents.ErrorMessage)) {
-                browsemStore.setErrors({ ...browsemStore.errors, channelNameExists: message.contents.ErrorMessage.ChannelNameExists });
+                browsemStore.setErrors({ ...useBrowsemStore.getState().errors, channelNameExists: message.contents.ErrorMessage.ChannelNameExists });
             }
         }
         else if (isBrowsemStats(message.contents)) {
             let { sessionsOnline, sessionsInYourUrl, sessionsInYourOrigin } = message.contents.BrowsemStats;
             browsemStore.setBrowsemStats(sessionsOnline, sessionsInYourOrigin, sessionsInYourUrl);
         }
+        else if (isChatterChannels(message.contents)) {
+            channelsStore.setChannels(message.contents.ChatterChannels);
+        }
     };
 
-    // handling messages. Does this only handle it while the popup is up?
+    // handling messages, opens when browsemstore gets username from storage session,
+    // which happens when popup is opened.
     useEffect(() => {
         if (messageListenerExists.current === false) {
             chrome.runtime.onMessage.addListener(messageListener)
             messageListenerExists.current = true;
+            // get stuff now that message listener is ready and component is mounted
+            if (browsemStore.socketState === "Connected") {
+                chrome.runtime.sendMessage({
+                    "type": "get-browsem-stats",
+                });
+                // can do origins as well instead in future
+                chrome.runtime.sendMessage({
+                    "type": "get-channels-by-url",
+                });
+            }
         }
         return () => {
             chrome.runtime.onMessage.removeListener(messageListener);
@@ -215,9 +245,17 @@ export default function App() {
                         <button onClick={handleDisconnectFromServer} type="button">Disconnect</button>
                     </div>
                     <div className="server-stats">
-                        <p>{browsemStore.sessionsOnline} online</p>
-                        <p>{browsemStore.sessionsInYourOrigin} in your website</p>
-                        <p>{browsemStore.sessionsInYourUrl} in your specific URL</p>
+                        <p className="read-the-docs">chatters</p>
+                        <p>{browsemStore.sessionsOnline} on Browsem</p>
+                        <p>{browsemStore.sessionsInYourOrigin} on {getDomainName(browsemStore.currentUrl)}</p>
+                        {
+                            /* 
+                                 insert big switch case based on ur origin what this should be here
+                                 (for example, if youtube, 200 watching this video)
+                                 (for twitch, 30 watching xqc's stream)
+                            */
+                        }
+                        <p>{browsemStore.sessionsInYourUrl} on your URL</p>
                     </div>
                 </div>
                 :

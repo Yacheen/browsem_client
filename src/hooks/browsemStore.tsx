@@ -77,7 +77,11 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             connected: (message: Connected) => {
                 let state = get().socketState;
                 if (state !== 'Connected') {
-                    set({ socketState: 'Connected', sessionsOnline: message.Connected.sessionsOnline, sessionId: message.Connected.sessionId });
+                    set({
+                        socketState: 'Connected',
+                        sessionsOnline: message.Connected.sessionsOnline,
+                        sessionId: message.Connected.sessionId,
+                    });
                 }
             },
             disconnected: (message: Disconnected) => {

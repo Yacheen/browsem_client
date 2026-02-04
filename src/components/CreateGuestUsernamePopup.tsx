@@ -7,7 +7,9 @@ export default function CreateGuestUsernamePopup(props: { username: string, setU
   const browsemStore = useBrowsemStore();
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
       console.log(event.currentTarget.value);
-      props.setUsername(event.currentTarget.value);
+      if (event.currentTarget.value.length > 0) {
+          props.setUsername(event.currentTarget.value);
+      }
   }
 
   return (
