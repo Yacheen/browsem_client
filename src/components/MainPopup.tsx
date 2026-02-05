@@ -1,6 +1,6 @@
 import { useBrowsemStore } from '@/hooks/browsemStore';
 import { useEffect, useState } from 'react'
-import './MainPopup.css'
+import './MainPopup.scss'
 import Channels from './Channels';
 import somePfp from "../../public/logo.png";
 import YouTubeIcon from '@mui/icons-material/YouTube';

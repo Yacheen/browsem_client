@@ -1,0 +1,94 @@
+.minimized_window {
+    visibility: hidden;
+    // must be 0 so that resizeobserver doesnt detect a resize
+    // so that window_handler doesn't change size on minimize
+    // height: 0;
+}
+.pointer_events_none {
+    pointer-events: none;
+}
+.window_handler_container {
+    position: fixed;
+    top: 15%;
+    left: 30%;
+    .window_handler {
+        background: hsl(0, 0%, 15%);
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        pointer-events: auto;
+        z-index: 1320;
+        .top_right_window {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            p {
+                padding-left: 6px;
+                user-select: none;
+            }
+            .top_right_window_buttons {
+                display: flex;
+                > * {
+                    transition: background ease 0.2s;
+                    padding: 6px;
+                    &:hover {
+                        background: hsl(0, 0%, 25%);
+                    }
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .minimize_window_button {
+
+                }
+                .fullscreen_window_button {
+
+                }
+                .exit_window_button {
+
+                }
+            }
+        }
+    }
+    .window_content {
+        resize: both;
+        overflow: auto;
+        position: relative;
+        max-width: 1200px;
+        max-height: 1200px;
+        border: 1px solid hsla(0, 0%, 80%, 0.6);
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+        background: hsl(0, 0%, 20%);
+        z-index: 1320;
+        &::-webkit-scrollbar {
+            width: 0px;
+        }
+    }
+    .resizing {
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+    }
+}
+.normal_z_index {
+    z-index: 1320;
+}
+.independent_call_z_index {
+    z-index: 1320;
+}
+.profile_card_z_index {
+    z-index: 1321;
+}
+.account_settings_z_index {
+    z-index: 1322;
+}
+.friends_z_index {
+    z-index: 1321;
+}
+.notifications_z_index {
+    z-index: 1321;
+}
+.verifying_z_index {
+    z-index: 1323;
+}
+

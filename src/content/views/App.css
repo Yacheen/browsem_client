@@ -9,6 +9,7 @@
   font-family: ui-sans-serif, system-ui, sans-serif;
   user-select: none;
   line-height: 1em;
+  min-height: 30px;
 }
 
 .popup-content {
@@ -54,3 +55,4 @@
 .opacity-0 {
   opacity: 0;
 }
+@import "../../components/WindowHandler.scss";

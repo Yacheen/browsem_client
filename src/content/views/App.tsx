@@ -1,20 +1,13 @@
 import { useState } from 'react'
 import './App.css'
+import WindowHandler from '@/components/WindowHandler'
+import BrowsemCall from '@/components/BrowsemCall'
 
 function App() {
-  const [show, setShow] = useState(false)
-  const toggle = () => setShow(!show)
-
   return (
-    <div className="popup-container">
-      {show && (
-        <div className={`popup-content ${show ? 'opacity-100' : 'opacity-0'}`}>
-          <h1>HELLO CRXJS</h1>
-        </div>
-      )}
-      <button className="toggle-button" onClick={toggle}>
-      </button>
-    </div>
+    <WindowHandler type='BrowsemCall' description='Group call in https://twitch.tv/xqc' closeMyWindow={() => console.log('hi')}>
+        <BrowsemCall />
+    </WindowHandler>
   )
 }
 
