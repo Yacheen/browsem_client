@@ -5,12 +5,13 @@
     // height: 0;
 }
 .pointer_events_none {
-    pointer-events: none;
+    pointer-events: none !important;
 }
-.window_handler_container {
-    position: fixed;
-    top: 15%;
-    left: 30%;
+.window_container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
     .window_handler {
         background: hsl(0, 0%, 15%);
         border-top-left-radius: 4px;
@@ -29,7 +30,7 @@
                 display: flex;
                 > * {
                     transition: background ease 0.2s;
-                    padding: 6px;
+                    padding: 10px;
                     &:hover {
                         background: hsl(0, 0%, 25%);
                     }
@@ -50,45 +51,14 @@
         }
     }
     .window_content {
-        resize: both;
+        height: 100%;
+        width: 100%;
         overflow: auto;
         position: relative;
-        max-width: 1200px;
-        max-height: 1200px;
         border: 1px solid hsla(0, 0%, 80%, 0.6);
         border-bottom-left-radius: 4px;
         border-bottom-right-radius: 4px;
         background: hsl(0, 0%, 20%);
-        z-index: 1320;
-        &::-webkit-scrollbar {
-            width: 0px;
-        }
     }
-    .resizing {
-        &::-webkit-scrollbar {
-            width: 6px;
-        }
-    }
-}
-.normal_z_index {
-    z-index: 1320;
-}
-.independent_call_z_index {
-    z-index: 1320;
-}
-.profile_card_z_index {
-    z-index: 1321;
-}
-.account_settings_z_index {
-    z-index: 1322;
-}
-.friends_z_index {
-    z-index: 1321;
-}
-.notifications_z_index {
-    z-index: 1321;
-}
-.verifying_z_index {
-    z-index: 1323;
 }
 

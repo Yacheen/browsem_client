@@ -1,0 +1,57 @@
+.resize-handle {
+  position: absolute;
+  z-index: 2000;
+}
+
+.resize-handle.top,
+.resize-handle.bottom {
+  height: 6px;
+  left: 0;
+  right: 0;
+  cursor: ns-resize;
+}
+
+.resize-handle.left,
+.resize-handle.right {
+  width: 6px;
+  top: 0;
+  bottom: 0;
+  cursor: ew-resize;
+}
+
+.resize-handle.top { top: -3px; }
+.resize-handle.bottom { bottom: -3px; }
+.resize-handle.left { left: -3px; }
+.resize-handle.right { right: -3px; }
+
+.resize-handle.top-left,
+.resize-handle.top-right,
+.resize-handle.bottom-left,
+.resize-handle.bottom-right {
+  width: 10px;
+  height: 10px;
+}
+
+.resize-handle.top-left {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+
+.resize-handle.top-right {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+
+.resize-handle.bottom-left {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
+}
+
+.resize-handle.bottom-right {
+  bottom: -5px;
+  right: -5px;
+  cursor: nwse-resize;
+}

@@ -1,17 +1,16 @@
 import { useState } from 'react'
 import './BrowsemCall.css'
-// import WindowHandler from '@/components/WindowHandler'
 
 function BrowsemCall() {
   return (
-      <>
+      <div className="browsem-call">
           <p>hello world</p>
           <p>hello world</p>
           <p>hello world</p>
           <p>hello world</p>
           <p>hello world</p>
           <p>hello world</p>
-      </>
+      </div>
   )
 }
 

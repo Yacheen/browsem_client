@@ -2,11 +2,19 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './views/App.tsx'
 
-console.log('[CRXJS] Hello world from content script!')
 
 const container = document.createElement('div')
-container.id = 'crxjs-app'
-document.body.appendChild(container)
+container.id = 'browsem-host';
+Object.assign(container.style, {
+  position: 'fixed',
+  inset: '0',
+  width: '100vw',
+  height: '100vh',
+  zIndex: '6942013373',
+  pointerEvents: 'none',
+});
+
+document.body.appendChild(container);
 createRoot(container).render(
   <StrictMode>
     <App />
