@@ -1,17 +1,18 @@
-import { useState } from 'react'
-import WindowHandler from '@/components/WindowHandler'
-import BrowsemCall from '@/components/BrowsemCall'
 
-function App() {
+import { useState, useMemo } from 'react';
+import createCache from '@emotion/cache';
+import { CacheProvider } from "@emotion/react";
+import { StyledEngineProvider } from '@mui/material/styles';
+import WindowHandler from '@/components/WindowHandler';
+import BrowsemCall from '@/components/BrowsemCall';
+
+export default function App() {
     return (
-        // <div style = {{
-        //     pointerEvents: 'auto'
-        // }}>
-        <WindowHandler minWidth={360} minHeight={240} type='BrowsemCall' description='Group call in https://twitch.tv/xqc' closeMyWindow={() => console.log('hi')}>
+        <WindowHandler
+            minWidth={360} minHeight={240} type='BrowsemCall' description='Group call in https://twitch.tv/xqc' closeMyWindow={() => console.log('hi')}
+        >
             <BrowsemCall />
         </WindowHandler>
-        // </div>
-    )
+    );
 }
 
-export default App

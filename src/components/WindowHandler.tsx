@@ -89,6 +89,6 @@ export default function WindowHandler(props: {children: React.JSX.Element, close
                 </div>
             </div>
         </Rnd>
-    )
+    );
 }
 
