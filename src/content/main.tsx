@@ -1,11 +1,12 @@
 import { createRoot } from 'react-dom/client'
 import App from './views/App.tsx'
 import { StrictMode } from 'react';
+import { createPortal } from 'react-dom';
+import Frame from 'react-frame-component';
 
 const container = document.createElement('div');
-container.id = "browsem-root-container";
+container.id = "browsem-root";
 Object.assign(container.style, {
-    all: 'initial',
     position: 'fixed',
     inset: '0',
     width: '100vw',
@@ -16,9 +17,8 @@ Object.assign(container.style, {
 
 document.body.appendChild(container);
 
-// Pass 'shadow' as a prop to App
 createRoot(container).render(
     <StrictMode>
         <App  />
-    </StrictMode>
-);
+    </StrictMode>,
+)
