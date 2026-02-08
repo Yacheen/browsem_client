@@ -2,7 +2,7 @@
 .url-calls-container {
     background: hsl(0, 0%, 25%);
     border-radius: 8px;
-    padding: 16px;
+    padding: 8px;
     max-width: 220px;
     min-width: 220px;
     overflow-y: auto;
@@ -15,8 +15,14 @@
         justify-content: space-between;
         align-items: center;
         cursor: pointer;
+        border-radius: 4px;
+        padding: 0px 8px;
+        &:hover {
+            background: hsl(0, 0%, 30%);
+        }
         .url-call-name {
-            font-size: 14px;
+            font-size: 16px;
+            font-weight: bold;
         }
         .url-call-right {
             display: flex;
@@ -38,10 +44,7 @@
     .channels-container {
         padding-left: 12px;
         padding-top: 4px;
-        cursor: pointer;
-        &:hover {
-            color: hsl(0, 0%, 60%);
-        }
+        padding-right: 8px;
         .channel {
             margin-bottom: 8px;
             .channel-meta {
@@ -60,6 +63,18 @@
                         justify-content: center;
                         .channel-icon {
                             font-size: 16px;
+
+                        }
+                    }
+                }
+                .channel-max-chatters {
+                    display: flex;
+                    align-items: center;
+                    .max-chatters-icon-container {
+                        .max-chatters-icon {
+                            font-size: 18px;
+                            display: flex;
+                            align-items: center;
 
                         }
                     }
@@ -90,6 +105,12 @@
 @media (prefers-color-scheme: light) {
     .url-calls-container {
         background: hsl(0, 0%, 95%);
+        .url-call-container {
+            &:hover {
+                background: hsl(0, 0%, 85%);
+            }
+
+        }
         .channels-container {
         }
     }

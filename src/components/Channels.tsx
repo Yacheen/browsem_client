@@ -8,6 +8,7 @@ import { useChannelsStore } from '@/hooks/ChannelsStore';
 import { shortenStringWithDots } from '@/utils/functions';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import PersonIcon from '@mui/icons-material/Person';
 export type ChatterChannel = {
     sessionId: string,
     channelName: string,
@@ -85,7 +86,7 @@ export default function Channels() {
                                                             <p title={channel.channelName} className="channel-name">{shortenStringWithDots(channel.channelName, 25)}</p>
                                                         </div>
                                                         <div className="channel-max-chatters">
-                                                            {channel.chatters.length}/{channel.maxChatters}
+                                                            {channel.chatters.length}/{channel.maxChatters} <div className="max-chatters-icon-container"><PersonIcon className="max-chatters-icon" /></div>
                                                         </div>
                                                     </div>
                                                 </Tooltip>
