@@ -18,7 +18,7 @@ export type BackgroundMessage = {
     contents: ClientMessage
 }
 type MessageType = "Connecting" | "Connected" | "Disconnected";
-export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated | BrowsemStats | ChatterChannels | UrlsUpdated;
+export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated | BrowsemStats | OriginCalls | UrlsUpdated;
 
 // general messages
 export type BrowsemStats = {
@@ -29,7 +29,7 @@ export type BrowsemStats = {
     }
 }
 export type ChannelCreated = {
-    ChannelCreated: ChatterChannel
+    ChannelCreated: UrlCalls,
 };
 export type Connected = {
     Connected: {
@@ -57,9 +57,16 @@ type NoChannelName = {
 type ChannelNameTooLong = {
     ChannelNameTooLong: string,
 };
-type ChatterChannels = {
-    ChatterChannels: ChatterChannel[],
-};
+export type OriginCalls = {
+    OriginCalls: {
+        originName: string,
+        urls: UrlCalls[],
+    }
+}
+export type UrlCalls = {
+    urlName: string,
+    channels: ChatterChannel[],
+}
 type UrlsUpdated = {
     UrlsUpdated: string,
 }
@@ -92,8 +99,8 @@ export const isBrowsemStats = (msg: ClientMessage): msg is BrowsemStats => {
 export const isUrlsUpdated = (msg: ClientMessage): msg is UrlsUpdated => {
     return (msg as UrlsUpdated).UrlsUpdated !== undefined;
 };
-export const isChatterChannels = (msg: ClientMessage): msg is ChatterChannels => {
-    return (msg as ChatterChannels).ChatterChannels !== undefined;
+export const isOriginCalls = (msg: ClientMessage): msg is OriginCalls => {
+    return (msg as OriginCalls).OriginCalls !== undefined;
 };
 
 
@@ -139,7 +146,7 @@ export default function App() {
         } 
         else if (isUrlsUpdated(message.contents)) {
             chrome.runtime.sendMessage({
-                "type": "get-channels-by-url"
+                "type": "get-channels-by-origin"
             });
             chrome.runtime.sendMessage({
                 "type": "get-browsem-stats"
@@ -149,10 +156,24 @@ export default function App() {
             browsemStore.disconnected(message.contents);
         }
         else if (isChannelCreated(message.contents)) {
-            console.log('channels are currently: ', channelsStore.channels);
-            // transition back to main with a message saying it was created. 
-            let newChannels = [...useChannelsStore.getState().channels, message.contents.ChannelCreated];
-            channelsStore.setChannels(newChannels);
+            let channelCreated = message.contents;
+            // find a url of calls, if it exists, set its channels, otherwise push a new urlcalls to the originCalls
+
+            let urlCallFound = useChannelsStore.getState().urlCalls.find(urlCall => urlCall.urlName === channelCreated.ChannelCreated.urlName);
+            if (urlCallFound) {
+                // edit channels of this url
+                let newUrlCalls = useChannelsStore.getState().urlCalls.map(urlCall => {
+                    if (urlCall.urlName === channelCreated.ChannelCreated.urlName) {
+                        urlCall.channels = channelCreated.ChannelCreated.channels;
+                    }
+                    return urlCall;
+                });
+                channelsStore.setUrlCalls(newUrlCalls);
+            }
+            else {
+                let newUrlCalls = [...useChannelsStore.getState().urlCalls, channelCreated.ChannelCreated];
+                channelsStore.setUrlCalls(newUrlCalls);
+            }
             browsemStore.setCurrentSelection("Connected");
         }
         // error msges
@@ -171,8 +192,9 @@ export default function App() {
             let { sessionsOnline, sessionsInYourUrl, sessionsInYourOrigin } = message.contents.BrowsemStats;
             browsemStore.setBrowsemStats(sessionsOnline, sessionsInYourOrigin, sessionsInYourUrl);
         }
-        else if (isChatterChannels(message.contents)) {
-            channelsStore.setChannels(message.contents.ChatterChannels);
+        else if (isOriginCalls(message.contents)) {
+            console.log('got origin calls: ', message.contents);
+            channelsStore.setUrlCalls(message.contents.OriginCalls.urls);
         }
     };
 
@@ -189,7 +211,7 @@ export default function App() {
                 });
                 // can do origins as well instead in future
                 chrome.runtime.sendMessage({
-                    "type": "get-channels-by-url",
+                    "type": "get-channels-by-origin",
                 });
             }
         }

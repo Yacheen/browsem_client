@@ -1,15 +1,13 @@
 import { useState } from 'react'
-import './BrowsemCall.css'
+import './BrowsemCall.scss'
+import CallSidebar from './CallSidebar'
+import ChattersBoard from './ChattersBoard'
 
 function BrowsemCall() {
   return (
       <div className="browsem-call">
-          <p>hello world</p>
-          <p>hello world</p>
-          <p>hello world</p>
-          <p>hello world</p>
-          <p>hello world</p>
-          <p>hello world</p>
+        <CallSidebar />
+        <ChattersBoard />
       </div>
   )
 }

@@ -1,3 +1,153 @@
+:root {
+    // backgrounds
+    --light-background: hsl(0, 0%, 95%);
+    ---light-background-hover: hsl(0, 0%, 90%);
+    --dark-background: hsl(0, 0%, 20%);
+    --dark-background-hover: hsl(0, 0%, 25%);
+    // text
+    --dark-text: hsl(0, 0%, 10%);
+    --light-text: hsl(0, 0%, 95%);
+    // window handler
+    --dark-window-handler-background: hsl(0, 0%, 15%);
+    --dark-window-handler-background-hover: hsl(0, 0%, 20%);
+    --light-window-handler-background: hsl(0, 0%, 90%);
+    --light-window-handler-background-hover: hsl(0, 0%, 85%);
+    // buttons
+    --dark-button-background: hsl(0, 0%, 25%);
+    --light-button-background: hsl(0, 0%, 90%);
+}
+.window_container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+
+    // styles for whole component
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    color-scheme: dark light;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    a {
+      font-weight: 500;
+      color: #646cff;
+      text-decoration: inherit;
+    }
+    a:hover {
+      color: #535bf2;
+    }
+    h1 {
+      font-size: 3.2em;
+      line-height: 1.1;
+    }
+    p {
+        color: hsl(0, 0%, 95%);
+        margin: 0;
+        line-height: 1.5;
+    }
+    .MuiSvgIcon-root {
+        color: var(--light-text);
+        // font-size: 24px !important;
+    }
+    > * {
+        box-sizing: border-box;
+    }
+    p {
+        font-size: 16px;
+    }
+
+    .window_handler {
+        all: revert;
+        background: var(--dark-window-handler-background);
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        pointer-events: auto;
+        z-index: 1320;
+        min-height: 42px;
+        .top_right_window {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            .window-call-url {
+                position: relative;
+                left: 12px;
+                user-select: none;
+                max-width: 33%;
+                transform: translateY(50%);
+                p {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    font-size: 16px;
+                }
+            }
+            .browsem-window-header-container {
+                position: absolute;
+                display: flex;
+                align-items: center;
+                left: 50%;
+                transform: translate(-50%, 25%);
+                .browsem-header {
+                    font-size: 24px;
+                    user-select: none;
+                }
+                .browsem-beta {
+                    user-select: none;
+                    position: absolute;
+                    font-size: 11.2px;
+                    left: 100%;
+                    top: 45%;
+                }
+            }
+            .top_right_window_buttons {
+                display: flex;
+                position: absolute;
+                right: 0;
+                top: 0;
+                > * {
+                    transition: background ease 0.2s;
+                    padding: 12px;
+                    &:hover {
+                        background: var(--dark-window-handler-background-hover);
+                    }
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .tab_icon {
+                    font-size: 18px;
+                }
+                .minimize_window_button {
+                    .minimize_icon {
+                        font-size: 60px;
+                    }
+                }
+                .fullscreen_window_button {
+                    font-size: 60px;
+                }
+                .exit_window_button {
+                    font-size: 60px;
+                    border-top-right-radius: 4px;
+
+                }
+            }
+        }
+    }
+    .window_content {
+        border: 1px solid hsla(0, 0%, 90%, 0.2);
+        height: 100%;
+        width: 100%;
+        overflow: auto;
+        position: relative;
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+        background: hsl(0, 0%, 20%);
+    }
+}
 .minimized_window {
     visibility: hidden;
     // must be 0 so that resizeobserver doesnt detect a resize
@@ -7,58 +157,39 @@
 .pointer_events_none {
     pointer-events: none !important;
 }
-.window_container {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-    .window_handler {
-        background: hsl(0, 0%, 15%);
-        border-top-left-radius: 4px;
-        border-top-right-radius: 4px;
-        pointer-events: auto;
-        z-index: 1320;
-        .top_right_window {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            p {
-                padding-left: 6px;
-                user-select: none;
-            }
-            .top_right_window_buttons {
-                display: flex;
-                > * {
-                    transition: background ease 0.2s;
-                    padding: 10px;
-                    &:hover {
-                        background: hsl(0, 0%, 25%);
+@media (prefers-color-scheme: light) {
+    :root {
+    color: #213547;
+    background-color: #ffffff;
+    }
+    .window_container {
+        a:hover {
+        color: #747bff;
+        }
+        button {
+            background-color: var(--dark-button-background);
+        }
+        p {
+          color: hsl(0, 0%, 10%);
+        }
+        .MuiSvgIcon-root { 
+            color: var(--dark-text);
+        }
+        .window_handler {
+            background: var(--light-window-handler-background);
+            .top_right_window {
+                .top_right_window_buttons {
+                    > * {
+                        &:hover {
+                            background: var(--light-window-handler-background-hover);
+                        }
                     }
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                }
-                .minimize_window_button {
-
-                }
-                .fullscreen_window_button {
-
-                }
-                .exit_window_button {
-
                 }
             }
         }
-    }
-    .window_content {
-        height: 100%;
-        width: 100%;
-        overflow: auto;
-        position: relative;
-        border: 1px solid hsla(0, 0%, 80%, 0.6);
-        border-bottom-left-radius: 4px;
-        border-bottom-right-radius: 4px;
-        background: hsl(0, 0%, 20%);
+        .window_content {
+            background: var(--light-background);
+        }
     }
 }
 

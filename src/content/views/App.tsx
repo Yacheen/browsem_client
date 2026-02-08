@@ -1,15 +1,11 @@
-
-import { useState, useMemo } from 'react';
-import createCache from '@emotion/cache';
-import { CacheProvider } from "@emotion/react";
-import { StyledEngineProvider } from '@mui/material/styles';
 import WindowHandler from '@/components/WindowHandler';
 import BrowsemCall from '@/components/BrowsemCall';
-import ReactDOMServer from 'react-dom/server';
+import { useBrowsemStore } from '@/hooks/browsemStore';
 
 export default function App() {
+    const browsemStore = useBrowsemStore();
     return (
-        <WindowHandler minWidth={360} minHeight={240} type='BrowsemCall' description='Group call in https://twitch.tv/xqc' closeMyWindow={() => console.log('hi')}>
+        <WindowHandler minWidth={480} minHeight={46} type='BrowsemCall' description={browsemStore.currentUrl} closeMyWindow={() => console.log('hi')}>
             <BrowsemCall />
         </WindowHandler>
     )

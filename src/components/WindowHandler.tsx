@@ -5,6 +5,7 @@ import CloseTwoToneIcon from '@mui/icons-material/CloseTwoTone';
 import VideoLabelTwoToneIcon from '@mui/icons-material/VideoLabelTwoTone';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { Rnd } from 'react-rnd';
+import { useBrowsemStore } from '@/hooks/browsemStore';
 type WindowType = "BrowsemCall" | "Any";
 
 export default function WindowHandler(props: {children: React.JSX.Element, closeMyWindow: () => void, description: string, type: WindowType, minWidth: number, minHeight: number }) {
@@ -14,6 +15,11 @@ export default function WindowHandler(props: {children: React.JSX.Element, close
     const windowContentRef = useRef<HTMLDivElement>(null);
     const [resizing, setResizing] = useState<boolean>(false);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+    const browsemStore = useBrowsemStore();
+    useEffect(() => {
+        console.log(browsemStore);
+
+    }, [browsemStore]);
 
     const nodeRef = useRef<HTMLDivElement>(null);
 
@@ -72,19 +78,27 @@ export default function WindowHandler(props: {children: React.JSX.Element, close
             <div className={`${minimized ? 'pointer_events_none' : ''} window_container`}>
                 <div style={{ minWidth: props.minWidth }} className="window_handler">
                     <div className="top_right_window">
-                        <p>
-                            {
-                                props.description ?? "Window"
-                            }
-                        </p>
+                        <div className="window-call-url">
+                            <p>
+                                {
+                                    props.description ?? "Window"
+                                }
+                            </p>
+                        </div>
+                        <div className="browsem-window-header-container">
+                            <p className="browsem-header">Browsem</p>
+                            <p className="browsem-beta">Beta</p>
+                        </div>
                         <div className="top_right_window_buttons">
-                            <div onClick={handleMinimize} className="minimize_window_button"><RemoveIcon /></div>
-                            <div onClick={handleFullscreen} className="fullscreen_window_button"><VideoLabelTwoToneIcon /></div>
-                            <div onClick={handleExitWindow} className="exit_window_button"><CloseTwoToneIcon /></div>
+                            <div onClick={handleMinimize} className="minimize_window_button"><RemoveIcon className="tab_icon" /></div>
+                            <div onClick={handleFullscreen} className="fullscreen_window_button"><VideoLabelTwoToneIcon className="tab_icon" /></div>
+                            <div onClick={handleExitWindow} className="exit_window_button"><CloseTwoToneIcon className="tab_icon" /></div>
                         </div>
                     </div>
                 </div>
-                <div ref={windowContentRef} className={` ${minimized ? 'pointer_events_none' : ''} window_content ${minimized ? 'minimized_window' : ""}`}>
+                <div style={{
+                    height: minimized ? 0 : undefined
+                }} ref={windowContentRef} className={` ${minimized ? 'pointer_events_none' : ''} window_content ${minimized ? 'minimized_window' : ""}`}>
                         {props.children}
                 </div>
             </div>

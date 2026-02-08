@@ -1,4 +1,12 @@
 import { BackgroundMessage, ClientMessage, isConnected, isUrlsUpdated } from "./popup/App";
+try {
+    chrome.storage.session.setAccessLevel({
+        accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS"
+    });
+}
+catch (err) {
+    console.log('Problem trying to access Storage Session in content script: ', err);
+}
 
 const TEN_SECONDS_MS = 10 * 1000;
 

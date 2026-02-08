@@ -1,4 +1,5 @@
 import { ChatterChannel } from '@/components/Channels';
+import { UrlCalls } from '@/popup/App';
 import { create } from 'zustand';
 import { ChromeSessionStorage } from 'zustand-chrome-storage';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -10,17 +11,18 @@ export type Chatter = {
 }
 
 interface ChannelsStoreState {
-    channels: ChatterChannel[],
-    setChannels: (channels: ChatterChannel[]) => void,
+    // url
+    urlCalls: UrlCalls[],
+    setUrlCalls: (urlCalls: UrlCalls[]) => void,
 }
 
 export const useChannelsStore = create<ChannelsStoreState>()(
     persist(
         (set) => ({
-            channels: [],
-            setChannels: (channels: ChatterChannel[]) => {
+            urlCalls: [],
+            setUrlCalls: (urlCalls: UrlCalls[]) => {
                 // sort the list by whomever has most chatters. in desc order
-                set({ channels: channels.sort((channel1, channel2) => channel1.chatters.length - channel2.chatters.length) });
+                set({ urlCalls });
             },
         }),
         {
