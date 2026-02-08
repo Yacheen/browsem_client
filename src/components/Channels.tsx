@@ -3,9 +3,11 @@ import { Chatter } from '@/hooks/callStore';
 import { useState } from 'react'
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import Tooltip from '@mui/material/Tooltip';
-import "./Channels.css";
+import "./Channels.scss";
 import { useChannelsStore } from '@/hooks/ChannelsStore';
 import { shortenStringWithDots } from '@/utils/functions';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 export type ChatterChannel = {
     sessionId: string,
     channelName: string,
@@ -19,10 +21,88 @@ export type ChatterChannel = {
 export default function Channels() {
   const browsemStore = useBrowsemStore();
   const channelsStore = useChannelsStore();
+  const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
+
+  const handleSetCurrentUrlDropdown = (urlName: string) => {
+      let alreadyDroppedDown = currentUrlDropdown.find(urlDroppedDown => urlDroppedDown === urlName);
+      if (alreadyDroppedDown) {
+          let newCurrentUrlsDroppedDown = currentUrlDropdown.filter(urlDroppedDown => urlDroppedDown !== urlName);
+          setCurrentUrlDropdown(newCurrentUrlsDroppedDown);
+      }
+      else {
+          setCurrentUrlDropdown([...currentUrlDropdown, urlName]);
+      }
+  }
 
   return (
-      <div className="channels-container"> 
-
-      </div>
+        <div className="url-calls-container">
+            {
+                channelsStore.urlCalls.map(urlCall => (
+                    <>
+                        <div onClick={() => handleSetCurrentUrlDropdown(urlCall.urlName)} className="url-call-container" key={urlCall.urlName}>
+                            <p>{urlCall.urlName}</p>
+                            <div className="url-call-channel-count">{urlCall.channels.length}</div>
+                            <div className="url-call-dropped-down-icon-container">
+                                {
+                                    currentUrlDropdown.find(urlDroppeddown => urlDroppeddown === urlCall.urlName)
+                                    ?
+                                        <KeyboardArrowUpIcon />
+                                    :
+                                        <KeyboardArrowDownIcon />
+                                }
+                            </div>
+                        </div>     
+                        {
+                            currentUrlDropdown.find(urlDroppeddown => urlDroppeddown === urlCall.urlName)
+                            ?
+                                <div className="channels-container"> 
+                                    {
+                                        urlCall.channels.map(channel => (
+                                            <div key={channel.sessionId} className="channel">
+                                                <Tooltip placement='top' title="Join" arrow disableInteractive slotProps={{
+                                                    // popper: {
+                                                    //     modifiers: [
+                                                    //         {
+                                                    //             name: 'offset',
+                                                    //             options: {
+                                                    //                 offset: [25, -10]
+                                                    //             }
+                                                    //         }
+                                                    //     ]
+                                                    // }
+                                                }}>
+                                                    <div className="channel-meta">
+                                                        <div className="channel-meta-left">
+                                                            <div className="channel-voice-icon">
+                                                                <VolumeUpIcon className="channel-icon" />
+                                                            </div>
+                                                            <p title={channel.channelName} className="channel-name">{shortenStringWithDots(channel.channelName, 25)}</p>
+                                                        </div>
+                                                        <div className="channel-max-chatters">
+                                                            {channel.chatters.length}/{channel.maxChatters}
+                                                        </div>
+                                                    </div>
+                                                </Tooltip>
+                                                <div className="channel-chatters">
+                                                    {
+                                                        channel.chatters.map(chatter => (
+                                                            <div className="channel-chatter">
+                                                                <img src={chatter.pfp_s3_key} alt="pfp" />
+                                                                <p>{chatter.username}</p>
+                                                            </div>
+                                                        ))
+                                                    }
+                                                </div>
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            :
+                                null
+                        }
+                    </>
+                ))
+            }
+        </div>
   )
 }
