@@ -10,11 +10,40 @@
     height: 100%;
     min-height: 200px;
     max-height: 320px;
+    .url-call-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        .url-call-name {
+            font-size: 14px;
+        }
+        .url-call-right {
+            display: flex;
+            align-items: center;
+            .url-call-channel-count {
+            }
+            .url-call-dropped-down-icon-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                .url-call-dropped-down-icon {
+                    position: relative;
+                    right: -4px;
+                }
+            }
+        }
+    }
 
     .channels-container {
         padding-left: 12px;
+        padding-top: 4px;
+        cursor: pointer;
+        &:hover {
+            color: hsl(0, 0%, 60%);
+        }
         .channel {
-            margin-bottom: 16px;
+            margin-bottom: 8px;
             .channel-meta {
                 display: flex;
                 align-items: center;
@@ -26,12 +55,18 @@
                     max-width: 100%;
                     .channel-voice-icon {
                         margin-right: 4px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        .channel-icon {
+                            font-size: 16px;
+
+                        }
                     }
                 }
             }
             .channel-meta:hover .channel-name, .channel-meta:hover .channel-icon, .channel-meta:hover .channel-max-chatters {
                 color: hsl(0, 0%, 60%);
-                
             }
             .channel-chatters {
                 .channel-chatter {
@@ -54,8 +89,8 @@
 }
 @media (prefers-color-scheme: light) {
     .url-calls-container {
+        background: hsl(0, 0%, 95%);
         .channels-container {
-            background: hsl(0, 0%, 95%);
         }
     }
 }

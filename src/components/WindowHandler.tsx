@@ -6,6 +6,7 @@ import VideoLabelTwoToneIcon from '@mui/icons-material/VideoLabelTwoTone';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { Rnd } from 'react-rnd';
 import { useBrowsemStore } from '@/hooks/browsemStore';
+import { isOverflown } from '@/utils/functions';
 type WindowType = "BrowsemCall" | "Any";
 
 export default function WindowHandler(props: {children: React.JSX.Element, closeMyWindow: () => void, description: string, type: WindowType, minWidth: number, minHeight: number }) {
@@ -54,6 +55,14 @@ export default function WindowHandler(props: {children: React.JSX.Element, close
             resizeObserver.observe(windowContentRef.current!);
         }
     }, [initialDimensions]);
+    useEffect(() => {
+        if (isFullscreen) {
+            document.body.classList.add('hide-body-scrollbar');
+        }
+        else {
+            document.body.classList.remove('hide-body-scrollbar');
+        }
+    }, [isFullscreen]);
 
     return (
         <Rnd
@@ -68,12 +77,14 @@ export default function WindowHandler(props: {children: React.JSX.Element, close
             position={isFullscreen ? { x: 0, y: 0 } : undefined}
             minWidth={props.minWidth}
             minHeight={props.minHeight}
-            bounds="window"
+            bounds="parent"
             dragHandleClassName='window_handler'
             style={{
-                pointerEvents: minimized ? 'none' : 'auto'
+                pointerEvents: minimized ? 'none' : 'auto',
+                paddingRight: isOverflown(document.body) ? '16px' : undefined,
             }}
-            size={isFullscreen ? { width: '100vw', height: '100vh' } : undefined}
+            size={isFullscreen ? { width: '100%', height: '100vh' } : undefined}
+            className={isFullscreen ? 'hide-body-scrollbar' : undefined}
         >
             <div className={`${minimized ? 'pointer_events_none' : ''} window_container`}>
                 <div style={{ minWidth: props.minWidth }} className="window_handler">

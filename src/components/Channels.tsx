@@ -33,6 +33,10 @@ export default function Channels() {
           setCurrentUrlDropdown([...currentUrlDropdown, urlName]);
       }
   }
+  const getUrlNameForUrlCall = (urlCall: string) => {
+      let newUrl = new URL(urlCall);
+      return newUrl.pathname + newUrl.search + newUrl.hash;
+  }
 
   return (
         <div className="url-calls-container">
@@ -40,16 +44,18 @@ export default function Channels() {
                 channelsStore.urlCalls.map(urlCall => (
                     <>
                         <div onClick={() => handleSetCurrentUrlDropdown(urlCall.urlName)} className="url-call-container" key={urlCall.urlName}>
-                            <p>{urlCall.urlName}</p>
-                            <div className="url-call-channel-count">{urlCall.channels.length}</div>
-                            <div className="url-call-dropped-down-icon-container">
-                                {
-                                    currentUrlDropdown.find(urlDroppeddown => urlDroppeddown === urlCall.urlName)
-                                    ?
-                                        <KeyboardArrowUpIcon />
-                                    :
-                                        <KeyboardArrowDownIcon />
-                                }
+                            <p className="url-call-name">{getUrlNameForUrlCall(urlCall.urlName)}</p>
+                            <div className="url-call-right">
+                                <div className="url-call-channel-count">{urlCall.channels.length}</div>
+                                <div className="url-call-dropped-down-icon-container">
+                                    {
+                                        currentUrlDropdown.find(urlDroppeddown => urlDroppeddown === urlCall.urlName)
+                                        ?
+                                            <KeyboardArrowUpIcon className="url-call-dropped-down-icon" />
+                                        :
+                                            <KeyboardArrowDownIcon className="url-call-dropped-down-icon" />
+                                    }
+                                </div>
                             </div>
                         </div>     
                         {
