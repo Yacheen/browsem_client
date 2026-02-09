@@ -1,14 +1,14 @@
 import { useBrowsemStore } from '@/hooks/browsemStore';
-import { Chatter } from '@/hooks/callStore';
 import { useState } from 'react'
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import Tooltip from '@mui/material/Tooltip';
 import "./Channels.scss";
-import { useChannelsStore } from '@/hooks/ChannelsStore';
+import { Chatter, useChannelsStore } from '@/hooks/ChannelsStore';
 import { shortenStringWithDots } from '@/utils/functions';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import PersonIcon from '@mui/icons-material/Person';
+import { useCurrentCallStore } from '@/hooks/callStore';
 export type ChatterChannel = {
     sessionId: string,
     channelName: string,
@@ -22,6 +22,7 @@ export type ChatterChannel = {
 export default function Channels() {
   const browsemStore = useBrowsemStore();
   const channelsStore = useChannelsStore();
+  const currentCall = useCurrentCallStore();
   const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
 
   const handleSetCurrentUrlDropdown = (urlName: string) => {
@@ -38,6 +39,8 @@ export default function Channels() {
       let newUrl = new URL(urlCall);
       return newUrl.pathname + newUrl.search + newUrl.hash;
   }
+  const handleJoinCall = () => {
+  }
 
   return (
         <div className="url-calls-container">
@@ -45,7 +48,7 @@ export default function Channels() {
                 channelsStore.urlCalls.map(urlCall => (
                     <>
                         <div onClick={() => handleSetCurrentUrlDropdown(urlCall.urlName)} className="url-call-container" key={urlCall.urlName}>
-                            <p className="url-call-name">{getUrlNameForUrlCall(urlCall.urlName)}</p>
+                            <p title={urlCall.urlName} className="url-call-name">{getUrlNameForUrlCall(urlCall.urlName)}</p>
                             <div className="url-call-right">
                                 <div className="url-call-channel-count">{urlCall.channels.length}</div>
                                 <div className="url-call-dropped-down-icon-container">
@@ -65,7 +68,7 @@ export default function Channels() {
                                 <div className="channels-container"> 
                                     {
                                         urlCall.channels.map(channel => (
-                                            <div key={channel.sessionId} className="channel">
+                                            <div onClick={handleJoinCall} key={channel.sessionId} className="channel">
                                                 <Tooltip placement='top' title="Join" arrow disableInteractive slotProps={{
                                                     // popper: {
                                                     //     modifiers: [

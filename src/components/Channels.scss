@@ -23,10 +23,16 @@
         .url-call-name {
             font-size: 16px;
             font-weight: bold;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            user-select: none;
         }
         .url-call-right {
+            position: relative;
             display: flex;
             align-items: center;
+            right: -4px;
             .url-call-channel-count {
             }
             .url-call-dropped-down-icon-container {
@@ -35,7 +41,6 @@
                 align-items: center;
                 .url-call-dropped-down-icon {
                     position: relative;
-                    right: -4px;
                 }
             }
         }
@@ -55,7 +60,7 @@
                 .channel-meta-left {
                     display: flex;
                     align-items: center;
-                    max-width: 100%;
+                    max-width: 75%;
                     .channel-voice-icon {
                         margin-right: 4px;
                         display: flex;
@@ -66,10 +71,16 @@
 
                         }
                     }
+                    .channel-name {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
                 }
                 .channel-max-chatters {
                     display: flex;
                     align-items: center;
+                    position: relative;
                     .max-chatters-icon-container {
                         .max-chatters-icon {
                             font-size: 18px;

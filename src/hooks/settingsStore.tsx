@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-type Settings = {
+export type Settings = {
     microphoneIsOn: boolean,
     cameraIsOn: boolean,
     sharingScreen: boolean,
