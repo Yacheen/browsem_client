@@ -22,7 +22,7 @@ export type ChatterChannel = {
 export default function Channels() {
   const browsemStore = useBrowsemStore();
   const channelsStore = useChannelsStore();
-  const currentCall = useCurrentCallStore();
+  const currentCallStore = useCurrentCallStore();
   const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
 
   const handleSetCurrentUrlDropdown = (urlName: string) => {
@@ -40,6 +40,7 @@ export default function Channels() {
       return newUrl.pathname + newUrl.search + newUrl.hash;
   }
   const handleJoinCall = () => {
+      currentCallStore.connectToCall();
   }
 
   return (

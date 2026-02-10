@@ -49,6 +49,9 @@ chrome.runtime.onMessage.addListener(async (message) => {
     else if (message.type === "get-channels-by-origin") {
         await getChannelsByOrigin();
     }
+    else if (message.type === "connect-to-call") {
+        await connectToCall();
+    }
 });
 // (tabId, changeInfo, updatedTab)
 chrome.tabs.onUpdated.addListener(async (...stuff) => {
@@ -169,6 +172,9 @@ const getChannelsByOrigin = async () => {
         };
         socket?.send(JSON.stringify(message));
     }
+}
+const connectToCall = async () => {
+    socket?.send(JSON.stringify("ConnectToCall"));
 }
 // const keepAlive = () => {
 //     const keepAliveIntervalId = setInterval(() => {
