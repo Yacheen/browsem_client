@@ -8,7 +8,7 @@ import { shortenStringWithDots } from '@/utils/functions';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import PersonIcon from '@mui/icons-material/Person';
-import { useCurrentCallStore } from '@/hooks/callStore';
+import { useCurrentCallStore } from '@/hooks/currentCallStore';
 export type ChatterChannel = {
     sessionId: string,
     channelName: string,
@@ -39,8 +39,8 @@ export default function Channels() {
       let newUrl = new URL(urlCall);
       return newUrl.pathname + newUrl.search + newUrl.hash;
   }
-  const handleJoinCall = () => {
-      currentCallStore.connectToCall();
+  const handleConnectToCall = (channelName: string) => {
+      currentCallStore.connectToCall(channelName);
   }
 
   return (
@@ -69,7 +69,7 @@ export default function Channels() {
                                 <div className="channels-container"> 
                                     {
                                         urlCall.channels.map(channel => (
-                                            <div onClick={handleJoinCall} key={channel.sessionId} className="channel">
+                                            <div onClick={() => handleConnectToCall(channel.channelName)} key={channel.sessionId} className="channel">
                                                 <Tooltip placement='top' title="Join" arrow disableInteractive slotProps={{
                                                     // popper: {
                                                     //     modifiers: [

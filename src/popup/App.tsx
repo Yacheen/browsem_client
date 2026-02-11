@@ -7,8 +7,9 @@ import CreateGuestUsernamePopup from '@/components/CreateGuestUsernamePopup';
 import { useSettingsStore } from '@/hooks/settingsStore';
 import CreateChannel from '@/components/CreateChannel';
 import { ChatterChannel } from '@/components/Channels';
-import { useChannelsStore } from '@/hooks/ChannelsStore';
+import { Chatter, useChannelsStore } from '@/hooks/ChannelsStore';
 import { getDomainName } from '@/utils/functions';
+import { useCurrentCallStore } from '@/hooks/currentCallStore';
 
 export type BackgroundMessage = {
     // this type field is used exclusively for sending messages back and forth for
@@ -18,7 +19,7 @@ export type BackgroundMessage = {
     contents: ClientMessage
 }
 type MessageType = "Connecting" | "Connected" | "Disconnected";
-export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated | BrowsemStats | OriginCalls | UrlsUpdated;
+export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated | BrowsemStats | OriginCalls | UrlsUpdated | ConnectedToCall | DisconnectedFromCall | AnswerFromServer | OfferFromServer;
 
 // general messages
 export type BrowsemStats = {
@@ -70,6 +71,25 @@ export type UrlCalls = {
 type UrlsUpdated = {
     UrlsUpdated: string,
 }
+ // ConnectedToCall | DisconnectedFromCall | AnswerFromServer | OfferFromServer
+export type ConnectedToCall = {
+    ConnectedToCall: {
+        connectedChatter: Chatter | null,
+        chatterChannel: ChatterChannel | null,
+    }
+}
+export type DisconnectedFromCall = {
+    DisconnectedFromCall: {
+        disconnectedChatter: Chatter | null,
+        reason: string | null,
+    } 
+}
+type AnswerFromServer = {
+    AnswerFromServer: string
+}
+type OfferFromServer = {
+    OfferFromServer: string
+}
 
 // typeguard fns
 export const isConnected = (msg: ClientMessage): msg is Connected => {
@@ -103,12 +123,25 @@ export const isOriginCalls = (msg: ClientMessage): msg is OriginCalls => {
     return (msg as OriginCalls).OriginCalls !== undefined;
 };
 
+export const isConnectedToCall = (msg: ClientMessage): msg is ConnectedToCall => {
+    return (msg as ConnectedToCall).ConnectedToCall !== undefined;
+};
+export const isDisconnectedFromCall = (msg: ClientMessage): msg is DisconnectedFromCall => {
+    return (msg as DisconnectedFromCall).DisconnectedFromCall !== undefined;
+};
+export const isAnswerFromServer = (msg: ClientMessage): msg is AnswerFromServer => {
+    return (msg as AnswerFromServer).AnswerFromServer !== undefined;
+};
+export const isOfferFromServer = (msg: ClientMessage): msg is OfferFromServer => {
+    return (msg as OfferFromServer).OfferFromServer !== undefined;
+};
 
 export default function App() {
     const messageListenerExists = useRef(false);
     const browsemStore = useBrowsemStore();
     const settingsStore = useSettingsStore();
     const channelsStore = useChannelsStore();
+    const currentCallStore = useCurrentCallStore();
 
     const handleConnectToServer = () => {
         browsemStore.connect();
@@ -195,6 +228,18 @@ export default function App() {
         else if (isOriginCalls(message.contents)) {
             console.log('got origin calls: ', message.contents);
             channelsStore.setUrlCalls(message.contents.OriginCalls.urls);
+        }
+        else if (isConnectedToCall(message.contents)) {
+            currentCallStore.connectedToCall(message.contents);
+        }
+        else if (isDisconnectedFromCall(message.contents)) {
+
+        }
+        else if (isOfferFromServer(message.contents)) {
+
+        }
+        else if (isAnswerFromServer(message.contents)) {
+
         }
     };
 

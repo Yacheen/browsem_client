@@ -1,6 +1,6 @@
 import { useBrowsemStore } from '@/hooks/browsemStore';
 import './CallSidebar.scss';
-import { useCurrentCallStore } from '@/hooks/callStore';
+import { useCurrentCallStore } from '@/hooks/currentCallStore';
 
 function CallSidebar() {
     const browsemStore = useBrowsemStore();
