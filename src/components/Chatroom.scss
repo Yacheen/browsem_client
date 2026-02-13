@@ -1,0 +1,40 @@
+.call-chatroom {
+    background: hsl(0, 0%, 30%);
+    margin-top: 12px;
+    border-radius: 8px;
+    padding: 12px;
+    min-height: 240px;
+    max-width: 100%;
+    word-wrap: break-word;
+    .chat-message-container {
+        span {
+            direction: ltr;
+            img {
+                max-width: 18px;
+                max-height: 18px;
+                border-radius: 50%;
+                margin-right: 4px;
+            }
+            p {
+                display: flex;
+                align-items: center;
+                word-break: break-all;
+            }
+            .chat-message-username {
+                margin-right: 4px;
+            }
+            .chat-message-content {
+
+            }
+        }
+    }
+}
+@media (prefers-color-scheme: light) {
+    :root {
+        color: #213547;
+        background-color: #ffffff;
+    }
+    .call-chatroom {
+        background: hsl(0, 0%, 80%);
+    }
+}

@@ -9,6 +9,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import PersonIcon from '@mui/icons-material/Person';
 import { useCurrentCallStore } from '@/hooks/currentCallStore';
+import aniviaUlt from '../assets/aniviault.png';
 export type ChatterChannel = {
     sessionId: string,
     channelName: string,
@@ -17,6 +18,11 @@ export type ChatterChannel = {
     urlOrigin: string,
     fullUrl: string,
     maxChatters: number,
+    channelMessages: ChatMessage[],
+};
+export type ChatMessage = {
+    chatter: Chatter,
+    message: string
 };
 
 export default function Channels() {
@@ -98,7 +104,7 @@ export default function Channels() {
                                                     {
                                                         channel.chatters.map(chatter => (
                                                             <div className="channel-chatter">
-                                                                <img src={chatter.pfp_s3_key} alt="pfp" />
+                                                                <img src={aniviaUlt} alt="pfp" />
                                                                 <p>{chatter.username}</p>
                                                             </div>
                                                         ))

@@ -230,7 +230,11 @@ export default function App() {
             channelsStore.setUrlCalls(message.contents.OriginCalls.urls);
         }
         else if (isConnectedToCall(message.contents)) {
-            currentCallStore.connectedToCall(message.contents);
+        let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        if (activeTab[0].id) {
+            currentCallStore.connectedToCall((message.contents as ConnectedToCall), activeTab[0].id);
+        }
+            
         }
         else if (isDisconnectedFromCall(message.contents)) {
 

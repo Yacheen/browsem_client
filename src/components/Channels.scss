@@ -1,4 +1,26 @@
 
+/* :root { */
+/*     // backgrounds */
+/*     --light-background: hsl(0, 0%, 95%); */
+/*     ---light-background-hover: hsl(0, 0%, 90%); */
+/*     --dark-background: hsl(0, 0%, 20%); */
+/*     --dark-background-hover: hsl(0, 0%, 25%); */
+/*     // text */
+/*     --dark-text: hsl(0, 0%, 10%); */
+/*     --light-text: hsl(0, 0%, 95%); */
+/*     // window handler */
+/*     --dark-window-handler-background: hsl(0, 0%, 15%); */
+/*     --dark-window-handler-background-hover: hsl(0, 0%, 20%); */
+/*     --light-window-handler-background: hsl(0, 0%, 90%); */
+/*     --light-window-handler-background-hover: hsl(0, 0%, 85%); */
+/*     // buttons */
+/*     --dark-button-background: hsl(0, 0%, 25%); */
+/*     --light-button-background: hsl(0, 0%, 90%); */
+/* } */
+
+.url-calls-header {
+
+}
 .url-calls-container {
     background: hsl(0, 0%, 25%);
     border-radius: 8px;
@@ -10,13 +32,14 @@
     height: 100%;
     min-height: 200px;
     max-height: 320px;
+
     .url-call-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
         cursor: pointer;
         border-radius: 4px;
-        padding: 0px 8px;
+        padding: 0px 12px 0px 4px;
         &:hover {
             background: hsl(0, 0%, 30%);
         }
@@ -34,6 +57,7 @@
             align-items: center;
             right: -4px;
             .url-call-channel-count {
+                color: var(--light-text);
             }
             .url-call-dropped-down-icon-container {
                 display: flex;
@@ -81,6 +105,7 @@
                     display: flex;
                     align-items: center;
                     position: relative;
+                    color: var(--light-text);
                     .max-chatters-icon-container {
                         .max-chatters-icon {
                             font-size: 18px;
@@ -95,6 +120,7 @@
                 color: hsl(0, 0%, 60%);
             }
             .channel-chatters {
+                padding-left: 12px;
                 .channel-chatter {
                     display: flex;
                     align-items: center;
@@ -105,8 +131,10 @@
                         white-space: nowrap;
                     }
                     img {
-                        max-width: 24px;
+                        max-width: 18px;
                         margin-right: 4px;
+                        color: var(--light-text);
+                        border-radius: 50%;
                     }
                 }
             }
@@ -115,14 +143,49 @@
 }
 @media (prefers-color-scheme: light) {
     .url-calls-container {
-        background: hsl(0, 0%, 95%);
+        background: hsl(0, 0%, 85%);
         .url-call-container {
             &:hover {
-                background: hsl(0, 0%, 85%);
+                background: hsl(0, 0%, 80%);
             }
-
+            .url-call-name {
+            }
+            .url-call-right {
+                .url-call-channel-count {
+                    color: var(--dark-text);
+                }
+            }
         }
         .channels-container {
+            .channel {
+                .channel-meta {
+                    .channel-meta-left {
+                        .channel-voice-icon {
+                            .channel-icon {
+                            }
+                        }
+                        .channel-name {
+                        }
+                    }
+                    .channel-max-chatters {
+                        color: var(--dark-text);
+                        .max-chatters-icon-container {
+                            .max-chatters-icon {
+                            }
+                        }
+                    }
+                }
+                .channel-meta:hover .channel-name, .channel-meta:hover .channel-icon, .channel-meta:hover .channel-max-chatters {
+                    color: hsl(0, 0%, 40%);
+                }
+                .channel-chatters {
+                    .channel-chatter {
+                        img {
+                            color: var(--dark-text);
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -9,7 +9,7 @@ import { useBrowsemStore } from '@/hooks/browsemStore';
 import { isOverflown } from '@/utils/functions';
 type WindowType = "BrowsemCall" | "Any";
 
-export default function WindowHandler(props: {children: React.JSX.Element, closeMyWindow: () => void, description: string, type: WindowType, minWidth: number, minHeight: number }) {
+export default function WindowHandler(props: {children: React.JSX.Element, closeMyWindow: () => void, description: string | undefined, type: WindowType, minWidth: number, minHeight: number }) {
     const [coords, setCoords] = useState<{ x: number, y: number }>({ x: 100, y: 100 });
     const [minimized, setMinimized] = useState<boolean>(false);
     const [initialDimensions, setInitialDimensions] = useState<{ width: number, height: number } | null>(null);
@@ -17,12 +17,6 @@ export default function WindowHandler(props: {children: React.JSX.Element, close
     const [resizing, setResizing] = useState<boolean>(false);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
     const browsemStore = useBrowsemStore();
-    useEffect(() => {
-        console.log(browsemStore);
-
-    }, [browsemStore]);
-
-    const nodeRef = useRef<HTMLDivElement>(null);
 
     const handleMinimize = () => {
         setMinimized(!minimized);
@@ -81,7 +75,7 @@ export default function WindowHandler(props: {children: React.JSX.Element, close
             dragHandleClassName='window_handler'
             style={{
                 pointerEvents: minimized ? 'none' : 'auto',
-                paddingRight: isOverflown(document.body) ? '16px' : undefined,
+                // paddingRight: isOverflown(document.body) ? '16px' : undefined,
             }}
             size={isFullscreen ? { width: '100%', height: '100vh' } : undefined}
             className={isFullscreen ? 'hide-body-scrollbar' : undefined}

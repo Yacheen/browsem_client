@@ -137,6 +137,7 @@ export default function MainPopup() {
                     }
                 </div>
                 <input title={browsemStore.currentUrl} className="where-am-i-input" type="text" disabled value={browsemStore.currentUrl} />
+                <p className="calls-header">Calls</p>
                 <div className="channels-and-buttons">
                     <Channels />
                     <div className="main-buttons">

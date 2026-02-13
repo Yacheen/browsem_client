@@ -1,0 +1,16 @@
+.chatter-container {
+    flex: 0 0 calc(33.33% - 16px);
+    min-width: 240px;
+    aspect-ratio: 16 / 9;
+    position: relative;
+    .chatter-top {
+        border-radius: 8px;
+        background: hsl(0, 0%, 15%);
+        height: 100%;
+    }
+    .chatter-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+}

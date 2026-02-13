@@ -1,0 +1,10 @@
+.chatters-board {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+    background: hsl(0, 0%, 5%);
+    padding: 12px;
+}

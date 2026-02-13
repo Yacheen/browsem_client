@@ -27,3 +27,4 @@ export const shortenStringWithDots = (sentence: string, lengthDesired: number) =
 export const isOverflown = (element: HTMLElement) => {
   return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth;
 }
+

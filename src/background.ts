@@ -7,7 +7,20 @@ try {
 catch (err) {
     console.log('Problem trying to access Storage Session in content script: ', err);
 }
+// let currentActiveTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+// if (currentActiveTab[0].id) {
+//     chrome.scripting.({
+//         target: { tabId: currentActiveTab[0].id },
+//         files: ['./content/main.tsx'],
+//     })
+// }
 
+chrome.webNavigation.onHistoryStateUpdated.addListener(async thing => {
+    chrome.tabs.sendMessage(thing.tabId, {
+        type: "url-changed",
+        newUrl: thing.url,
+    })
+});
 const TEN_SECONDS_MS = 10 * 1000;
 
 let socket: WebSocket | null = null;
@@ -21,7 +34,7 @@ let socket: WebSocket | null = null;
 
 // Toggle socket connection when they click connect as guest, or they have logged in.
 // For now, shall use, continue as guest after db/http is implemented for new tab.
-chrome.runtime.onMessage.addListener(async (message) => {
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     if (message.type === "connect") {
         if (socket === null) {
             connect();
@@ -51,6 +64,9 @@ chrome.runtime.onMessage.addListener(async (message) => {
     }
     else if (message.type === "connect-to-call") {
         await connectToCall(message.channelName);
+    }
+    else if (message.type === "get-tab-id") {
+        sendResponse({ tabId: sender.tab?.id });
     }
 });
 // (tabId, changeInfo, updatedTab)

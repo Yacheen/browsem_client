@@ -8,8 +8,10 @@ import { ChromeSessionStorage } from 'zustand-chrome-storage';
 
 interface CurrentCallStoreState {
     chatterChannel: ChatterChannel | null,
+    tabId: number | null,
+    setChatterChannel: (chatterChannel: ChatterChannel | null) => void,
     connectToCall: (channelName: string) => void,
-    connectedToCall: (msg: ConnectedToCall) => void,
+    connectedToCall: (msg: ConnectedToCall, tabId: number) => void,
     reconnectToCall: (channelName: string) => void,
     disconnectedFromCall: (msg: DisconnectedFromCall) => void,
     disconnectFromCall: () => void,
@@ -19,6 +21,10 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
     persist(
         (set, get) => ({
             chatterChannel: null,
+            tabId: null,
+            setChatterChannel: (chatterChannel: ChatterChannel | null) => {
+                set({ chatterChannel });
+            },
             connectToCall: (channelName: string) => {
                 chrome.runtime.sendMessage({
                     type: "connect-to-call",
@@ -31,9 +37,9 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     channelName: channelName,
                 });
             },
-            connectedToCall: (msg: ConnectedToCall) => {
+            connectedToCall: (msg: ConnectedToCall, tabId: number) => {
                 if (msg.ConnectedToCall.chatterChannel !== null) {
-                    set({ chatterChannel: msg.ConnectedToCall.chatterChannel });
+                    set({ chatterChannel: msg.ConnectedToCall.chatterChannel, tabId });
                 }
                 else if (msg.ConnectedToCall.connectedChatter !== null) {
                     let chatterChannel = get().chatterChannel;

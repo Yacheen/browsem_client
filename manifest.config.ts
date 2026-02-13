@@ -19,10 +19,12 @@ export default defineManifest({
     'contentSettings',
     'storage',
     'tabs',
+    'webNavigation',
   ],
   content_scripts: [{
     js: ['src/content/main.tsx'],
-    matches: ['https://*/*'],
+    matches: ['<all_urls>'],
+    // run_at: "document_start"
   }],
   side_panel: {
     default_path: 'src/sidepanel/index.html',
@@ -30,5 +32,11 @@ export default defineManifest({
   background: {
     "service_worker": "src/background.ts",
     "type": "module"
-  }
+  },
+  web_accessible_resources: [
+      {
+          "resources": ["src/assets/*"],
+          "matches": ["<all_urls>"]
+      }
+  ]
 })
