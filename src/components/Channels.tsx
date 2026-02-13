@@ -9,7 +9,8 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import PersonIcon from '@mui/icons-material/Person';
 import { useCurrentCallStore } from '@/hooks/currentCallStore';
-import aniviaUlt from '../assets/aniviault.png';
+import aniviaUltAsset from "../assets/aniviault.png";
+const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
 export type ChatterChannel = {
     sessionId: string,
     channelName: string,
