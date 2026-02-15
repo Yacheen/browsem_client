@@ -7,9 +7,10 @@ import { ChatMessage } from './Channels';
 import './Chatroom.scss';
 import aniviaUltAsset from "../assets/aniviault.png";
 const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
+import SettingsIcon from '@mui/icons-material/Settings';
 let bla: ChatMessage[] = [{
     chatter: {
-        session_id: "69420",
+        sessionId: "69420",
         settings: {
             cameraIsOn: false,
             deafened: false,
@@ -17,9 +18,9 @@ let bla: ChatMessage[] = [{
             sharingScreen: false
         },
         username: "yassin",
-        pfp_s3_key: aniviaUlt
+        pfpS3Key: aniviaUlt
     },
-    message: "erhm hi.asdfidfjhawsgdfasjhdfgasskjdhfasdfasdadfklsadfefsdcnxcv"
+    message: "erhm      hi.asdfidfjhawsgdfasjhdfgasskjdhfasdfasdadfklsadfefsdcnxcv"
 }];
 
 function Chatroom() {
@@ -27,18 +28,29 @@ function Chatroom() {
     // const currentCall = useCurrentCallStore();
     // const channelsStore = useChannelsStore();
     return (
-        <div className="call-chatroom">
-            {
-                bla.map(chatMessage => (
-                    <div className="chat-message-container">
-                        <span>
-                            <img src={chatMessage.chatter.pfp_s3_key} alt="pfp" />
-                            <p className="chat-message-username">{chatMessage.chatter.username}:</p>
-                            <p className="chat-message-content">{chatMessage.message}</p>
-                        </span>
+        <div className="call-chatroom-container">
+            <div className="call-chatroom">
+                {
+                    bla.map(chatMessage => (
+                        <div className="chat-message-container">
+                            <img src={chatMessage.chatter.pfpS3Key} alt="pfp" />
+                            <span className="chat-message-username">{chatMessage.chatter.username}: </span>
+                            <span className="chat-message-content">{chatMessage.message}</span>
+                        </div>
+                    ))
+                }
+            </div>
+            <div className="chatroom-bottom">
+                <div className="input-container">
+                    <input placeholder="message..." type="text" />
+                </div>
+                <div className="input-bottom">
+                    <div className="input-settings-icon-container">
+                        <SettingsIcon  className="input-settings-icon"/>
                     </div>
-                ))
-            }
+                    <button className="input-send-button" type="button">Send</button>
+                </div>
+            </div>
         </div>
     )
 }

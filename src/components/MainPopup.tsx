@@ -11,26 +11,26 @@ import kickIcon from '../assets/kick_logo.svg';
 import { useCreatingChannelStore } from '@/hooks/CreatingChannelStore';
 const channelsDummy = [
     {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
+        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
     ]},
     {
         channelName: "KoolKidsKlub",
         chatters: [
-            {session_id: "69420", username: "yassin", pfp_s3_key: somePfp },
-            {session_id: "69420", username: "alan", pfp_s3_key: somePfp },
+            {sessionId: "69420", username: "yassin", pfpS3Key: somePfp },
+            {sessionId: "69420", username: "alan", pfpS3Key: somePfp },
         ]
     },
     {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
+        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
     ]},
     {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
+        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
     ]},
     {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
+        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
     ]},
     {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {session_id: "69420", username: "jeff", pfp_s3_key: somePfp },
+        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
     ]},
 ];
 

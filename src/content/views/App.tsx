@@ -45,7 +45,7 @@ export default function App() {
     return (
         useCurrentCallStore.getState().tabId === currentTabId 
         ?
-            <WindowHandler minWidth={480} minHeight={46} type='BrowsemCall' description={chatterChannel?.fullUrl} closeMyWindow={handleCloseCurrentCall}>
+            <WindowHandler minWidth={540} minHeight={46} type='BrowsemCall' description={chatterChannel?.fullUrl} closeMyWindow={handleCloseCurrentCall}>
                 <BrowsemCall />
             </WindowHandler>
         :

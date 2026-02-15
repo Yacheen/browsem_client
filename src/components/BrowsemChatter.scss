@@ -1,12 +1,21 @@
 .chatter-container {
-    flex: 0 0 calc(33.33% - 16px);
+    flex: 1 1 33.3%;
     min-width: 240px;
+    max-width: 520px;
     aspect-ratio: 16 / 9;
     position: relative;
+    user-select: none;
     .chatter-top {
         border-radius: 8px;
         background: hsl(0, 0%, 15%);
         height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        .chatter-pfp {
+            border-radius: 50%;
+        }
     }
     .chatter-bottom {
         display: flex;

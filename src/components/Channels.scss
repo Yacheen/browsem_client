@@ -25,13 +25,13 @@
     background: hsl(0, 0%, 25%);
     border-radius: 8px;
     padding: 8px;
-    max-width: 220px;
-    min-width: 220px;
+    max-width: 206px;
+    min-width: 206px;
     overflow-y: auto;
     overflow-x:hidden;
     height: 100%;
     min-height: 200px;
-    max-height: 320px;
+    max-height: 200px;
 
     .url-call-container {
         display: flex;
@@ -58,11 +58,13 @@
             right: -4px;
             .url-call-channel-count {
                 color: var(--light-text);
+                user-select: none;
             }
             .url-call-dropped-down-icon-container {
                 display: flex;
                 justify-content: center;
                 align-items: center;
+                user-select: none;
                 .url-call-dropped-down-icon {
                     position: relative;
                 }
@@ -71,7 +73,6 @@
     }
 
     .channels-container {
-        padding-left: 12px;
         padding-top: 4px;
         padding-right: 8px;
         .channel {
@@ -81,6 +82,7 @@
                 align-items: center;
                 justify-content: space-between;
                 cursor: pointer;
+                margin-bottom: 4px;
                 .channel-meta-left {
                     display: flex;
                     align-items: center;
@@ -90,6 +92,7 @@
                         display: flex;
                         align-items: center;
                         justify-content: center;
+                        user-select: none;
                         .channel-icon {
                             font-size: 16px;
 
@@ -99,6 +102,7 @@
                         overflow: hidden;
                         text-overflow: ellipsis;
                         white-space: nowrap;
+                        user-select: none;
                     }
                 }
                 .channel-max-chatters {
@@ -106,12 +110,13 @@
                     align-items: center;
                     position: relative;
                     color: var(--light-text);
+                    user-select: none;
                     .max-chatters-icon-container {
                         .max-chatters-icon {
                             font-size: 18px;
                             display: flex;
                             align-items: center;
-
+                            user-select: none;
                         }
                     }
                 }
@@ -124,17 +129,20 @@
                 .channel-chatter {
                     display: flex;
                     align-items: center;
-                    margin-bottom: 4px;
+                    margin-bottom: 8px;
                     p {
                         overflow: hidden;
                         text-overflow: ellipsis;
                         white-space: nowrap;
+                        user-select: none;
+                        font-size: 12px;
                     }
                     img {
                         max-width: 18px;
                         margin-right: 4px;
                         color: var(--light-text);
                         border-radius: 50%;
+                        user-select: none;
                     }
                 }
             }

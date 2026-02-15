@@ -7,8 +7,8 @@ import { Settings } from './settingsStore';
 
 export type Chatter = {
     username: string,
-    session_id: string,
-    pfp_s3_key?: string,
+    sessionId: string,
+    pfpS3Key?: string,
     settings: Settings,
 }
 

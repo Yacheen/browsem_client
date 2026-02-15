@@ -66,6 +66,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         await connectToCall(message.channelName);
     }
     else if (message.type === "get-tab-id") {
+        console.log('got a get-tab-id: ', sender.tab?.id);
         sendResponse({ tabId: sender.tab?.id });
     }
 });

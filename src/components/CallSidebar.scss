@@ -1,8 +1,16 @@
+@import "./scss/abstracts/mixins.scss";
 .call-sidebar {
-    height: 100%;
+    height: calc(100% - 182px);
     max-width: 236px;
-    .channels-on-youtube {
+    overflow-y: auto;
+    overflow-x: hidden;
+    @include scrollbar;
+    .channels-on-origin {
         margin-bottom: 12px;
     }
+    .calls-header {
+        margin-bottom: 4px;
+    }
     padding: 12px;
+    border-bottom: 1px solid hsla(0, 0%, 90%, 0.2);
 }

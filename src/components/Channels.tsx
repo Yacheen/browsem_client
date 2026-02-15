@@ -7,6 +7,7 @@ import { Chatter, useChannelsStore } from '@/hooks/ChannelsStore';
 import { shortenStringWithDots } from '@/utils/functions';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import PersonIcon from '@mui/icons-material/Person';
 import { useCurrentCallStore } from '@/hooks/currentCallStore';
 import aniviaUltAsset from "../assets/aniviault.png";
@@ -63,9 +64,9 @@ export default function Channels() {
                                     {
                                         currentUrlDropdown.find(urlDroppeddown => urlDroppeddown === urlCall.urlName)
                                         ?
-                                            <KeyboardArrowUpIcon className="url-call-dropped-down-icon" />
-                                        :
                                             <KeyboardArrowDownIcon className="url-call-dropped-down-icon" />
+                                        :
+                                            <KeyboardArrowRightIcon className="url-call-dropped-down-icon" />
                                     }
                                 </div>
                             </div>
@@ -78,16 +79,11 @@ export default function Channels() {
                                         urlCall.channels.map(channel => (
                                             <div onClick={() => handleConnectToCall(channel.channelName)} key={channel.sessionId} className="channel">
                                                 <Tooltip placement='top' title="Join" arrow disableInteractive slotProps={{
-                                                    // popper: {
-                                                    //     modifiers: [
-                                                    //         {
-                                                    //             name: 'offset',
-                                                    //             options: {
-                                                    //                 offset: [25, -10]
-                                                    //             }
-                                                    //         }
-                                                    //     ]
-                                                    // }
+                                                    popper: {
+                                                        style: {
+                                                            zIndex: 6942013383,
+                                                        }
+                                                    }
                                                 }}>
                                                     <div className="channel-meta">
                                                         <div className="channel-meta-left">
