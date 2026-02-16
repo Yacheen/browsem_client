@@ -69,6 +69,15 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         console.log('got a get-tab-id: ', sender.tab?.id);
         sendResponse({ tabId: sender.tab?.id });
     }
+    else if (message.type === "ice-candidate") {
+        socket?.send(message.contents)
+    }
+    else if (message.type === "create-offer") {
+        socket?.send(message.contents)
+    }
+    else if (message.type === "answer-from-client") {
+        socket?.send(message.contents)
+    }
 });
 // (tabId, changeInfo, updatedTab)
 chrome.tabs.onUpdated.addListener(async (...stuff) => {

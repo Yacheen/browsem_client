@@ -84,11 +84,17 @@ export type DisconnectedFromCall = {
         reason: string | null,
     } 
 }
-type AnswerFromServer = {
-    AnswerFromServer: string
+export type AnswerFromServer = {
+    AnswerFromServer: RTCSessionDescription 
 }
-type OfferFromServer = {
-    OfferFromServer: string
+export type OfferFromServer = {
+    OfferFromServer: RTCSessionDescription 
+}
+export type OfferFromClient = {
+    OfferFromClient: RTCSessionDescription 
+}
+export type AnswerFromClient = {
+    AnswerFromClient: RTCSessionDescription 
 }
 
 // typeguard fns
