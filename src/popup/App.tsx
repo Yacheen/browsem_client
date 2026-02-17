@@ -9,7 +9,7 @@ import CreateChannel from '@/components/CreateChannel';
 import { ChatterChannel } from '@/components/Channels';
 import { Chatter, useChannelsStore } from '@/hooks/ChannelsStore';
 import { getDomainName } from '@/utils/functions';
-import { useCurrentCallStore } from '@/hooks/currentCallStore';
+import { IceCandidate, useCurrentCallStore } from '@/hooks/currentCallStore';
 
 export type BackgroundMessage = {
     // this type field is used exclusively for sending messages back and forth for
@@ -19,7 +19,7 @@ export type BackgroundMessage = {
     contents: ClientMessage
 }
 type MessageType = "Connecting" | "Connected" | "Disconnected";
-export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated | BrowsemStats | OriginCalls | UrlsUpdated | ConnectedToCall | DisconnectedFromCall | AnswerFromServer | OfferFromServer;
+export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated | BrowsemStats | OriginCalls | UrlsUpdated | ConnectedToCall | DisconnectedFromCall | AnswerFromServer | OfferFromServer | IceCandidate;
 
 // general messages
 export type BrowsemStats = {
@@ -141,6 +141,9 @@ export const isAnswerFromServer = (msg: ClientMessage): msg is AnswerFromServer 
 export const isOfferFromServer = (msg: ClientMessage): msg is OfferFromServer => {
     return (msg as OfferFromServer).OfferFromServer !== undefined;
 };
+export const isIceCandidate = (message: any): message is IceCandidate => {
+    return (message as IceCandidate).IceCandidate !== undefined;
+}
 
 export default function App() {
     const messageListenerExists = useRef(false);
@@ -243,13 +246,16 @@ export default function App() {
             }
         }
         else if (isDisconnectedFromCall(message.contents)) {
-
+            currentCallStore.disconnectedFromCall(message.contents);
         }
         else if (isOfferFromServer(message.contents)) {
-
+            currentCallStore.handleOfferFromServer(message.contents);
         }
         else if (isAnswerFromServer(message.contents)) {
-
+            currentCallStore.handleAnswerFromServer(message.contents);
+        }
+        else if (isIceCandidate(message.contents)) {
+            currentCallStore.handleIceCandidateFromServer(message.contents);
         }
     };
 

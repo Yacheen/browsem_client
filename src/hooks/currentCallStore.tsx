@@ -31,10 +31,12 @@ interface CurrentCallStoreState {
     disconnectedFromCall: (msg: DisconnectedFromCall) => void,
     disconnectFromCall: () => void,
     startPeerConnection: () => Promise<void>,
+    handleIceCandidateFromServer: (message: IceCandidate) => Promise<void>,
     handleCreateOffer: () => Promise<void>,
     monitorSpeaking: (username: string, stream: MediaStream, onSpeakingChange: (isSpeaking: boolean) => void) => void,
     handleAnswerFromServer: (message: AnswerFromServer) => void,
     handleOfferFromServer: (message: OfferFromServer) => Promise<void>,
+    stopMonitoringSpeakers: () => void
 }
 export type IceCandidate = {
     IceCandidate: RTCIceCandidateInit,
@@ -94,10 +96,29 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     set({ chatterChannel: newChatterChannel });
                 }
             },
-            disconnectedFromCall: (msg: DisconnectedFromCall) => {
+            disconnectedFromCall: async (msg: DisconnectedFromCall) => {
+                let stopMonitoringSpeakers = get().stopMonitoringSpeakers;
+                let audioContext = get().audioContext;
                 if (msg.DisconnectedFromCall.reason !== null) {
                     console.log('disconnected from call, reason: ', msg.DisconnectedFromCall.reason);
-                    set({ chatterChannel: null });
+                    stopMonitoringSpeakers();
+                    await audioContext?.close();
+                    set({
+                        chatterChannel: null,
+                        connection: "disconnected",
+                        audioContext: null,
+                        audioTx: null,
+                        monitorSpeakingIntervalIds: new Map(),
+                        camSender: null,
+                        camStream: null,
+                        focusedWindow: null,
+                        loadingMyVideo: false,
+                        makingOffer: false,
+                        micSender: null,
+                        micStream: null,
+                        peerConnection: null,
+                        remoteStreams: new Map(),
+                    });
                 }
                 else if (msg.DisconnectedFromCall.disconnectedChatter) {
                     let chatterChannel = get().chatterChannel;
@@ -275,6 +296,12 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 peerConnection.onicecandidateerror = () => {
                 }
             },
+            handleIceCandidateFromServer: async (message: IceCandidate) => {
+                let peerConnection = get().peerConnection;
+                if (peerConnection?.remoteDescription !== null) {
+                    await peerConnection?.addIceCandidate(message.IceCandidate);
+                }
+            },
             handleCreateOffer: async () => {
                 let peerConnection = get().peerConnection;
                 try {
@@ -387,7 +414,21 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                         contents: JSON.stringify(answerFromClient),
                     });
                 }
-            }
+            },
+            stopMonitoringSpeakers: () => {
+                let peerConnection = get().peerConnection;
+                let monitorSpeakingIntervalIds = get().monitorSpeakingIntervalIds;
+                if (peerConnection) {
+                    // cancel all animation frames
+                    monitorSpeakingIntervalIds.forEach(animationId => {
+                        cancelAnimationFrame(animationId);
+                    });
+
+                    const newMonitorSpeakingIntervalIds = new Map();
+
+                    set({ monitorSpeakingIntervalIds: newMonitorSpeakingIntervalIds });
+                }
+            },
         }),
         {
             name: "current-call-session-storage",
