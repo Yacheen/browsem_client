@@ -1,10 +1,13 @@
 // for now manage state via storage (thats using zustand), and for content scripts just use another zustand store,
-import { create } from 'zustand';
+import { create, StoreApi } from 'zustand';
 import { ChatterChannel } from '@/components/Channels';
 import { Chatter } from './ChannelsStore';
 import { AnswerFromClient, AnswerFromServer, ConnectedToCall, DisconnectedFromCall, OfferFromClient, OfferFromServer } from '@/popup/App';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { ChromeSessionStorage } from 'zustand-chrome-storage';
+import { Settings, SettingsStore } from './settingsStore';
+import { UseBoundStore } from 'zustand';
+import { QuickchatterWindow } from '@/components/BrowsemChatter';
 
 interface CurrentCallStoreState {
     chatterChannel: ChatterChannel | null,
@@ -14,7 +17,7 @@ interface CurrentCallStoreState {
     connection: RTCIceConnectionState,
     monitorSpeakingIntervalIds: Map<string, number>,
     makingOffer: boolean,
-    focusedWindow: null,
+    focusedWindow: QuickchatterWindow | null,
     loadingMyVideo: boolean,
     micStream: MediaStream | null,
     camStream: MediaStream | null,
@@ -23,7 +26,7 @@ interface CurrentCallStoreState {
     audioContext: AudioContext | null,
     micThreshold: number,
     audioTx: RTCRtpTransceiver | null,
-    setFocusedWindow: (chatterWindow: null) => void,
+    setFocusedWindow: (chatterWindow: QuickchatterWindow | null) => void,
     setChatterChannel: (chatterChannel: ChatterChannel | null) => void,
     connectToCall: (channelName: string) => void,
     connectedToCall: (msg: ConnectedToCall, tabId: number) => void,
@@ -36,7 +39,10 @@ interface CurrentCallStoreState {
     monitorSpeaking: (username: string, stream: MediaStream, onSpeakingChange: (isSpeaking: boolean) => void) => void,
     handleAnswerFromServer: (message: AnswerFromServer) => void,
     handleOfferFromServer: (message: OfferFromServer) => Promise<void>,
-    stopMonitoringSpeakers: () => void
+    stopMonitoringSpeakers: () => void,
+    handleApplyMicSettings: (username: string, stream: MediaStream, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => void,
+    handleGetMicrophone: (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => Promise<MediaStream | null>,
+    handleGetCamera: (username: string) => Promise<MediaStream | null>,
 }
 export type IceCandidate = {
     IceCandidate: RTCIceCandidateInit,
@@ -429,6 +435,147 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     set({ monitorSpeakingIntervalIds: newMonitorSpeakingIntervalIds });
                 }
             },
+            // voiceAndVideoSettings: VoiceAndVideoSettings, settings: settings
+            handleApplyMicSettings: (username: string, stream: MediaStream, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => {
+                let audioContext = get().audioContext;
+                let peerConnection = get().peerConnection;
+                let audioTx = get().audioTx;
+
+                if (audioContext) {
+                    const source = audioContext.createMediaStreamSource(stream);
+                    const analyser = audioContext.createAnalyser();
+                    analyser.fftSize = 512;
+                    source.connect(analyser);
+
+                    const destNode = audioContext.createMediaStreamDestination();
+                    source.connect(destNode);
+
+                    const data = new Uint8Array(analyser.frequencyBinCount);
+                    const applyMicSettings = () => {
+                        let micThreshold = get().micThreshold;
+                        if (destNode.stream.getAudioTracks().length > 0) {
+                            let innerPeerConnection = get().peerConnection;
+                            let innerMonitorSpeakingIntervalIds = get().monitorSpeakingIntervalIds
+                            let settings = settingsStore.getState().settings;
+                            if (innerPeerConnection) {
+                                analyser.getByteFrequencyData(data);
+                                const volume = data.reduce((a, b) => a + b, 0) / data.length;
+                                if (settings.microphoneIsOn) {
+                                    if (volume > micThreshold) {
+                                        destNode.stream.getAudioTracks()[0].enabled = true;
+                                        let chatterCameraOnElement = document.getElementById(`chatter_camera_on_${username}`);
+                                        let chatterCameraOffElement = document.getElementById(`chatter_camera_off_${username}`);
+                                        if (chatterCameraOnElement !== null) {
+                                            chatterCameraOnElement.classList.add('speaking_border');
+                                        }
+                                        else if (chatterCameraOffElement !== null) {
+                                            chatterCameraOffElement.classList.add('speaking_border');
+                                        }
+                                    }
+                                    else {
+                                        destNode.stream.getAudioTracks()[0].enabled = false;
+                                        let chatterCameraOnElement = document.getElementById(`chatter_camera_on_${username}`);
+                                        let chatterCameraOffElement = document.getElementById(`chatter_camera_off_${username}`);
+                                        if (chatterCameraOnElement !== null) {
+                                            chatterCameraOnElement.classList.remove('speaking_border');
+                                        }
+                                        else if (chatterCameraOffElement !== null) {
+                                            chatterCameraOffElement.classList.remove('speaking_border');
+                                        }
+
+                                    }
+                                }
+                                else {
+                                    destNode.stream.getAudioTracks()[0].enabled = false;
+                                    let chatterCameraOnElement = document.getElementById(`chatter_camera_on_${username}`);
+                                    let chatterCameraOffElement = document.getElementById(`chatter_camera_off_${username}`);
+                                    if (chatterCameraOnElement !== null) {
+                                        chatterCameraOnElement.classList.remove('speaking_border');
+                                    }
+                                    else if (chatterCameraOffElement !== null) {
+                                        chatterCameraOffElement.classList.remove('speaking_border');
+                                    }
+                                }
+                                if (innerMonitorSpeakingIntervalIds.get(username) === undefined) {
+                                    let newMonitorSpeakingId = requestAnimationFrame(applyMicSettings);
+                                    const newMonitorSpeakingIntervalIds = new Map(innerMonitorSpeakingIntervalIds);
+                                    newMonitorSpeakingIntervalIds.set(username, newMonitorSpeakingId);
+
+                                    set({ monitorSpeakingIntervalIds: newMonitorSpeakingIntervalIds });
+                                }
+                                else {
+                                    requestAnimationFrame(applyMicSettings);
+                                }
+                            }
+                        }
+                    }
+                    if (audioTx && audioTx.sender) {
+                        audioTx.sender.replaceTrack(destNode.stream.getAudioTracks()[0]);
+                    }
+                    else {
+                        peerConnection?.addTrack(destNode.stream.getAudioTracks()[0]);
+                    }
+                    set({ micStream: destNode.stream });
+                    applyMicSettings();
+                }
+            },
+            handleGetMicrophone: async (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => {
+                let handleApplyMicSettings = get().handleApplyMicSettings;
+                try {
+                    const micStream = await navigator.mediaDevices.getUserMedia({
+                        video: false,
+                        audio: {
+                            channelCount: 2,
+                            autoGainControl: false,
+                            echoCancellation: false,
+                            noiseSuppression: false,
+                            // deviceId: {}
+                        }
+                    })
+                    handleApplyMicSettings(username, micStream, settingsStore);
+                    return micStream;
+                }
+                catch (err) {
+                    console.log('problem getting mic:', err);
+                    return null;
+                }
+            },
+            handleGetCamera: async (username: string) => {
+                let peerConnection = get().peerConnection;
+                let camSender = get().camSender;
+                try {
+                    const camStream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            width: { ideal: 1920 },
+                            height: { ideal: 1080 },
+                            frameRate: {
+                                ideal: 60,
+                                min: 30,
+                                max: 60,
+                            },
+                            // deviceId: {}
+                        }
+                    })
+                    if (camSender !== null) {
+                        camSender.replaceTrack(camStream.getVideoTracks()[0]);
+                    }
+                    else {
+                        if (peerConnection) {
+                            camSender = peerConnection.addTrack(camStream.getVideoTracks()[0], camStream);
+                        }
+                    }
+                    set({ camStream, camSender });
+                    let videoElement: HTMLVideoElement | null = document.querySelector(`#${username}_video`);
+                    if (videoElement !== null) {
+                        videoElement.srcObject = camStream;
+                    }
+                    return camStream;
+                }
+                catch (err) {
+                    console.log('problem getting camera: ', err);
+                    return null;
+                }
+            }
         }),
         {
             name: "current-call-session-storage",
