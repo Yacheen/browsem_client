@@ -11,6 +11,7 @@ import aniviaUltAsset from "../assets/aniviault.png";
 import { useEffect, useRef } from 'react';
 import { useSettingsStore } from '@/hooks/settingsStore';
 import { useBrowsemStore } from '@/hooks/browsemStore';
+import { CircularProgress } from '@mui/material';
 const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
 
 export type QuickchatterWindow = {
@@ -120,9 +121,74 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
 
     return (
         <div className={`chatter-container ${props.isFocused ? 'focused_window' : null} ${props.focusedWindow !== null && !props.isFocused ? 'non_focused_window' : null}`}>
-            <div onClick={handleSetFocusedWindow} className="chatter-top">
+            { /*<div onClick={handleSetFocusedWindow} className="chatter-camera-off">
                 <img className="chatter-pfp" src={aniviaUlt} alt="pfp" />
-            </div>
+            </div> */}
+            {
+                props.isFocused
+                ?
+                    props.focusedWindow
+                    ?
+                        props.chatter.settings.cameraIsOn && peerConnection !== null 
+                        ?
+                            <div id={`chatter_camera_on_${props.chatter.username}`} onClick={() => handleClickedWindow('video')} className="chatter_camera_on">
+                                <div className="video_loading_icon_container">
+                                    <CircularProgress className="video_loading_icon" />
+                                </div>
+                                <video
+                                    autoPlay
+                                    id={`${props.chatter.username}_video`}
+                                    ref={videoRef}
+                                    muted
+                                >
+                                </video>
+                            </div>
+                            :
+                            <div id={`chatter_camera_off_${props.chatter.username}`} onClick={() => handleClickedWindow(undefined)} className='chatter_camera_off'>
+                                <img className="chatter-pfp" src={aniviaUlt} alt="pfp" />
+                            </div>
+                        :
+                        <div onClick={() => handleClickedWindow(undefined)} className="chatter_camera_off focused_window_tint">
+                            <img className="chatter-pfp" src={aniviaUlt} alt="pfp" />
+                        </div>
+                    :
+                props.focusedWindow?.username === props.chatter.username && (props.focusedWindow.stream?.type === "video" || props.focusedWindow.stream === undefined)
+                ?
+                    <div onClick={() => handleClickedWindow(undefined)} className="chatter_camera_off focused_window_tint">
+                        <img className="chatter-pfp" src={aniviaUlt} alt="profile picture" /> 
+                    </div>
+                :
+                props.chatter.settings.cameraIsOn && peerConnection !== null
+                ?
+                    <div id={`chatter_camera_on_${props.chatter.username}`} onClick={() => handleClickedWindow('video')} className="chatter_camera_on">
+                        <div className="video_loading_icon_container">
+                            <CircularProgress className="video_loading_icon" />
+                        </div>
+                        <video
+                            autoPlay
+                            id={`${props.chatter.username}_video`}
+                            ref={videoRef}
+                            muted
+                        >
+                        </video>
+                    </div>
+                :
+                    <div id={`chatter_camera_off_${props.chatter.username}`} onClick={() => handleClickedWindow(undefined)} className="chatter_camera_off">
+                        <img className="chatter-pfp" src={aniviaUlt} alt="pfp" /> 
+                    </div>
+            }
+            {
+                props.isFocused
+                ?
+                    null
+                :
+                    <audio
+                        ref={audioRef}
+                        autoPlay
+                        id={`${props.chatter.username}_audio`}
+                        muted={props.chatter.username === yourUsername ? true : settings.settings.deafened ? true : false}
+                    />
+            }
             <div className="chatter-bottom">
                 <p>{props.chatter.username}</p> 
                 <div className="chatter-settings">
