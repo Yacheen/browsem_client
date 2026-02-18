@@ -5,6 +5,7 @@ import { useCurrentCallStore } from '@/hooks/currentCallStore';
 import { useEffect, useState } from 'react';
 import { ChatterChannel } from '@/components/Channels';
 import { useChannelsStore } from '@/hooks/ChannelsStore';
+import allStyles from "../../components/AllStyles.scss?inline";
 
 export default function App() {
     const chatterChannel = useCurrentCallStore(state => state.chatterChannel)
@@ -48,9 +49,12 @@ export default function App() {
     return (
         useCurrentCallStore.getState().tabId === currentTabId && chatterChannel !== null
         ?
-            <WindowHandler minWidth={540} minHeight={46} type='BrowsemCall' description={chatterChannel?.fullUrl} closeMyWindow={handleCloseCurrentCall}>
-                <BrowsemCall />
-            </WindowHandler>
+            <>
+                <style>{allStyles}</style>
+                <WindowHandler minWidth={570} minHeight={46} type='BrowsemCall' description={chatterChannel?.fullUrl} closeMyWindow={handleCloseCurrentCall}>
+                    <BrowsemCall />
+                </WindowHandler>
+            </>
         :
             null
     )

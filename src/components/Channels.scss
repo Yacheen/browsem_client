@@ -25,11 +25,11 @@
     background: hsl(0, 0%, 25%);
     border-radius: 8px;
     padding: 8px;
-    max-width: 206px;
-    min-width: 206px;
     overflow-y: auto;
     overflow-x:hidden;
     height: 100%;
+    max-width: 100%;
+    min-width: 200px;
     min-height: 200px;
     max-height: 200px;
 

@@ -32,13 +32,14 @@ function CallButtons(props: { chatter: Chatter }) {
     const hasCampermission = useCurrentCallStore(state => state.hasCamPermission);
     const handleGetMicrophone = useCurrentCallStore(state => state.handleGetMicrophone);
     const handleGetCamera = useCurrentCallStore(state => state.handleGetCamera);
-    // const muteMic = useCurrentCallStore(state => state.muteMic);
-    // const unmuteMic = useCurrentCallStore(state => state.unmuteMic);
+    const muteMic = useCurrentCallStore(state => state.muteMic);
+    const unmuteMic = useCurrentCallStore(state => state.unmuteMic);
+    const turnOffCamera = useCurrentCallStore(state => state.turnOffCamera);
 
     const handleSetVideo = async () => {
         if (hasCampermission) {
             if (props.chatter.settings.cameraIsOn) {
-                // turnOffCamera();
+                turnOffCamera();
                 setSettings({
                     ...props.chatter.settings,
                     cameraIsOn: false
@@ -57,7 +58,6 @@ function CallButtons(props: { chatter: Chatter }) {
             }
         }
         else {
-            // handleGetCamera: (username: string) => Promise<MediaStream | null>,
             let camStream = await handleGetCamera(props.chatter.username);
             if (camStream) {
                 setSettings({
@@ -74,13 +74,13 @@ function CallButtons(props: { chatter: Chatter }) {
                     ...props.chatter.settings,
                     microphoneIsOn: false
                 });
-                // muteMic();
+                muteMic();
             }
             else {
                 if (props.chatter.settings.deafened === true) {
                     // play undeafened sound
                 }
-                // unmuteMic();
+                unmuteMic();
                 setSettings({
                     ...props.chatter.settings,
                     microphoneIsOn: true,
@@ -89,8 +89,6 @@ function CallButtons(props: { chatter: Chatter }) {
             }
         }
         else {
-            console.log('NO MIC PERMISSION DETECTED.');
-            // handleGetMicrophone: (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => Promise<MediaStream | null>,
             let possibleMediaStreamWithMicrophone = await handleGetMicrophone(props.chatter.username, useSettingsStore);
             if (possibleMediaStreamWithMicrophone !== null) {
                 if (props.chatter.settings.deafened === true) {
@@ -122,7 +120,7 @@ function CallButtons(props: { chatter: Chatter }) {
                     deafened: true,
                     microphoneIsOn: false,
                 })
-                // muteMic();
+                muteMic();
                 // play deafened sound
                 // if (sfxController.current) {
                 //     sfxController.current.playSound("/sounds/deafen_true.wav");
@@ -139,9 +137,17 @@ function CallButtons(props: { chatter: Chatter }) {
                     </div>
                     <p className="rtc-status-text">Disconnected</p>
                 </div>
-                <div className="rtc-disconnect-icon-container">
-                    <CallEndIcon className="rtc-disconnect-icon" />
-                </div>
+                <Tooltip placement='top' title="Disconnect" arrow disableInteractive slotProps={{
+                    popper: {
+                        style: {
+                            zIndex: 6942013383,
+                        }
+                    },
+                }}>
+                    <div className="rtc-disconnect-icon-container">
+                        <CallEndIcon className="rtc-disconnect-icon" />
+                    </div>
+                </Tooltip>
             </div>
             <div className="call-buttons-middle">
                 <Tooltip arrow disableInteractive title={props.chatter.settings.microphoneIsOn ? 'Mute' : 'Unmute'} placement="top" slotProps={{ popper: { style: { zIndex: 6942013383, } } }}>
@@ -183,9 +189,17 @@ function CallButtons(props: { chatter: Chatter }) {
                     <img src={aniviaUlt} alt="pfp" />
                     <p>{props.chatter.username}</p>
                 </div>
+                <Tooltip placement='top' title="Call Settings" arrow disableInteractive slotProps={{
+                    popper: {
+                        style: {
+                            zIndex: 6942013383,
+                        }
+                    },
+                }}>
                 <div className="call-settings-container">
                     <SettingsIcon />
                 </div>
+                </Tooltip>
             </div>
         </div>
     );

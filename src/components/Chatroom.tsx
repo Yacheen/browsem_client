@@ -8,6 +8,7 @@ import './Chatroom.scss';
 import aniviaUltAsset from "../assets/aniviault.png";
 const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
 import SettingsIcon from '@mui/icons-material/Settings';
+import { Tooltip } from '@mui/material';
 let bla: ChatMessage[] = [{
     chatter: {
         sessionId: "69420",
@@ -45,9 +46,17 @@ function Chatroom() {
                     <input placeholder="message..." type="text" />
                 </div>
                 <div className="input-bottom">
-                    <div className="input-settings-icon-container">
-                        <SettingsIcon  className="input-settings-icon"/>
-                    </div>
+                    <Tooltip placement='top' title="Chat settings" arrow disableInteractive slotProps={{
+                        popper: {
+                            style: {
+                                zIndex: 6942013383,
+                            }
+                        },
+                    }}>
+                        <div className="input-settings-icon-container">
+                            <SettingsIcon  className="input-settings-icon"/>
+                        </div>
+                    </Tooltip>
                     <button className="input-send-button" type="button">Send</button>
                 </div>
             </div>

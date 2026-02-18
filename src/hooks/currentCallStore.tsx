@@ -45,10 +45,10 @@ interface CurrentCallStoreState {
     handleApplyMicSettings: (username: string, stream: MediaStream, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => void,
     handleGetMicrophone: (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => Promise<MediaStream | null>,
     handleGetCamera: (username: string) => Promise<MediaStream | null>,
-    // muteMic: () => void;
-    // unmuteMic: () => void;
-    // turnOffMicrophone: () => void;
-    // turnOffCamera: () => void;
+    muteMic: () => void;
+    unmuteMic: () => void;
+    turnOffMicrophone: () => void;
+    turnOffCamera: () => void;
     
 }
 export type IceCandidate = {
@@ -255,23 +255,24 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                                 // get chatter_camera_on and chatter_camera_off with id of said person
                                 // if theres a chatter_camera_on, highlight that
                                 // else, highlight chatter camera off
-                                let chatterCameraOnElement = document.getElementById(`chatter_camera_on_${username}`);
-                                let chatterCameraOffElement = document.getElementById(`chatter_camera_off_${username}`);
+                                console.log('THEYRE SPEAKING');
+                                let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
+                                let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
                                 if (chatterCameraOnElement !== null) {
-                                    chatterCameraOnElement.classList.add('speaking_border');
+                                    chatterCameraOnElement?.classList.add('speaking_border');
                                 }
                                 else if (chatterCameraOffElement !== null) {
-                                    chatterCameraOffElement.classList.add('speaking_border');
+                                    chatterCameraOffElement?.classList.add('speaking_border');
                                 }
                             }
                             else {
-                                let chatterCameraOnElement = document.getElementById(`chatter_camera_on_${username}`);
-                                let chatterCameraOffElement = document.getElementById(`chatter_camera_off_${username}`);
+                                let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
+                                let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
                                 if (chatterCameraOnElement !== null) {
-                                    chatterCameraOnElement.classList.remove('speaking_border');
+                                    chatterCameraOnElement?.classList.remove('speaking_border');
                                 }
                                 else if (chatterCameraOffElement !== null) {
-                                    chatterCameraOffElement.classList.remove('speaking_border');
+                                    chatterCameraOffElement?.classList.remove('speaking_border');
                                 }
                             }
                         })
@@ -279,14 +280,14 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     track.onunmute = () => {
                         if (type === "audio") {
                             track.enabled = true;
-                            let audio: HTMLAudioElement | null = document.querySelector(`#${username}_audio`);
-                            if (audio !== null) {
+                            let audio: HTMLAudioElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_audio`);
+                            if (audio) {
                                 audio.srcObject = stream;
                             }
                         }
                         if (type === "video") {
-                            let videoElement: HTMLVideoElement | null = document.querySelector(`#${username}_video`);
-                            if (videoElement !== null) {
+                            let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
+                            if (videoElement) {
                                 videoElement.srcObject = stream;
                             }
                         }
@@ -295,8 +296,8 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                         if (type === "audio") {
                         } 
                         if (type === "video") {
-                            let videoElement: HTMLVideoElement | null = document.querySelector(`#${username}_video`);
-                            if (videoElement !== null) {
+                            let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
+                            if (videoElement) {
                                 videoElement.srcObject = null;
                             }
                         }
@@ -480,37 +481,37 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                                 if (settings.microphoneIsOn) {
                                     if (volume > micThreshold) {
                                         destNode.stream.getAudioTracks()[0].enabled = true;
-                                        let chatterCameraOnElement = document.getElementById(`chatter_camera_on_${username}`);
-                                        let chatterCameraOffElement = document.getElementById(`chatter_camera_off_${username}`);
+                                        let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
+                                        let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
                                         if (chatterCameraOnElement !== null) {
-                                            chatterCameraOnElement.classList.add('speaking_border');
+                                            chatterCameraOnElement?.classList.add('speaking_border');
                                         }
                                         else if (chatterCameraOffElement !== null) {
-                                            chatterCameraOffElement.classList.add('speaking_border');
+                                            chatterCameraOffElement?.classList.add('speaking_border');
                                         }
                                     }
                                     else {
                                         destNode.stream.getAudioTracks()[0].enabled = false;
-                                        let chatterCameraOnElement = document.getElementById(`chatter_camera_on_${username}`);
-                                        let chatterCameraOffElement = document.getElementById(`chatter_camera_off_${username}`);
+                                        let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
+                                        let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
                                         if (chatterCameraOnElement !== null) {
-                                            chatterCameraOnElement.classList.remove('speaking_border');
+                                            chatterCameraOnElement?.classList.remove('speaking_border');
                                         }
                                         else if (chatterCameraOffElement !== null) {
-                                            chatterCameraOffElement.classList.remove('speaking_border');
+                                            chatterCameraOffElement?.classList.remove('speaking_border');
                                         }
 
                                     }
                                 }
                                 else {
                                     destNode.stream.getAudioTracks()[0].enabled = false;
-                                    let chatterCameraOnElement = document.getElementById(`chatter_camera_on_${username}`);
-                                    let chatterCameraOffElement = document.getElementById(`chatter_camera_off_${username}`);
+                                    let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
+                                    let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
                                     if (chatterCameraOnElement !== null) {
-                                        chatterCameraOnElement.classList.remove('speaking_border');
+                                        chatterCameraOnElement?.classList.remove('speaking_border');
                                     }
                                     else if (chatterCameraOffElement !== null) {
-                                        chatterCameraOffElement.classList.remove('speaking_border');
+                                        chatterCameraOffElement?.classList.remove('speaking_border');
                                     }
                                 }
                                 if (innerMonitorSpeakingIntervalIds.get(username) === undefined) {
@@ -587,8 +588,9 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                         }
                     }
                     set({ hasCamPermission: true, camStream, camSender });
-                    let videoElement: HTMLVideoElement | null = document.querySelector(`#${username}_video`);
-                    if (videoElement !== null) {
+                    let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
+                    console.log(videoElement);
+                    if (videoElement) {
                         videoElement.srcObject = camStream;
                     }
                     return camStream;
@@ -598,14 +600,55 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     set({ hasCamPermission: false });
                     return null;
                 }
-            }
+            },
+            muteMic: () => {
+                let micStream = get().micStream;
+                if (micStream && micStream.getAudioTracks()[0]) {
+                    micStream.getAudioTracks()[0].enabled = false;
+                    return set({ micStream });
+                }
+            },
+            unmuteMic: () => {
+                let micStream = get().micStream;
+                if (micStream && micStream.getAudioTracks()[0]) {
+                    micStream.getAudioTracks()[0].enabled = true;
+                    set({ micStream });
+                }
+            },
+            turnOffCamera: () => {
+                let camStream = get().camStream;
+                let peerConnection = get().peerConnection;
+                let camSender = get().camSender;
+
+                if (camStream && camStream.getVideoTracks()[0]) {
+                    let track = camStream.getVideoTracks()[0];
+                    track.stop();
+                    camStream.removeTrack(track);
+                    camSender?.replaceTrack(null);
+                }
+                set({ camStream: null, camSender, peerConnection, hasCamPermission: false });
+            },
+            turnOffMicrophone: () => {
+                let micStream = get().micStream;
+                let peerConnection = get().peerConnection;
+                let micSender = get().micSender;
+                
+                if (micStream && micStream.getAudioTracks()[0]) {
+                    micStream.getAudioTracks().forEach(track => {
+                        track.stop();
+                        micStream?.removeTrack(track);
+                        micSender?.replaceTrack(null);
+                    })
+                }
+                set({ micStream: null, micSender, peerConnection, hasMicPermission: false, });
+            },
         }),
         {
             name: "current-call-session-storage",
             storage: createJSONStorage(() => ChromeSessionStorage),
             partialize: (state) =>
                 Object.fromEntries(
-                    Object.entries(state).filter(([key]) => !['audioTx', 'micStream', 'micSender', 'camStream', 'camSender', 'audioContext', 'remoteStreams', 'peerConnection', 'monitorSpeakingIntervalIds', 'focusedWindow', 'hasMicPermission', 'hasCamPermission'].includes(key))
+                    Object.entries(state).filter(([key]) => !['audioTx', 'micStream', 'micSender', 'camStream', 'camSender', 'audioContext', 'remoteStreams', 'peerConnection', 'monitorSpeakingIntervalIds', 'focusedWindow'].includes(key))
                 )
 
         }

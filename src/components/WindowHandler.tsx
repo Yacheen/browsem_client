@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import './WindowHandler.scss'
 import Draggable, { DraggableData, DraggableEvent } from "react-draggable";
 import CloseTwoToneIcon from '@mui/icons-material/CloseTwoTone';
 import VideoLabelTwoToneIcon from '@mui/icons-material/VideoLabelTwoTone';

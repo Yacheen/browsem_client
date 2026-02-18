@@ -28,10 +28,28 @@ export type ChatMessage = {
 };
 
 export default function Channels() {
-  const browsemStore = useBrowsemStore();
-  const channelsStore = useChannelsStore();
-  const currentCallStore = useCurrentCallStore();
-  const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
+    const browsemStore = useBrowsemStore();
+    const channelsStore = useChannelsStore();
+    const currentCallStore = useCurrentCallStore();
+    const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
+    const [textColor, setTextColor] = useState<'hsl(0, 0%, 10%)' | 'hsl(0, 0%, 95%)'>(() => {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        if (mediaQuery.matches) {
+            return 'hsl(0, 0%, 95%)'
+        }
+        else {
+            return 'hsl(0, 0%, 10%)'
+        }
+    });
+    const [bgColor, setBgColor] = useState<'hsl(0, 0%, 15%)' | 'hsl(0, 0%, 90%)'>(() => {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        if (mediaQuery.matches) {
+            return 'hsl(0, 0%, 15%)'
+        }
+        else {
+            return 'hsl(0, 0%, 90%)'
+        }
+    });
 
   const handleSetCurrentUrlDropdown = (urlName: string) => {
       let alreadyDroppedDown = currentUrlDropdown.find(urlDroppedDown => urlDroppedDown === urlName);
@@ -82,6 +100,11 @@ export default function Channels() {
                                                     popper: {
                                                         style: {
                                                             zIndex: 6942013383,
+                                                        }
+                                                    },
+                                                    tooltip: {
+                                                        style: {
+                                                            color: textColor,
                                                         }
                                                     }
                                                 }}>

@@ -1,8 +1,10 @@
 .call-sidebar {
-    height: calc(100% - 182px);
+    height: calc(100% - 190px);
     max-width: 236px;
+    min-width: 236px;
     overflow-y: auto;
     overflow-x: hidden;
+    position: relative;
     .channels-on-origin {
         margin-bottom: 12px;
     }

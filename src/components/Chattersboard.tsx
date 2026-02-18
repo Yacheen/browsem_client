@@ -47,7 +47,7 @@ function ChattersBoard() {
         focusedWindow !== null
         ?
             <div className="chattersboard_with_focused_window">
-                <div className="focused_window">
+                <div className="focused_window_container">
                     {
                         focusedWindow.chatter.username === yourUsername
                         ?
@@ -59,7 +59,15 @@ function ChattersBoard() {
                 <div className="chattersboard_bottom">
                     {
                         currentCallStore.chatterChannel?.chatters.map(chatter => (
-                            <BrowsemChatter chatter={chatter} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={false} />
+                            <>
+                                {
+                                    chatter.username === yourUsername
+                                    ?
+                                    <BrowsemChatter chatter={{...chatter, settings: yourSettings}} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={false} />
+                                    :
+                                    <BrowsemChatter chatter={chatter} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={false} />
+                                }
+                            </>
                         ))
                     }
                 </div>
