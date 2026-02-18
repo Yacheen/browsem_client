@@ -45,6 +45,11 @@ interface CurrentCallStoreState {
     handleApplyMicSettings: (username: string, stream: MediaStream, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => void,
     handleGetMicrophone: (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => Promise<MediaStream | null>,
     handleGetCamera: (username: string) => Promise<MediaStream | null>,
+    // muteMic: () => void;
+    // unmuteMic: () => void;
+    // turnOffMicrophone: () => void;
+    // turnOffCamera: () => void;
+    
 }
 export type IceCandidate = {
     IceCandidate: RTCIceCandidateInit,
@@ -600,7 +605,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             storage: createJSONStorage(() => ChromeSessionStorage),
             partialize: (state) =>
                 Object.fromEntries(
-                    Object.entries(state).filter(([key]) => !['audioTx', 'micStream', 'micSender', 'camStream', 'camSender', 'audioContext', 'remoteStreams', 'peerConnection', 'monitorSpeakingIntervalIds', 'focusedWindow'].includes(key))
+                    Object.entries(state).filter(([key]) => !['audioTx', 'micStream', 'micSender', 'camStream', 'camSender', 'audioContext', 'remoteStreams', 'peerConnection', 'monitorSpeakingIntervalIds', 'focusedWindow', 'hasMicPermission', 'hasCamPermission'].includes(key))
                 )
 
         }
