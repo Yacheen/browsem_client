@@ -26,12 +26,14 @@ interface CurrentCallStoreState {
     audioContext: AudioContext | null,
     micThreshold: number,
     audioTx: RTCRtpTransceiver | null,
+    hasMicPermission: boolean,
+    hasCamPermission: boolean,
     setFocusedWindow: (chatterWindow: QuickchatterWindow | null) => void,
     setChatterChannel: (chatterChannel: ChatterChannel | null) => void,
     connectToCall: (channelName: string) => void,
     connectedToCall: (msg: ConnectedToCall, tabId: number) => void,
     reconnectToCall: (channelName: string) => void,
-    disconnectedFromCall: (msg: DisconnectedFromCall) => void,
+    disconnectedFromCall: (msg: DisconnectedFromCall) => Promise<void>,
     disconnectFromCall: () => void,
     startPeerConnection: () => Promise<void>,
     handleIceCandidateFromServer: (message: IceCandidate) => Promise<void>,
@@ -60,21 +62,27 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
         (set, get) => ({
             chatterChannel: null,
             tabId: null,
-            focusedWindow: null,
-            remoteStreams: new Map(),
-            peerConnection: null,
             connection: "disconnected",
-            monitorSpeakingIntervalIds: new Map(),
             makingOffer: false,
             loadingMyVideo: false,
+            micThreshold: 15,
+            hasMicPermission: false,
+            hasCamPermission: false,
+
+            // dont persist any of these in session storage (u cant persist a mediastream, or an audiocontext, peerConnection, etc.))
+            audioTx: null,
             micStream: null,
             micSender: null,
             camStream: null,
             camSender: null,
             audioContext: null,
-            micThreshold: 15,
-            audioTx: null,
-            setFocusedWindow: () => {},
+            remoteStreams: new Map(),
+            peerConnection: null,
+            monitorSpeakingIntervalIds: new Map(),
+            focusedWindow: null,
+            setFocusedWindow: (windowToBeFocused: QuickchatterWindow | null) => {
+                set({ focusedWindow: windowToBeFocused });
+            },
             setChatterChannel: (chatterChannel: ChatterChannel | null) => {
                 set({ chatterChannel });
             },
@@ -110,6 +118,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     stopMonitoringSpeakers();
                     await audioContext?.close();
                     set({
+                        tabId: null,
                         chatterChannel: null,
                         connection: "disconnected",
                         audioContext: null,
@@ -142,10 +151,10 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             },
             startPeerConnection: async () => {
                 let peerConnection = new RTCPeerConnection(servers);
-
                 let audioTx = peerConnection.addTransceiver("audio");
                 let audioContext = new AudioContext();
                 set({
+                    peerConnection,
                     connection: peerConnection.iceConnectionState,
                     remoteStreams: new Map(),
                     monitorSpeakingIntervalIds: new Map(),
@@ -441,8 +450,11 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 let peerConnection = get().peerConnection;
                 let audioTx = get().audioTx;
 
+                console.log('audio context is: ', audioContext);
                 if (audioContext) {
+                    console.log('audio context is: ', audioContext);
                     const source = audioContext.createMediaStreamSource(stream);
+                    console.log('audio context is: ', audioContext);
                     const analyser = audioContext.createAnalyser();
                     analyser.fftSize = 512;
                     source.connect(analyser);
@@ -515,8 +527,12 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     else {
                         peerConnection?.addTrack(destNode.stream.getAudioTracks()[0]);
                     }
-                    set({ micStream: destNode.stream });
+                    console.log('setting hasmicpermission to true!');
+                    set({ hasMicPermission: true, micStream: destNode.stream });
                     applyMicSettings();
+                }
+                else {
+                    console.log('THERE IS NO AUDIO CONTEXT.');
                 }
             },
             handleGetMicrophone: async (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => {
@@ -537,6 +553,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 }
                 catch (err) {
                     console.log('problem getting mic:', err);
+                    set({ hasMicPermission: false });
                     return null;
                 }
             },
@@ -564,7 +581,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                             camSender = peerConnection.addTrack(camStream.getVideoTracks()[0], camStream);
                         }
                     }
-                    set({ camStream, camSender });
+                    set({ hasCamPermission: true, camStream, camSender });
                     let videoElement: HTMLVideoElement | null = document.querySelector(`#${username}_video`);
                     if (videoElement !== null) {
                         videoElement.srcObject = camStream;
@@ -573,13 +590,19 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 }
                 catch (err) {
                     console.log('problem getting camera: ', err);
+                    set({ hasCamPermission: false });
                     return null;
                 }
             }
         }),
         {
             name: "current-call-session-storage",
-            storage: createJSONStorage(() => ChromeSessionStorage)
+            storage: createJSONStorage(() => ChromeSessionStorage),
+            partialize: (state) =>
+                Object.fromEntries(
+                    Object.entries(state).filter(([key]) => !['audioTx', 'micStream', 'micSender', 'camStream', 'camSender', 'audioContext', 'remoteStreams', 'peerConnection', 'monitorSpeakingIntervalIds', 'focusedWindow'].includes(key))
+                )
+
         }
     )
 );

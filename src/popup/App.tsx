@@ -155,9 +155,10 @@ export default function App() {
     const handleConnectToServer = () => {
         browsemStore.connect();
     }
-    const handleDisconnectFromServer = () => {
+    const handleDisconnectFromServer = async () => {
         browsemStore.disconnect();
         browsemStore.setCurrentSelection("Intro");
+        await currentCallStore.disconnectedFromCall({DisconnectedFromCall: { reason: "manual disconnect", disconnectedChatter: null }});
     };
     const handleCreateGuestUsername = () => {
         browsemStore.setCurrentSelection("CreatingGuestUsername");
@@ -196,6 +197,7 @@ export default function App() {
         }
         else if (isDisconnected(message.contents)) {
             browsemStore.disconnected(message.contents);
+           //  await currentCallStore.disconnectedFromCall({DisconnectedFromCall: { reason: message.contents.Disconnected.reason, disconnectedChatter: null }});
         }
         else if (isChannelCreated(message.contents)) {
             let channelCreated = message.contents;

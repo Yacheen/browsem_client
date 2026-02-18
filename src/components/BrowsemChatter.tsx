@@ -15,7 +15,7 @@ import { CircularProgress } from '@mui/material';
 const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
 
 export type QuickchatterWindow = {
-    username: string, 
+    chatter: Chatter, 
     stream?: {
         msid: string,
         type: 'video' | 'screen' | undefined,
@@ -27,7 +27,7 @@ export type ChatterSetting = {
     microphoneVolume: number,
     hidingVideo: false,
 }
-function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (windowToBeFocused: QuickchatterWindow | null) => void, isFocused?: boolean, focusedWindow?: QuickchatterWindow, chatterSetting?: ChatterSetting }) {
+function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (windowToBeFocused: QuickchatterWindow | null) => void, isFocused?: boolean, focusedWindow?: QuickchatterWindow | null, chatterSetting?: ChatterSetting }) {
     let videoRef = useRef<HTMLVideoElement| null>(null);
     let audioRef = useRef<HTMLAudioElement| null>(null);
     const yourUsername = useBrowsemStore(state => state.username);
@@ -43,7 +43,7 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
     const handleClickedWindow = (type: 'video' | undefined) => {
         if (type !== undefined) {
             props.handleSetFocusedWindow({
-                username: props.chatter.username,
+                chatter: props.chatter,
                 stream: {
                     msid: `${props.chatter.username}_${type}`,
                     type
@@ -52,7 +52,7 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
         }
         else {
             props.handleSetFocusedWindow({
-                username: props.chatter.username,
+                chatter: props.chatter,
                 stream: undefined,
             });
         }
@@ -64,11 +64,12 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
         if (yourUsername === props.chatter.username) {
             if (micStream !== null) {
                 if (audioRef !== null && audioRef.current !== null) {
-
+                    console.log('NEGATIVEONENEGATIVEONE');
                 }
             }
             if (camStream !== null) {
                 if (videoRef.current !== null) {
+                    console.log('CAM STREAM ISNT NULL AND NEITHER IS SRCOBJECT');
                     videoRef.current.srcObject = camStream;
                 }
             }
@@ -86,27 +87,34 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
             //if its you
             if (yourUsername === props.chatter.username) {
                 if (audioRef.current && micStream) {
+                    console.log('ONEONEONEONEONE');
                     audioRef.current.srcObject = micStream;
                 }
                 if (videoRef.current && camStream) {
+                    console.log('TWOTWOTWOTWOTWO');
                     videoRef.current.srcObject = camStream;
                 }
             }
             else {
-                let stream = currentCallStore.remoteStreams.get(`${props.chatter.username}`);
-                if (stream !== undefined) {
-                    stream.getTracks().forEach(track => {
-                        if (track.kind === "audio") {
-                            if (audioRef.current) {
-                                audioRef.current.srcObject = stream!;
+                // CHECK IF REMOTE STREAMS EXISTS 1st
+                if (currentCallStore.remoteStreams instanceof Map) {
+                    let stream = currentCallStore.remoteStreams.get(`${props.chatter.username}`);
+                    if (stream !== undefined) {
+                        stream.getTracks().forEach(track => {
+                            if (track.kind === "audio") {
+                                if (audioRef.current) {
+                                    console.log('THREETHREETHREETHREE');
+                                    audioRef.current.srcObject = stream!;
+                                }
                             }
-                        }
-                        if (track.kind === "video") {
-                            if (videoRef.current) {
-                                videoRef.current.srcObject = stream!;
+                            if (track.kind === "video") {
+                                if (videoRef.current) {
+                                    console.log('FOURFOURFOURFOURFOUR');
+                                    videoRef.current.srcObject = stream!;
+                                }
                             }
-                        }
-                    })
+                        })
+                    }
                 }
             }
         }
@@ -152,7 +160,7 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
                             <img className="chatter-pfp" src={aniviaUlt} alt="pfp" />
                         </div>
                     :
-                props.focusedWindow?.username === props.chatter.username && (props.focusedWindow.stream?.type === "video" || props.focusedWindow.stream === undefined)
+                props.focusedWindow?.chatter.username === props.chatter.username && (props.focusedWindow.stream?.type === "video" || props.focusedWindow.stream === undefined)
                 ?
                     <div onClick={() => handleClickedWindow(undefined)} className="chatter_camera_off focused_window_tint">
                         <img className="chatter-pfp" src={aniviaUlt} alt="profile picture" /> 

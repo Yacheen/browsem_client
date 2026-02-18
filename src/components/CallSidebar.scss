@@ -1,10 +1,8 @@
-@import "./scss/abstracts/mixins.scss";
 .call-sidebar {
     height: calc(100% - 182px);
     max-width: 236px;
     overflow-y: auto;
     overflow-x: hidden;
-    @include scrollbar;
     .channels-on-origin {
         margin-bottom: 12px;
     }

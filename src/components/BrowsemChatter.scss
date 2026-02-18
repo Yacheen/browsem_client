@@ -1,9 +1,9 @@
+@import "./variables.scss";
 .chatter-container {
     flex: 1 1 33.3%;
     min-width: 240px;
     max-width: 520px;
     aspect-ratio: 16 / 9;
-    position: relative;
     user-select: none;
     /* .chatter-top { */
     /*     border-radius: 8px; */
@@ -71,5 +71,29 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        .chatter-settings {
+            display: flex;
+            align-items: center;
+            .chatter-settings-icon-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+        }
     }
+}
+.speaking_border {
+    box-shadow: 0 0 8px $light-green;
+}
+
+.focused_window {
+    width: 100% !important;
+    max-width: 896px;
+}
+.non_focused_window {
+    max-width: 280px;
+    min-width: 280px;
+}
+.focused_window_tint {
+    filter: brightness(35%);
 }

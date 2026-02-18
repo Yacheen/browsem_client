@@ -27,8 +27,16 @@ export default function App() {
             }
         }
     }
+    const handleCloseCurrentCall = () => {
+    }
     useEffect(() => {
         chrome.storage.onChanged.addListener(handleStorageChange);
+        // return () => {
+        //     chrome.storage.onChanged.removeListener(handleStorageChange);
+        // }
+    }, []);
+
+    useEffect(() => {
         // chrome.runtime.onMessage.addListener(handleRuntimeMessage);
         chrome.runtime.sendMessage({ type: "get-tab-id"}, response => {
             if (response && response.tabId) {
@@ -36,14 +44,9 @@ export default function App() {
                 setCurrentTabId(response.tabId);
             }
         });
-        return () => {
-            chrome.storage.onChanged.removeListener(handleStorageChange);
-        }
-    }, []);
-    const handleCloseCurrentCall = () => {
-    }
+    }, [callTabId]);
     return (
-        useCurrentCallStore.getState().tabId === currentTabId 
+        useCurrentCallStore.getState().tabId === currentTabId && chatterChannel !== null
         ?
             <WindowHandler minWidth={540} minHeight={46} type='BrowsemCall' description={chatterChannel?.fullUrl} closeMyWindow={handleCloseCurrentCall}>
                 <BrowsemCall />
