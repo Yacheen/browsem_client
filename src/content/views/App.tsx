@@ -6,10 +6,13 @@ import { useEffect, useState } from 'react';
 import { ChatterChannel } from '@/components/Channels';
 import { useChannelsStore } from '@/hooks/ChannelsStore';
 import allStyles from "../../components/AllStyles.scss?inline";
+import { useSettingsStore } from '@/hooks/settingsStore';
 
 export default function App() {
     const chatterChannel = useCurrentCallStore(state => state.chatterChannel)
     const callTabId = useCurrentCallStore(state => state.tabId);
+    const settings = useSettingsStore(state => state.settings);
+    const disconnectedFromCall = useCurrentCallStore(state => state.disconnectedFromCall);
     const [currentTabId, setCurrentTabId] = useState(null);
     const handleStorageChange = (changes: {[key: string]: chrome.storage.StorageChange}, areaName: string) => {
         if (areaName === "session") {
@@ -28,14 +31,26 @@ export default function App() {
             }
         }
     }
-    const handleCloseCurrentCall = () => {
+    const handleCloseCurrentCall = async () => {
+        await disconnectedFromCall({DisconnectedFromCall: { reason: "manual disconnect", disconnectedChatter: null }});
     }
     useEffect(() => {
         chrome.storage.onChanged.addListener(handleStorageChange);
-        // return () => {
-        //     chrome.storage.onChanged.removeListener(handleStorageChange);
-        // }
+        return () => {
+            chrome.storage.onChanged.removeListener(handleStorageChange);
+        }
     }, []);
+    useEffect(() => {
+        chrome.runtime.sendMessage({
+            "type": "update-user-info",
+            "contents": JSON.stringify({
+                UpdateInfo: {
+                    username: useBrowsemStore.getState().username,
+                    settings: settings,
+                }
+            })
+        });
+    }, [settings]);
 
     useEffect(() => {
         // chrome.runtime.onMessage.addListener(handleRuntimeMessage);

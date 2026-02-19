@@ -2,7 +2,7 @@
 import { create, StoreApi } from 'zustand';
 import { ChatterChannel } from '@/components/Channels';
 import { Chatter } from './ChannelsStore';
-import { AnswerFromClient, AnswerFromServer, ConnectedToCall, DisconnectedFromCall, OfferFromClient, OfferFromServer } from '@/popup/App';
+import { AnswerFromClient, AnswerFromServer, ConnectedToCall, DisconnectedFromCall, OfferFromClient, OfferFromServer, UserUpdatedSettings } from '@/popup/App';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { ChromeSessionStorage } from 'zustand-chrome-storage';
 import { Settings, SettingsStore } from './settingsStore';
@@ -49,6 +49,7 @@ interface CurrentCallStoreState {
     unmuteMic: () => void;
     turnOffMicrophone: () => void;
     turnOffCamera: () => void;
+    handleUserUpdatedSettings: (msg: UserUpdatedSettings) => void;
     
 }
 export type IceCandidate = {
@@ -111,17 +112,20 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     let chatterChannel = get().chatterChannel;
                     let newChatterChannel = chatterChannel;
                     newChatterChannel?.chatters.push(msg.ConnectedToCall.connectedChatter);
-
                     set({ chatterChannel: newChatterChannel });
                 }
             },
             disconnectedFromCall: async (msg: DisconnectedFromCall) => {
                 let stopMonitoringSpeakers = get().stopMonitoringSpeakers;
                 let audioContext = get().audioContext;
+                let turnOffCam = get().turnOffCamera;
+                let turnOffMicrophone = get().turnOffMicrophone;
                 if (msg.DisconnectedFromCall.reason !== null) {
                     console.log('disconnected from call, reason: ', msg.DisconnectedFromCall.reason);
                     stopMonitoringSpeakers();
                     await audioContext?.close();
+                    turnOffCam();
+                    turnOffMicrophone();
                     set({
                         tabId: null,
                         chatterChannel: null,
@@ -173,6 +177,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
 
                     let handleCreateOffer = get().handleCreateOffer;
                     if (peerConnection) {
+                        console.log(peerConnection.iceConnectionState);
                         if (peerConnection.iceConnectionState === "failed" || peerConnection.iceConnectionState === "disconnected") {
                             // retry in x amount of seconds instead of this if disonnected and not failed?
                             //await handleCreateOffer(sessionId, socket)
@@ -209,6 +214,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     }
                 }
                 peerConnection.ontrack = ({ track, streams }: { track: MediaStreamTrack, streams: readonly MediaStream[] }) => {
+                    console.log('ONTRACK HAPPENED: ', track, streams);
                     // handleTrackEvent(track, streams);
                     // stream id format:
                     // uuid_username_kind
@@ -307,6 +313,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     // stream.onremovetrack = () => {}
                 }
                 peerConnection.onnegotiationneeded = () => {
+                    console.log('ON NEGOTIATION NEEDED HHAPPENED');
                     // handleNegotiationNeededEvent(sessionId, socket)
                     let handleCreateOffer = get().handleCreateOffer;
                     // TODO!() maybe needs to be awaited
@@ -320,7 +327,11 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             handleIceCandidateFromServer: async (message: IceCandidate) => {
                 let peerConnection = get().peerConnection;
                 if (peerConnection?.remoteDescription !== null) {
+                    console.log('my peer conns remote desc isnt null. ');
                     await peerConnection?.addIceCandidate(message.IceCandidate);
+                }
+                else {
+                    console.log('my peer conns null. no addicecand.');
                 }
             },
             handleCreateOffer: async () => {
@@ -642,6 +653,25 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 }
                 set({ micStream: null, micSender, peerConnection, hasMicPermission: false, });
             },
+            handleUserUpdatedSettings: (msg: UserUpdatedSettings) => {
+                // update in currentCall.chatters
+                let chatterChannel = get().chatterChannel;
+                if (msg.UserUpdatedSettings.callSessionId === chatterChannel?.sessionId) {
+                    let newChatterChannel = chatterChannel;
+                    newChatterChannel.chatters = newChatterChannel.chatters.map(chatter => {
+                        if (chatter.username === msg.UserUpdatedSettings.username) {
+                            let newChatter: Chatter = {
+                                ...chatter,
+                                username: msg.UserUpdatedSettings.username,
+                                settings: msg.UserUpdatedSettings.settings,
+                            };
+                            return newChatter
+                        }
+                        return chatter;
+                    });
+                    set({ chatterChannel: newChatterChannel });
+                }
+            }
         }),
         {
             name: "current-call-session-storage",

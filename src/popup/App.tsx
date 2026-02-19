@@ -4,7 +4,7 @@ import { useBrowsemStore } from '@/hooks/browsemStore';
 import IntroPopup from '@/components/IntroPopup';
 import MainPopup from '@/components/MainPopup';
 import CreateGuestUsernamePopup from '@/components/CreateGuestUsernamePopup';
-import { useSettingsStore } from '@/hooks/settingsStore';
+import { Settings, useSettingsStore } from '@/hooks/settingsStore';
 import CreateChannel from '@/components/CreateChannel';
 import { ChatterChannel } from '@/components/Channels';
 import { Chatter, useChannelsStore } from '@/hooks/ChannelsStore';
@@ -19,7 +19,7 @@ export type BackgroundMessage = {
     contents: ClientMessage
 }
 type MessageType = "Connecting" | "Connected" | "Disconnected";
-export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated | BrowsemStats | OriginCalls | UrlsUpdated | ConnectedToCall | DisconnectedFromCall | AnswerFromServer | OfferFromServer | IceCandidate;
+export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated | BrowsemStats | OriginCalls | UrlsUpdated | ConnectedToCall | DisconnectedFromCall | AnswerFromServer | OfferFromServer | IceCandidate | UserUpdatedSettings;
 
 // general messages
 export type BrowsemStats = {
@@ -96,6 +96,15 @@ export type OfferFromClient = {
 export type AnswerFromClient = {
     AnswerFromClient: RTCSessionDescription 
 }
+export type UserUpdatedSettings = {
+    UserUpdatedSettings: {
+        settings: Settings,
+        // SESSIONS ID, NOT CALL NAME
+        currentCall: string,
+        username: string,
+        callSessionId: string,
+    }
+}
 
 // typeguard fns
 export const isConnected = (msg: ClientMessage): msg is Connected => {
@@ -143,6 +152,9 @@ export const isOfferFromServer = (msg: ClientMessage): msg is OfferFromServer =>
 };
 export const isIceCandidate = (message: any): message is IceCandidate => {
     return (message as IceCandidate).IceCandidate !== undefined;
+}
+export const isUserUpdatedSettings = (message: any): message is UserUpdatedSettings => {
+    return (message as UserUpdatedSettings).UserUpdatedSettings !== undefined;
 }
 
 export default function App() {
@@ -251,13 +263,17 @@ export default function App() {
             currentCallStore.disconnectedFromCall(message.contents);
         }
         else if (isOfferFromServer(message.contents)) {
-            currentCallStore.handleOfferFromServer(message.contents);
+            await currentCallStore.handleOfferFromServer(message.contents);
         }
         else if (isAnswerFromServer(message.contents)) {
             currentCallStore.handleAnswerFromServer(message.contents);
         }
         else if (isIceCandidate(message.contents)) {
+            console.log('its an ice cand: ', message.contents);
             currentCallStore.handleIceCandidateFromServer(message.contents);
+        }
+        else if (isUserUpdatedSettings(message.contents)) {
+            currentCallStore.handleUserUpdatedSettings(message.contents);
         }
     };
 
