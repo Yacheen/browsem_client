@@ -28,6 +28,7 @@ interface CurrentCallStoreState {
     audioTx: RTCRtpTransceiver | null,
     hasMicPermission: boolean,
     hasCamPermission: boolean,
+    pendingIceCandidates: RTCIceCandidateInit[],
     setFocusedWindow: (chatterWindow: QuickchatterWindow | null) => void,
     setChatterChannel: (chatterChannel: ChatterChannel | null) => void,
     connectToCall: (channelName: string) => void,
@@ -39,7 +40,7 @@ interface CurrentCallStoreState {
     handleIceCandidateFromServer: (message: IceCandidate) => Promise<void>,
     handleCreateOffer: () => Promise<void>,
     monitorSpeaking: (username: string, stream: MediaStream, onSpeakingChange: (isSpeaking: boolean) => void) => void,
-    handleAnswerFromServer: (message: AnswerFromServer) => void,
+    handleAnswerFromServer: (message: AnswerFromServer) => Promise<void>,
     handleOfferFromServer: (message: OfferFromServer) => Promise<void>,
     stopMonitoringSpeakers: () => void,
     handleApplyMicSettings: (username: string, stream: MediaStream, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => void,
@@ -60,6 +61,11 @@ const servers = {
         {
             urls: "stun:stun.l.google.com:19302",
         },
+        {
+            urls: "turn:numb.viagenie.ca",
+            username: "sj0016092@gmail.com",
+            credential: "turnserver",
+        }
     ],
 };
 
@@ -74,6 +80,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             micThreshold: 15,
             hasMicPermission: false,
             hasCamPermission: false,
+            pendingIceCandidates: [],
 
             // dont persist any of these in session storage (u cant persist a mediastream, or an audiocontext, peerConnection, etc.))
             audioTx: null,
@@ -326,12 +333,16 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             },
             handleIceCandidateFromServer: async (message: IceCandidate) => {
                 let peerConnection = get().peerConnection;
-                if (peerConnection?.remoteDescription !== null) {
-                    console.log('my peer conns remote desc isnt null. ');
-                    await peerConnection?.addIceCandidate(message.IceCandidate);
-                }
-                else {
-                    console.log('my peer conns null. no addicecand.');
+                let pendingIceCandidates = get().pendingIceCandidates;
+                if (peerConnection) {
+                    if (peerConnection.remoteDescription !== null) {
+                        console.log('my peer conns remote desc isnt null. ');
+                        await peerConnection?.addIceCandidate(message.IceCandidate);
+                    }
+                    else {
+                        set({ pendingIceCandidates: [...pendingIceCandidates, message.IceCandidate]});
+                        console.log('my peer conns null. no addicecand.');
+                    }
                 }
             },
             handleCreateOffer: async () => {
@@ -406,10 +417,15 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     checkVolume();
                 }
             },
-            handleAnswerFromServer: (message: AnswerFromServer) => {
+            handleAnswerFromServer: async (message: AnswerFromServer) => {
                 let peerConnection = get().peerConnection;
+                let pendingIceCandidates = get().pendingIceCandidates;
                 try {
-                    peerConnection?.setRemoteDescription(message.AnswerFromServer);
+                    await peerConnection?.setRemoteDescription(message.AnswerFromServer);
+                    for (const cand of pendingIceCandidates) {
+                        await peerConnection?.addIceCandidate(cand);
+                    }
+                    set({ pendingIceCandidates: [] });
                 }
                 catch (err) {
                     console.log('problem handling answer from server: ', err);

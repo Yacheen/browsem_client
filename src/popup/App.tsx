@@ -266,11 +266,11 @@ export default function App() {
             await currentCallStore.handleOfferFromServer(message.contents);
         }
         else if (isAnswerFromServer(message.contents)) {
-            currentCallStore.handleAnswerFromServer(message.contents);
+            await currentCallStore.handleAnswerFromServer(message.contents);
         }
         else if (isIceCandidate(message.contents)) {
             console.log('its an ice cand: ', message.contents);
-            currentCallStore.handleIceCandidateFromServer(message.contents);
+            await currentCallStore.handleIceCandidateFromServer(message.contents);
         }
         else if (isUserUpdatedSettings(message.contents)) {
             currentCallStore.handleUserUpdatedSettings(message.contents);
