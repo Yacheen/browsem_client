@@ -26,6 +26,7 @@ interface CurrentCallStoreState {
     audioContext: AudioContext | null,
     micThreshold: number,
     audioTx: RTCRtpTransceiver | null,
+    videoTx: RTCRtpTransceiver | null,
     hasMicPermission: boolean,
     hasCamPermission: boolean,
     pendingIceCandidates: RTCIceCandidateInit[],
@@ -84,6 +85,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
 
             // dont persist any of these in session storage (u cant persist a mediastream, or an audiocontext, peerConnection, etc.))
             audioTx: null,
+            videoTx: null, 
             micStream: null,
             micSender: null,
             camStream: null,
@@ -167,7 +169,8 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             },
             startPeerConnection: async () => {
                 let peerConnection = new RTCPeerConnection(servers);
-                let audioTx = peerConnection.addTransceiver("audio", { direction: "sendrecv" });
+                let handleCreateOffer = get().handleCreateOffer;
+                let audioTx = peerConnection.addTransceiver("audio");
                 let audioContext = new AudioContext();
                 set({
                     peerConnection,
@@ -177,7 +180,9 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     audioContext,
                     audioTx,
                 });
+                
                 peerConnection.oniceconnectionstatechange = () => {
+                    console.log('ICE CONNECTION STATE CHANGE-------------------------');
                     // handleICEConnectionStateChangeEvent(sessionId, socket);
                     let micStream = get().micStream;
                     let camStream = get().camStream;
@@ -185,17 +190,21 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     let handleCreateOffer = get().handleCreateOffer;
                     if (peerConnection) {
                         console.log(peerConnection.iceConnectionState);
-                        if (peerConnection.iceConnectionState === "failed" || peerConnection.iceConnectionState === "disconnected") {
+                        if (peerConnection.iceConnectionState === "failed") {
                             // retry in x amount of seconds instead of this if disonnected and not failed?
                             //await handleCreateOffer(sessionId, socket)
-                            micStream?.getTracks().forEach(track => {
-                                track.stop();
-                            });
-                            camStream?.getTracks().forEach(track => {
-                                track.stop();
-                            });
-                            peerConnection.close();
+                            // micStream?.getTracks().forEach(track => {
+                            //     track.stop();
+                            // });
+                            // camStream?.getTracks().forEach(track => {
+                            //     track.stop();
+                            // });
+                            // peerConnection.close();
+                            // peerConnection.restartIce();
                         }
+                        // else if (peerConnection.iceConnectionState === "closed") {
+                        //     peerConnection.restartIce();
+                        // }
                         if (peerConnection) {
                             return set((prevState => ({...prevState, connection: peerConnection.iceConnectionState})));
                         }
@@ -417,6 +426,9 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     }
                     checkVolume();
                 }
+                else {
+                    console.log('THERES NO AUDIOCONTEXT!!!');
+                }
             },
             handleAnswerFromServer: async (message: AnswerFromServer) => {
                 let peerConnection = get().peerConnection;
@@ -438,13 +450,12 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 let pendingIceCandidates = get().pendingIceCandidates;
 
                 let msgSdp: RTCSessionDescriptionInit = message.OfferFromServer;
-                const offerCollision = msgSdp.type === "offer" && 
-                    (makingOffer || peerConnection?.signalingState !== "stable");
-                //
-                // // i am impolite peer, so if there is one, ignore it
-                if (offerCollision) {
-                    return;
-                }
+                // const offerCollision = msgSdp.type === "offer" && 
+                //     (makingOffer || peerConnection?.signalingState !== "stable");
+                // // // i am impolite peer, so if there is one, ignore it
+                // if (offerCollision) {
+                //     return;
+                // }
                 try {
                     await peerConnection?.setRemoteDescription(msgSdp);
                     for (const cand of pendingIceCandidates) {
@@ -453,6 +464,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     set({ pendingIceCandidates: [] });
                 }
                 catch (err) {
+                    console.log('problem setting remote desc in handleofferfromserver: ', err);
                 }
                 const answer = await peerConnection?.createAnswer();
                 await peerConnection?.setLocalDescription(answer);
@@ -596,6 +608,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 }
             },
             handleGetCamera: async (username: string) => {
+                console.log(username);
                 let peerConnection = get().peerConnection;
                 let camSender = get().camSender;
                 try {
@@ -620,11 +633,11 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                         }
                     }
                     set({ hasCamPermission: true, camStream, camSender });
-                    let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
-                    console.log(videoElement);
-                    if (videoElement) {
-                        videoElement.srcObject = camStream;
-                    }
+                    // let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
+                    // console.log(videoElement);
+                    // if (videoElement) {
+                    //     videoElement.srcObject = camStream;
+                    // }
                     return camStream;
                 }
                 catch (err) {
