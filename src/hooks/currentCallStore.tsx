@@ -61,11 +61,11 @@ const servers = {
         {
             urls: "stun:stun.l.google.com:19302",
         },
-        {
-            urls: "turn:numb.viagenie.ca",
-            username: "sj0016092@gmail.com",
-            credential: "turnserver",
-        }
+        // {
+        //     urls: "turn:numb.viagenie.ca",
+        //     username: "sj0016092@gmail.com",
+        //     credential: "turnserver",
+        // }
     ],
 };
 
@@ -167,7 +167,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             },
             startPeerConnection: async () => {
                 let peerConnection = new RTCPeerConnection(servers);
-                let audioTx = peerConnection.addTransceiver("audio");
+                let audioTx = peerConnection.addTransceiver("audio", { direction: "sendrecv" });
                 let audioContext = new AudioContext();
                 set({
                     peerConnection,
@@ -299,6 +299,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                             }
                         }
                         if (type === "video") {
+                            console.log(username,' VIDEO TRACK UNMUTED' );
                             let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
                             if (videoElement) {
                                 videoElement.srcObject = stream;
@@ -309,6 +310,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                         if (type === "audio") {
                         } 
                         if (type === "video") {
+                            console.log(username,' VIDEO TRACK MUTED' );
                             let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
                             if (videoElement) {
                                 videoElement.srcObject = null;
@@ -319,12 +321,11 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     // stream.onaddtrack = () => {}
                     // stream.onremovetrack = () => {}
                 }
-                peerConnection.onnegotiationneeded = () => {
+                peerConnection.onnegotiationneeded = async () => {
                     console.log('ON NEGOTIATION NEEDED HHAPPENED');
                     // handleNegotiationNeededEvent(sessionId, socket)
                     let handleCreateOffer = get().handleCreateOffer;
-                    // TODO!() maybe needs to be awaited
-                    handleCreateOffer();
+                    await handleCreateOffer();
                 }
                 peerConnection.onconnectionstatechange = () => {
                 }
@@ -421,7 +422,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 let peerConnection = get().peerConnection;
                 let pendingIceCandidates = get().pendingIceCandidates;
                 try {
-                    await peerConnection?.setRemoteDescription(message.AnswerFromServer);
+                    peerConnection?.setRemoteDescription(message.AnswerFromServer);
                     for (const cand of pendingIceCandidates) {
                         await peerConnection?.addIceCandidate(cand);
                     }
@@ -434,20 +435,24 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             handleOfferFromServer: async (message: OfferFromServer) => {
                 let peerConnection = get().peerConnection;
                 let makingOffer = get().makingOffer;
+                let pendingIceCandidates = get().pendingIceCandidates;
 
                 let msgSdp: RTCSessionDescriptionInit = message.OfferFromServer;
                 const offerCollision = msgSdp.type === "offer" && 
                     (makingOffer || peerConnection?.signalingState !== "stable");
-
-                // i am impolite peer, so if there is one, ignore it
+                //
+                // // i am impolite peer, so if there is one, ignore it
                 if (offerCollision) {
                     return;
                 }
                 try {
                     await peerConnection?.setRemoteDescription(msgSdp);
+                    for (const cand of pendingIceCandidates) {
+                        await peerConnection?.addIceCandidate(cand);
+                    }
+                    set({ pendingIceCandidates: [] });
                 }
                 catch (err) {
-                    console.log('problem handling offer from server:', err);
                 }
                 const answer = await peerConnection?.createAnswer();
                 await peerConnection?.setLocalDescription(answer);

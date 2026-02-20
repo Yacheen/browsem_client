@@ -1,4 +1,5 @@
 import { BackgroundMessage, ClientMessage, isConnected, isUrlsUpdated } from "./popup/App";
+let currentTabId: number | null = null;
 try {
     chrome.storage.session.setAccessLevel({
         accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS"
@@ -67,7 +68,10 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     }
     else if (message.type === "get-tab-id") {
         console.log('got a get-tab-id: ', sender.tab?.id);
-        sendResponse({ tabId: sender.tab?.id });
+        if (sender.tab && sender.tab.id) {
+            currentTabId = sender.tab.id;
+            sendResponse({ tabId: sender.tab?.id });
+        }
     }
     else if (message.type === "ice-candidate") {
         socket?.send(message.contents)
@@ -110,6 +114,12 @@ const connect = () => {
             "type": "message",
             "contents": message,
         });
+        if (currentTabId) {
+            chrome.tabs.sendMessage(currentTabId, {
+                "type": "message",
+                "contents": message,
+            });
+        }
     }
 
     socket.onclose = (event) => {

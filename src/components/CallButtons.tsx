@@ -35,6 +35,7 @@ function CallButtons(props: { chatter: Chatter }) {
     const muteMic = useCurrentCallStore(state => state.muteMic);
     const unmuteMic = useCurrentCallStore(state => state.unmuteMic);
     const turnOffCamera = useCurrentCallStore(state => state.turnOffCamera);
+    const iceConnectionState = useCurrentCallStore(state => state.connection);
 
     const handleSetVideo = async () => {
         if (hasCampermission) {
@@ -135,7 +136,7 @@ function CallButtons(props: { chatter: Chatter }) {
                     <div className="rtc-status-icon-container">
                         <PhoneDisabledIcon className="rtc-status-icon" />
                     </div>
-                    <p className="rtc-status-text">Disconnected</p>
+                    <p className="rtc-status-text">{iceConnectionState}</p>
                 </div>
                 <Tooltip placement='top' title="Disconnect" arrow disableInteractive slotProps={{
                     popper: {

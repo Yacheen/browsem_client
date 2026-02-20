@@ -262,16 +262,17 @@ export default function App() {
         else if (isDisconnectedFromCall(message.contents)) {
             currentCallStore.disconnectedFromCall(message.contents);
         }
-        else if (isOfferFromServer(message.contents)) {
-            await currentCallStore.handleOfferFromServer(message.contents);
-        }
-        else if (isAnswerFromServer(message.contents)) {
-            await currentCallStore.handleAnswerFromServer(message.contents);
-        }
-        else if (isIceCandidate(message.contents)) {
-            console.log('its an ice cand: ', message.contents);
-            await currentCallStore.handleIceCandidateFromServer(message.contents);
-        }
+        // else if (isOfferFromServer(message.contents)) {
+        //     await currentCallStore.handleOfferFromServer(message.contents);
+        // }
+        // else if (isAnswerFromServer(message.contents)) {
+        //     await currentCallStore.handleAnswerFromServer(message.contents);
+        //     console.log('HI I GOT AN ANSWER FROM SERVER IT COMPLETED SUCCESSFULLY');
+        // }
+        // else if (isIceCandidate(message.contents)) {
+        //     console.log('its an ice cand: ', message.contents);
+        //     await currentCallStore.handleIceCandidateFromServer(message.contents);
+        // }
         else if (isUserUpdatedSettings(message.contents)) {
             currentCallStore.handleUserUpdatedSettings(message.contents);
         }
