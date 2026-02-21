@@ -21,6 +21,8 @@ interface CurrentCallStoreState {
     loadingMyVideo: boolean,
     micStream: MediaStream | null,
     camStream: MediaStream | null,
+    pendingCamStream: boolean,
+    pendingMicStream: boolean,
     micSender: RTCRtpSender | null,
     camSender: RTCRtpSender | null,
     audioContext: AudioContext | null,
@@ -89,6 +91,8 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             micStream: null,
             micSender: null,
             camStream: null,
+            pendingCamStream: false,
+            pendingMicStream: false,
             camSender: null,
             audioContext: null,
             remoteStreams: new Map(),
@@ -170,18 +174,8 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             startPeerConnection: async () => {
                 let peerConnection = new RTCPeerConnection(servers);
                 let handleCreateOffer = get().handleCreateOffer;
-                let audioTx = peerConnection.addTransceiver("audio");
-                let videoTx = peerConnection.addTransceiver("video");
+                let chatterChannel = get().chatterChannel;
                 let audioContext = new AudioContext();
-                set({
-                    peerConnection,
-                    connection: peerConnection.iceConnectionState,
-                    remoteStreams: new Map(),
-                    monitorSpeakingIntervalIds: new Map(),
-                    audioContext,
-                    audioTx,
-                    camSender: videoTx.sender,
-                });
                 
                 peerConnection.oniceconnectionstatechange = () => {
                     console.log('ICE CONNECTION STATE CHANGE-------------------------');
@@ -332,16 +326,24 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     // stream.onaddtrack = () => {}
                     // stream.onremovetrack = () => {}
                 }
-                peerConnection.onnegotiationneeded = async () => {
-                    console.log('ON NEGOTIATION NEEDED HHAPPENED');
-                    // handleNegotiationNeededEvent(sessionId, socket)
-                    let handleCreateOffer = get().handleCreateOffer;
-                    await handleCreateOffer();
-                }
+                // peerConnection.onnegotiationneeded = async () => {
+                //     console.log('ON NEGOTIATION NEEDED HHAPPENED');
+                //     // handleNegotiationNeededEvent(sessionId, socket)
+                //     let handleCreateOffer = get().handleCreateOffer;
+                //     await handleCreateOffer();
+                // }
                 peerConnection.onconnectionstatechange = () => {
                 }
                 peerConnection.onicecandidateerror = () => {
                 }
+                set({
+                    peerConnection,
+                    connection: peerConnection.iceConnectionState,
+                    remoteStreams: new Map(),
+                    monitorSpeakingIntervalIds: new Map(),
+                    audioContext,
+                });
+                chrome.runtime.sendMessage({ type: "join-call" });
             },
             handleIceCandidateFromServer: async (message: IceCandidate) => {
                 let peerConnection = get().peerConnection;
@@ -450,14 +452,12 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 let peerConnection = get().peerConnection;
                 let makingOffer = get().makingOffer;
                 let pendingIceCandidates = get().pendingIceCandidates;
+                let micStream = get().micStream;
+                let camStream = get().camStream;
+                let pendingMicStream = get().pendingMicStream;
+                let pendingCamStream = get().pendingCamStream;
 
                 let msgSdp: RTCSessionDescriptionInit = message.OfferFromServer;
-                // const offerCollision = msgSdp.type === "offer" && 
-                //     (makingOffer || peerConnection?.signalingState !== "stable");
-                // // // i am impolite peer, so if there is one, ignore it
-                // if (offerCollision) {
-                //     return;
-                // }
                 try {
                     await peerConnection?.setRemoteDescription(msgSdp);
                     for (const cand of pendingIceCandidates) {
@@ -468,6 +468,30 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 catch (err) {
                     console.log('problem setting remote desc in handleofferfromserver: ', err);
                 }
+
+                if (peerConnection) {
+                    // attach pending camera
+                    if (pendingCamStream && camStream) {
+                        const transceivers = peerConnection?.getTransceivers()
+                        const videoTx = transceivers[transceivers.length - 1];
+                        if (videoTx) {
+                            await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
+                            videoTx.direction = "sendonly";
+                        }
+                        set({ videoTx, pendingCamStream: false });
+                    }
+                    // attach pending mic
+                    if (pendingMicStream && micStream) {
+                        const transceivers = peerConnection.getTransceivers()
+                        const audioTx = transceivers[transceivers.length - 1];
+                        if (audioTx) {
+                            await audioTx.sender.replaceTrack(micStream.getAudioTracks()[0]);
+                            audioTx.direction = "sendonly";
+                        }
+                        set({ audioTx, pendingMicStream: false });
+                    }
+                }
+
                 const answer = await peerConnection?.createAnswer();
                 await peerConnection?.setLocalDescription(answer);
 
@@ -573,15 +597,14 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                             }
                         }
                     }
+                    applyMicSettings();
                     if (audioTx && audioTx.sender) {
                         audioTx.sender.replaceTrack(destNode.stream.getAudioTracks()[0]);
                     }
                     else {
-                        peerConnection?.addTrack(destNode.stream.getAudioTracks()[0]);
+                        chrome.runtime.sendMessage({ type: "enable-mic" });
                     }
-                    console.log('setting hasmicpermission to true!');
-                    set({ hasMicPermission: true, micStream: destNode.stream });
-                    applyMicSettings();
+                    set({ hasMicPermission: true, micStream: destNode.stream, pendingMicStream: true });
                 }
                 else {
                     console.log('THERE IS NO AUDIO CONTEXT.');
@@ -612,7 +635,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             handleGetCamera: async (username: string) => {
                 console.log(username);
                 let peerConnection = get().peerConnection;
-                let camSender = get().camSender;
+                let videoTx = get().videoTx;
                 try {
                     const camStream = await navigator.mediaDevices.getUserMedia({
                         video: {
@@ -626,15 +649,13 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                             // deviceId: {}
                         }
                     })
-                    if (camSender !== null) {
-                        camSender.replaceTrack(camStream.getVideoTracks()[0]);
+                    if (videoTx !== null) {
+                        await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
                     }
                     else {
-                        if (peerConnection) {
-                            camSender = peerConnection.addTrack(camStream.getVideoTracks()[0], camStream);
-                        }
+                        chrome.runtime.sendMessage({ type: "enable-camera" });
                     }
-                    set({ hasCamPermission: true, camStream, camSender });
+                    set({ hasCamPermission: true, camStream, videoTx, pendingCamStream: true });
                     // let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
                     // console.log(videoElement);
                     // if (videoElement) {

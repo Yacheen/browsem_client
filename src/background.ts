@@ -82,6 +82,17 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     else if (message.type === "answer-from-client") {
         socket?.send(message.contents)
     }
+    
+    //     socket?.send(JSON.stringify("GetChannelsByUrl"));
+    else if (message.type === "join-call") {
+        socket?.send(JSON.stringify("JoinCall"));
+    }
+    else if (message.type === "enable-mic") {
+        socket?.send(JSON.stringify("EnableMic"));
+    }
+    else if (message.type === "enable-camera") {
+        socket?.send(JSON.stringify("EnableCamera"));
+    }
 });
 // (tabId, changeInfo, updatedTab)
 chrome.tabs.onUpdated.addListener(async (...stuff) => {
