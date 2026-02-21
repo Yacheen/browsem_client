@@ -171,6 +171,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 let peerConnection = new RTCPeerConnection(servers);
                 let handleCreateOffer = get().handleCreateOffer;
                 let audioTx = peerConnection.addTransceiver("audio");
+                let videoTx = peerConnection.addTransceiver("video");
                 let audioContext = new AudioContext();
                 set({
                     peerConnection,
@@ -179,6 +180,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     monitorSpeakingIntervalIds: new Map(),
                     audioContext,
                     audioTx,
+                    camSender: videoTx.sender,
                 });
                 
                 peerConnection.oniceconnectionstatechange = () => {
