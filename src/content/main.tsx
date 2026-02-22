@@ -43,9 +43,7 @@ const muiCache = createCache({
 });
 // 7. Render React into the shadow container
 createRoot(container).render(
-  <StrictMode>
     <CacheProvider value={muiCache}>
         <App />
     </CacheProvider>
-  </StrictMode>,
 )

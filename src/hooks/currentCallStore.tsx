@@ -23,8 +23,6 @@ interface CurrentCallStoreState {
     camStream: MediaStream | null,
     pendingCamStream: boolean,
     pendingMicStream: boolean,
-    micSender: RTCRtpSender | null,
-    camSender: RTCRtpSender | null,
     audioContext: AudioContext | null,
     micThreshold: number,
     audioTx: RTCRtpTransceiver | null,
@@ -35,11 +33,11 @@ interface CurrentCallStoreState {
     setFocusedWindow: (chatterWindow: QuickchatterWindow | null) => void,
     setChatterChannel: (chatterChannel: ChatterChannel | null) => void,
     connectToCall: (channelName: string) => void,
-    connectedToCall: (msg: ConnectedToCall, tabId: number) => void,
+    connectedToCall: (msg: ConnectedToCall) => Promise<void>,
     reconnectToCall: (channelName: string) => void,
     disconnectedFromCall: (msg: DisconnectedFromCall) => Promise<void>,
     disconnectFromCall: () => void,
-    startPeerConnection: () => Promise<void>,
+    startPeerConnection: () => Promise<RTCPeerConnection>,
     handleIceCandidateFromServer: (message: IceCandidate) => Promise<void>,
     handleCreateOffer: () => Promise<void>,
     monitorSpeaking: (username: string, stream: MediaStream, onSpeakingChange: (isSpeaking: boolean) => void) => void,
@@ -89,11 +87,9 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             audioTx: null,
             videoTx: null, 
             micStream: null,
-            micSender: null,
             camStream: null,
             pendingCamStream: false,
             pendingMicStream: false,
-            camSender: null,
             audioContext: null,
             remoteStreams: new Map(),
             peerConnection: null,
@@ -117,20 +113,26 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     channelName: channelName,
                 });
             },
-            connectedToCall: (msg: ConnectedToCall, tabId: number) => {
-                if (msg.ConnectedToCall.chatterChannel !== null) {
-                    set({ chatterChannel: msg.ConnectedToCall.chatterChannel, tabId });
-                }
-                else if (msg.ConnectedToCall.connectedChatter !== null) {
-                    let chatterChannel = get().chatterChannel;
-                    let newChatterChannel = chatterChannel;
-                    newChatterChannel?.chatters.push(msg.ConnectedToCall.connectedChatter);
-                    set({ chatterChannel: newChatterChannel });
-                }
+            connectedToCall: async (msg: ConnectedToCall) => {
+                chrome.runtime.sendMessage({ type: "get-tab-id"}, response => {
+                    if (response && response.tabId) {
+                        if (msg.ConnectedToCall.chatterChannel !== null) {
+                            console.log('its a chatterchannel, setting...');
+                            set({ chatterChannel: msg.ConnectedToCall.chatterChannel, tabId: response.tabId });
+                        }
+                        else if (msg.ConnectedToCall.connectedChatter !== null) {
+                            let chatterChannel = get().chatterChannel;
+                            let newChatterChannel = chatterChannel;
+                            newChatterChannel?.chatters.push(msg.ConnectedToCall.connectedChatter);
+                            set({ chatterChannel: newChatterChannel });
+                        }
+                    }
+                });
             },
             disconnectedFromCall: async (msg: DisconnectedFromCall) => {
                 let stopMonitoringSpeakers = get().stopMonitoringSpeakers;
                 let audioContext = get().audioContext;
+                let peerConnection = get().peerConnection;
                 let turnOffCam = get().turnOffCamera;
                 let turnOffMicrophone = get().turnOffMicrophone;
                 if (msg.DisconnectedFromCall.reason !== null) {
@@ -139,30 +141,56 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     await audioContext?.close();
                     turnOffCam();
                     turnOffMicrophone();
-                    set({
-                        tabId: null,
-                        chatterChannel: null,
-                        connection: "disconnected",
-                        audioContext: null,
-                        audioTx: null,
-                        monitorSpeakingIntervalIds: new Map(),
-                        camSender: null,
-                        camStream: null,
-                        focusedWindow: null,
-                        loadingMyVideo: false,
-                        makingOffer: false,
-                        micSender: null,
-                        micStream: null,
-                        peerConnection: null,
-                        remoteStreams: new Map(),
-                    });
+                    peerConnection?.close();
+                    if (msg.DisconnectedFromCall.reason === "joining another call") {
+                        set({
+                            // tabId: null,
+                            // chatterChannel: null,
+                            connection: "disconnected",
+                            audioContext: null,
+                            audioTx: null,
+                            monitorSpeakingIntervalIds: new Map(),
+                            videoTx: null,
+                            camStream: null,
+                            focusedWindow: null,
+                            loadingMyVideo: false,
+                            makingOffer: false,
+                            micStream: null,
+                            peerConnection: null,
+                            remoteStreams: new Map(),
+                            pendingCamStream: false,
+                            pendingMicStream: false,
+                            pendingIceCandidates: [],
+                        });
+                    }
+                    else {
+                        set({
+                            tabId: null,
+                            chatterChannel: null,
+                            connection: "disconnected",
+                            audioContext: null,
+                            audioTx: null,
+                            monitorSpeakingIntervalIds: new Map(),
+                            videoTx: null,
+                            camStream: null,
+                            focusedWindow: null,
+                            loadingMyVideo: false,
+                            makingOffer: false,
+                            micStream: null,
+                            peerConnection: null,
+                            remoteStreams: new Map(),
+                            pendingCamStream: false,
+                            pendingMicStream: false,
+                            pendingIceCandidates: [],
+                        });
+                    }
                 }
                 else if (msg.DisconnectedFromCall.disconnectedChatter) {
                     let chatterChannel = get().chatterChannel;
                     if (chatterChannel) {
-                        let newChatters = chatterChannel.chatters.filter(chatter => chatter.sessionId !== msg.DisconnectedFromCall.disconnectedChatter?.sessionId);
-
-                        set({ chatterChannel: { ...chatterChannel, chatters: newChatters } });
+                        let newChatterChannel = chatterChannel;
+                        newChatterChannel.chatters = newChatterChannel.chatters.filter(chatter => chatter.username !== msg.DisconnectedFromCall.disconnectedChatter?.username);
+                        set({ chatterChannel: newChatterChannel });
                     }
                 }
             },
@@ -343,7 +371,8 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     monitorSpeakingIntervalIds: new Map(),
                     audioContext,
                 });
-                chrome.runtime.sendMessage({ type: "join-call" });
+                // chrome.runtime.sendMessage({ type: "join-call" });
+                return peerConnection;
             },
             handleIceCandidateFromServer: async (message: IceCandidate) => {
                 let peerConnection = get().peerConnection;
@@ -456,6 +485,10 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 let camStream = get().camStream;
                 let pendingMicStream = get().pendingMicStream;
                 let pendingCamStream = get().pendingCamStream;
+                let startPeerConnection = get().startPeerConnection;
+                if (peerConnection === null) {
+                    peerConnection = await startPeerConnection();
+                }
 
                 let msgSdp: RTCSessionDescriptionInit = message.OfferFromServer;
                 try {
@@ -686,29 +719,33 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             turnOffCamera: () => {
                 let camStream = get().camStream;
                 let peerConnection = get().peerConnection;
-                let camSender = get().camSender;
+                let videoTx = get().videoTx;
 
                 if (camStream && camStream.getVideoTracks()[0]) {
                     let track = camStream.getVideoTracks()[0];
                     track.stop();
                     camStream.removeTrack(track);
-                    camSender?.replaceTrack(null);
+                    if (videoTx && videoTx.sender) {
+                        videoTx?.sender.replaceTrack(null);
+                    }
                 }
-                set({ camStream: null, camSender, peerConnection, hasCamPermission: false });
+                set({ camStream: null, videoTx, peerConnection, hasCamPermission: false });
             },
             turnOffMicrophone: () => {
                 let micStream = get().micStream;
                 let peerConnection = get().peerConnection;
-                let micSender = get().micSender;
+                let audioTx = get().audioTx;
                 
                 if (micStream && micStream.getAudioTracks()[0]) {
                     micStream.getAudioTracks().forEach(track => {
                         track.stop();
                         micStream?.removeTrack(track);
-                        micSender?.replaceTrack(null);
+                        if (audioTx && audioTx.sender) {
+                            audioTx?.sender.replaceTrack(null);
+                        }
                     })
                 }
-                set({ micStream: null, micSender, peerConnection, hasMicPermission: false, });
+                set({ micStream: null, audioTx, peerConnection, hasMicPermission: false, });
             },
             handleUserUpdatedSettings: (msg: UserUpdatedSettings) => {
                 // update in currentCall.chatters

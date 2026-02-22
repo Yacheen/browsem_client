@@ -13,24 +13,24 @@ function BrowsemCall() {
     const chatterChannel = useCurrentCallStore(state => state.chatterChannel);
     const peerConnection = useCurrentCallStore(state => state.peerConnection);
     // state doesnt rehydrate fast enough. ends up running useEffects twice on app.
-    const connectAttemptedRef = useRef(false);
-
-    useEffect(() => {
-        const connectToCall = async () => {
-            console.log('running connecttocall...');
-            connectAttemptedRef.current = true;
-            setSettings({
-                ...settings,
-                sharingScreen: false,
-                cameraIsOn: false,
-                microphoneIsOn: false,
-            });
-            await currentCallStore.startPeerConnection();
-        }
-        if (peerConnection === null && connectAttemptedRef.current === false) {
-            connectToCall();
-        }
-    }, [peerConnection]);
+    // const connectAttemptedRef = useRef(false);
+    //
+    // useEffect(() => {
+    //     const connectToCall = async () => {
+    //         console.log('running connecttocall...');
+    //         connectAttemptedRef.current = true;
+    //         setSettings({
+    //             ...settings,
+    //             sharingScreen: false,
+    //             cameraIsOn: false,
+    //             microphoneIsOn: false,
+    //         });
+    //         await currentCallStore.startPeerConnection();
+    //     }
+    //     if (peerConnection === null && connectAttemptedRef.current === false) {
+    //         connectToCall();
+    //     }
+    // }, [peerConnection]);
   return (
       <div className="browsem-call">
         <CallSidebar />

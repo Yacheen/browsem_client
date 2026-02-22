@@ -82,6 +82,7 @@ export type DisconnectedFromCall = {
     DisconnectedFromCall: {
         disconnectedChatter: Chatter | null,
         reason: string | null,
+        // joiningAnotherCall
     } 
 }
 export type AnswerFromServer = {
@@ -253,11 +254,28 @@ export default function App() {
             channelsStore.setUrlCalls(message.contents.OriginCalls.urls);
         }
         else if (isConnectedToCall(message.contents)) {
-            let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-            if (activeTab[0].id) {
-                currentCallStore.connectedToCall((message.contents as ConnectedToCall), activeTab[0].id);
-                console.log('doing a connectedtocall, tabid: ', activeTab[0].id);
+            if (message.contents.ConnectedToCall.chatterChannel) {
+                let newUrlCalls = useChannelsStore.getState().urlCalls;
+                newUrlCalls.map(urlCall => {
+                    if (urlCall.urlName === (message.contents as ConnectedToCall).ConnectedToCall.chatterChannel?.fullUrl) {
+                        urlCall.channels.map(channel => {
+                            if (channel.channelName === (message.contents as ConnectedToCall).ConnectedToCall.chatterChannel?.channelName) {
+                                channel.chatters.push({
+                                    sessionId: useBrowsemStore.getState().sessionId ?? "", 
+                                    username: useBrowsemStore.getState().username,
+                                    settings: useSettingsStore.getState().settings,
+                                    pfpS3Key: "",
+                                });
+                            }
+                            return channel;
+                        })
+
+                    }
+                    return urlCall;
+                })
+                channelsStore.setUrlCalls(newUrlCalls);
             }
+            await currentCallStore.connectedToCall(message.contents);
         }
         else if (isDisconnectedFromCall(message.contents)) {
             currentCallStore.disconnectedFromCall(message.contents);
