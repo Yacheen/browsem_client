@@ -18,7 +18,7 @@ export type BackgroundMessage = {
     type: MessageType,
     contents: ClientMessage
 }
-type MessageType = "Connecting" | "Connected" | "Disconnected";
+type MessageType = "disconnected-from-socket" | "any";
 export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated | BrowsemStats | OriginCalls | UrlsUpdated | ConnectedToCall | DisconnectedFromCall | AnswerFromServer | OfferFromServer | IceCandidate | UserUpdatedSettings;
 
 // general messages
@@ -74,14 +74,18 @@ type UrlsUpdated = {
  // ConnectedToCall | DisconnectedFromCall | AnswerFromServer | OfferFromServer
 export type ConnectedToCall = {
     ConnectedToCall: {
-        connectedChatter: Chatter | null,
-        chatterChannel: ChatterChannel | null,
+        connectedChatter: Chatter,
+        channelName: string ,
+        channelSessionId: string,
+        urlName: string,
     }
 }
 export type DisconnectedFromCall = {
     DisconnectedFromCall: {
-        disconnectedChatter: Chatter | null,
-        reason: string | null,
+        disconnectedChatter: Chatter,
+        channelName: string,
+        urlName: string,
+        reason: string,
         // joiningAnotherCall
     } 
 }
@@ -162,6 +166,7 @@ export default function App() {
     const messageListenerExists = useRef(false);
     const browsemStore = useBrowsemStore();
     const settingsStore = useSettingsStore();
+    const setSettings = useSettingsStore(state => state.setSettings);
     const channelsStore = useChannelsStore();
     const currentCallStore = useCurrentCallStore();
 
@@ -169,9 +174,25 @@ export default function App() {
         browsemStore.connect();
     }
     const handleDisconnectFromServer = async () => {
+        // await currentCallStore.disconnectFromCall(true);
+       //  let currentCallTabId = currentCallStore.tabId;
+        // console.log('the state of currentcallstore is: ', useCurrentCallStore.getState());
+        // chrome.tabs.sendMessage(useCurrentCallStore.getState().tabId!, {
+        //     type: "disconnected-from-socket"
+        // })
+        if (useCurrentCallStore.getState().tabId) {
+            console.log('sending tabs messaage to ', useCurrentCallStore.getState().tabId);
+            chrome.tabs.sendMessage(useCurrentCallStore.getState().tabId!, {
+                type: "disconnected-from-socket",
+            });
+        }
+        else {
+            console.log('currentcallstore tabid is null, not sending a disconnectedfromsocket msg.');
+        }
+        await currentCallStore.disconnectFromCall(true);
         browsemStore.disconnect();
         browsemStore.setCurrentSelection("Intro");
-        await currentCallStore.disconnectedFromCall({DisconnectedFromCall: { reason: "manual disconnect", disconnectedChatter: null }});
+        // tell the content script u disconnected from the socket
     };
     const handleCreateGuestUsername = () => {
         browsemStore.setCurrentSelection("CreatingGuestUsername");
@@ -254,31 +275,64 @@ export default function App() {
             channelsStore.setUrlCalls(message.contents.OriginCalls.urls);
         }
         else if (isConnectedToCall(message.contents)) {
-            if (message.contents.ConnectedToCall.chatterChannel) {
-                let newUrlCalls = useChannelsStore.getState().urlCalls;
-                newUrlCalls.map(urlCall => {
-                    if (urlCall.urlName === (message.contents as ConnectedToCall).ConnectedToCall.chatterChannel?.fullUrl) {
-                        urlCall.channels.map(channel => {
-                            if (channel.channelName === (message.contents as ConnectedToCall).ConnectedToCall.chatterChannel?.channelName) {
-                                channel.chatters.push({
-                                    sessionId: useBrowsemStore.getState().sessionId ?? "", 
-                                    username: useBrowsemStore.getState().username,
-                                    settings: useSettingsStore.getState().settings,
-                                    pfpS3Key: "",
-                                });
-                            }
-                            return channel;
-                        })
+            console.log('received isconnected message. (on popup)');
+            // add them to the channel they were added to.
+            let newUrlCalls = useChannelsStore.getState().urlCalls;
+            let msg: ConnectedToCall = message.contents;
+            let chatterChannelHandle: ChatterChannel | undefined;
+            newUrlCalls.map(urlCall => {
+                if (urlCall.urlName === msg.ConnectedToCall.urlName) {
+                    urlCall.channels.map(channel => {
+                        if (channel.channelName === msg.ConnectedToCall.channelName) {
+                            chatterChannelHandle = channel;
+                            channel.chatters.push(msg.ConnectedToCall.connectedChatter);
+                        }
+                        return channel;
+                    })
+                }
+                return urlCall;
+            })
 
-                    }
-                    return urlCall;
-                })
-                channelsStore.setUrlCalls(newUrlCalls);
+            channelsStore.setUrlCalls(newUrlCalls);
+
+            if (chatterChannelHandle) {
+                if (msg.ConnectedToCall.connectedChatter.username === useBrowsemStore.getState().username) {
+                    await currentCallStore.connectedToCall(message.contents, true, chatterChannelHandle);
+                }
+                else {
+                    await currentCallStore.connectedToCall(message.contents, false, chatterChannelHandle);
+                }
             }
-            await currentCallStore.connectedToCall(message.contents);
         }
         else if (isDisconnectedFromCall(message.contents)) {
-            currentCallStore.disconnectedFromCall(message.contents);
+            let newUrlCalls = useChannelsStore.getState().urlCalls;
+            let msg: DisconnectedFromCall = message.contents;
+            newUrlCalls.map(urlCall => {
+                if (urlCall.urlName === msg.DisconnectedFromCall.urlName) {
+                    urlCall.channels.map(channel => {
+                        if (channel.channelName === msg.DisconnectedFromCall.channelName) {
+                            channel.chatters = channel.chatters.filter(chatter => chatter.username != msg.DisconnectedFromCall.disconnectedChatter.username);
+                        }
+                        return channel;
+                    })
+                }
+                return urlCall;
+            })
+            channelsStore.setUrlCalls(newUrlCalls);
+            if (msg.DisconnectedFromCall.channelName === useCurrentCallStore.getState().chatterChannel?.channelName) {
+                if (msg.DisconnectedFromCall.disconnectedChatter.username === useBrowsemStore.getState().username) {
+                    setSettings({
+                        ...useSettingsStore.getState().settings,
+                        cameraIsOn: false,
+                        microphoneIsOn: false,
+                        sharingScreen: false,
+                    });
+                    await currentCallStore.disconnectedFromCall(message.contents, true);
+                }
+                else {
+                    await currentCallStore.disconnectedFromCall(message.contents, false);
+                }
+            }
         }
         // else if (isOfferFromServer(message.contents)) {
         //     await currentCallStore.handleOfferFromServer(message.contents);
@@ -318,6 +372,9 @@ export default function App() {
             messageListenerExists.current = false;
         }
     }, []);
+    useEffect(() => {
+        console.log('currentCallStore is now: ', currentCallStore);
+    }, [currentCallStore]);
 
     // setting info on ws whenever settings or profile updates are made
     // useEffect(() => {

@@ -51,9 +51,9 @@ function ChattersBoard() {
                     {
                         focusedWindow.chatter.username === yourUsername
                         ?
-                        <BrowsemChatter chatter={{...focusedWindow.chatter, settings: yourSettings}} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={true} />
+                        <BrowsemChatter key={focusedWindow.chatter.sessionId} chatter={{...focusedWindow.chatter, settings: yourSettings}} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={true} />
                             :
-                        <BrowsemChatter chatter={focusedWindow.chatter} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={true} />
+                        <BrowsemChatter key={focusedWindow.chatter.sessionId} chatter={focusedWindow.chatter} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={true} />
                     }
                 </div>
                 <div className="chattersboard_bottom">
@@ -63,9 +63,9 @@ function ChattersBoard() {
                                 {
                                     chatter.username === yourUsername
                                     ?
-                                    <BrowsemChatter chatter={{...chatter, settings: yourSettings}} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={false} />
+                                    <BrowsemChatter key={chatter.sessionId} chatter={{...chatter, settings: yourSettings}} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={false} />
                                     :
-                                    <BrowsemChatter chatter={chatter} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={false} />
+                                    <BrowsemChatter key={chatter.sessionId} chatter={chatter} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={false} />
                                 }
                             </>
                         ))

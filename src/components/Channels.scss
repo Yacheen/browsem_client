@@ -128,8 +128,14 @@
                 padding-left: 12px;
                 .channel-chatter {
                     display: flex;
+                    justify-content: space-between;
                     align-items: center;
                     margin-bottom: 8px;
+                    padding-left: 8px;
+                    border-radius: 8px;
+                    &:hover {
+                        background: hsl(0, 0%, 30%);
+                    }
                     p {
                         overflow: hidden;
                         text-overflow: ellipsis;
@@ -143,6 +149,21 @@
                         color: var(--light-text);
                         border-radius: 50%;
                         user-select: none;
+                    }
+                    .channel-chatter-left {
+                        display: flex;
+                        align-items: center;
+                    }
+                    .channel-chatter-right {
+                        display: flex;
+                        align-items: center;
+                        .chatter-settings-icon-container {
+                            display: flex;
+                            align-items: center;
+                            svg {
+                                max-width: 18px;
+                            }
+                        }
                     }
                 }
             }

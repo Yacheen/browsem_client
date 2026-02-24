@@ -67,7 +67,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         await connectToCall(message.channelName);
     }
     else if (message.type === "get-tab-id") {
-        console.log('got a get-tab-id: ', sender.tab?.id);
         if (sender.tab && sender.tab.id) {
             currentTabId = sender.tab.id;
             sendResponse({ tabId: sender.tab?.id });
@@ -92,6 +91,9 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     }
     else if (message.type === "enable-camera") {
         socket?.send(JSON.stringify("EnableCamera"));
+    }
+    else if (message.type === "disconnect-from-call") {
+        socket?.send(JSON.stringify("DisconnectFromCall"));
     }
 });
 // (tabId, changeInfo, updatedTab)

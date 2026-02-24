@@ -12,6 +12,17 @@ import PersonIcon from '@mui/icons-material/Person';
 import { useCurrentCallStore } from '@/hooks/currentCallStore';
 import aniviaUltAsset from "../assets/aniviault.png";
 const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
+// mic
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
+// video
+import VideocamIcon from '@mui/icons-material/Videocam';
+import VideocamOffIcon from '@mui/icons-material/VideocamOff';
+// deafened
+import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
+import HeadsetIcon from '@mui/icons-material/Headset';
+// screenshere
+import MonitorIcon from '@mui/icons-material/Monitor';
 export type ChatterChannel = {
     sessionId: string,
     channelName: string,
@@ -124,8 +135,24 @@ export default function Channels() {
                                                     {
                                                         channel.chatters.map(chatter => (
                                                             <div className="channel-chatter">
-                                                                <img src={aniviaUlt} alt="pfp" />
-                                                                <p>{chatter.username}</p>
+                                                                <div className="channel-chatter-left">
+                                                                    <img src={aniviaUlt} alt="pfp" />
+                                                                    <p>{chatter.username}</p>
+                                                                </div>
+                                                                <div className="channel-chatter-right">
+                                                                    <div className="chatter-settings-icon-container">
+                                                                        {chatter.settings.microphoneIsOn ? null : <MicOffIcon />}
+                                                                    </div>
+                                                                    <div className="chatter-settings-icon-container">
+                                                                        {chatter.settings.deafened ? <HeadsetOffIcon /> : null}
+                                                                    </div>
+                                                                    <div className="chatter-settings-icon-container">
+                                                                        {chatter.settings.cameraIsOn ? <VideocamIcon /> : null}
+                                                                    </div>
+                                                                    <div className="chatter-settings-icon-container">
+                                                                        {chatter.settings.sharingScreen ? <MonitorIcon /> : null}
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         ))
                                                     }
