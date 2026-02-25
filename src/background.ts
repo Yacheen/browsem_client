@@ -1,4 +1,5 @@
 import { BackgroundMessage, ClientMessage, isConnected, isUrlsUpdated } from "./popup/App";
+let currentTabId: number | null = null;
 try {
     chrome.storage.session.setAccessLevel({
         accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS"
@@ -66,8 +67,10 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         await connectToCall(message.channelName);
     }
     else if (message.type === "get-tab-id") {
-        console.log('got a get-tab-id: ', sender.tab?.id);
-        sendResponse({ tabId: sender.tab?.id });
+        if (sender.tab && sender.tab.id) {
+            currentTabId = sender.tab.id;
+            sendResponse({ tabId: sender.tab?.id });
+        }
     }
     else if (message.type === "ice-candidate") {
         socket?.send(message.contents)
@@ -77,6 +80,20 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     }
     else if (message.type === "answer-from-client") {
         socket?.send(message.contents)
+    }
+    
+    //     socket?.send(JSON.stringify("GetChannelsByUrl"));
+    else if (message.type === "join-call") {
+        socket?.send(JSON.stringify("JoinCall"));
+    }
+    else if (message.type === "enable-mic") {
+        socket?.send(JSON.stringify("EnableMic"));
+    }
+    else if (message.type === "enable-camera") {
+        socket?.send(JSON.stringify("EnableCamera"));
+    }
+    else if (message.type === "disconnect-from-call") {
+        socket?.send(JSON.stringify("DisconnectFromCall"));
     }
 });
 // (tabId, changeInfo, updatedTab)
@@ -110,6 +127,12 @@ const connect = () => {
             "type": "message",
             "contents": message,
         });
+        if (currentTabId) {
+            chrome.tabs.sendMessage(currentTabId, {
+                "type": "message",
+                "contents": message,
+            });
+        }
     }
 
     socket.onclose = (event) => {

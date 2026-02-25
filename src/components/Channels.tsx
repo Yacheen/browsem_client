@@ -12,6 +12,17 @@ import PersonIcon from '@mui/icons-material/Person';
 import { useCurrentCallStore } from '@/hooks/currentCallStore';
 import aniviaUltAsset from "../assets/aniviault.png";
 const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
+// mic
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
+// video
+import VideocamIcon from '@mui/icons-material/Videocam';
+import VideocamOffIcon from '@mui/icons-material/VideocamOff';
+// deafened
+import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
+import HeadsetIcon from '@mui/icons-material/Headset';
+// screenshere
+import MonitorIcon from '@mui/icons-material/Monitor';
 export type ChatterChannel = {
     sessionId: string,
     channelName: string,
@@ -28,10 +39,28 @@ export type ChatMessage = {
 };
 
 export default function Channels() {
-  const browsemStore = useBrowsemStore();
-  const channelsStore = useChannelsStore();
-  const currentCallStore = useCurrentCallStore();
-  const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
+    const browsemStore = useBrowsemStore();
+    const channelsStore = useChannelsStore();
+    const currentCallStore = useCurrentCallStore();
+    const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
+    const [textColor, setTextColor] = useState<'hsl(0, 0%, 10%)' | 'hsl(0, 0%, 95%)'>(() => {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        if (mediaQuery.matches) {
+            return 'hsl(0, 0%, 95%)'
+        }
+        else {
+            return 'hsl(0, 0%, 10%)'
+        }
+    });
+    const [bgColor, setBgColor] = useState<'hsl(0, 0%, 15%)' | 'hsl(0, 0%, 90%)'>(() => {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        if (mediaQuery.matches) {
+            return 'hsl(0, 0%, 15%)'
+        }
+        else {
+            return 'hsl(0, 0%, 90%)'
+        }
+    });
 
   const handleSetCurrentUrlDropdown = (urlName: string) => {
       let alreadyDroppedDown = currentUrlDropdown.find(urlDroppedDown => urlDroppedDown === urlName);
@@ -83,6 +112,11 @@ export default function Channels() {
                                                         style: {
                                                             zIndex: 6942013383,
                                                         }
+                                                    },
+                                                    tooltip: {
+                                                        style: {
+                                                            color: textColor,
+                                                        }
                                                     }
                                                 }}>
                                                     <div className="channel-meta">
@@ -101,8 +135,24 @@ export default function Channels() {
                                                     {
                                                         channel.chatters.map(chatter => (
                                                             <div className="channel-chatter">
-                                                                <img src={aniviaUlt} alt="pfp" />
-                                                                <p>{chatter.username}</p>
+                                                                <div className="channel-chatter-left">
+                                                                    <img src={aniviaUlt} alt="pfp" />
+                                                                    <p>{chatter.username}</p>
+                                                                </div>
+                                                                <div className="channel-chatter-right">
+                                                                    <div className="chatter-settings-icon-container">
+                                                                        {chatter.settings.microphoneIsOn ? null : <MicOffIcon />}
+                                                                    </div>
+                                                                    <div className="chatter-settings-icon-container">
+                                                                        {chatter.settings.deafened ? <HeadsetOffIcon /> : null}
+                                                                    </div>
+                                                                    <div className="chatter-settings-icon-container">
+                                                                        {chatter.settings.cameraIsOn ? <VideocamIcon /> : null}
+                                                                    </div>
+                                                                    <div className="chatter-settings-icon-container">
+                                                                        {chatter.settings.sharingScreen ? <MonitorIcon /> : null}
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         ))
                                                     }

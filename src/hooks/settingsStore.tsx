@@ -6,7 +6,7 @@ export type Settings = {
     deafened: boolean,
 }
 
-interface SettingsStore {
+export interface SettingsStore {
     settings: Settings,
     setSettings: (settings: Settings) => void,
 }

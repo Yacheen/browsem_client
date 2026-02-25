@@ -1,0 +1,12 @@
+@import "BrowsemCall.scss";
+@import "BrowsemChatter.scss";
+@import "CallButtons.scss";
+@import "CallSidebar.scss";
+@import "Channels.scss";
+@import "Chatroom.scss";
+@import "ChattersBoard.scss";
+@import "Resizable.scss";
+@import "WindowHandler.scss";
+@import "variables.scss";
+// do notee that this does not import styles that arent for content scripts (like createusernamepopup)
+// but it has styles that appear in both popup and content script.
