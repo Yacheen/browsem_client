@@ -1,16 +1,9 @@
-import { ChatterChannel } from '@/components/Channels';
-import { UrlCalls } from '@/popup/App';
 import { create } from 'zustand';
 import { ChromeSessionStorage } from 'zustand-chrome-storage';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { Settings } from './settingsStore';
+import { initPegasusZustandStoreBackend, pegasusZustandStoreReady } from '@webext-pegasus/store-zustand'
+import { UrlCalls } from '@/background';
 
-export type Chatter = {
-    username: string,
-    sessionId: string,
-    pfpS3Key?: string,
-    settings: Settings,
-}
 
 interface ChannelsStoreState {
     // url
@@ -33,3 +26,6 @@ export const useChannelsStore = create<ChannelsStoreState>()(
         }
     )
 );
+export const STORE_NAME = 'ChannelsStore';
+export const channelsStoreBackendReady = () => initPegasusZustandStoreBackend(STORE_NAME, useChannelsStore);
+export const channelsStoreReady = () => pegasusZustandStoreReady(STORE_NAME, useChannelsStore);

@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client'
 import App from './views/App.tsx'
+import { initPegasusTransport } from '@webext-pegasus/transport/content-script';
 import { StrictMode } from 'react';
 
 // 1. Create the host element that will contain the Shadow DOM
@@ -37,13 +38,23 @@ shadowRoot.appendChild(container);
 // Create the Emotion cache targeting the shadow root
 import createCache from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
+import { browsemStoreReady } from '@/hooks/browsemStore.tsx';
+import { channelsStoreReady } from '@/hooks/ChannelsStore.tsx';
+import { settingsStoreReady } from '@/hooks/settingsStore.tsx';
 const muiCache = createCache({
   key: 'browsem-mui',
   container: shadowRoot, // This is the magic part
 });
+initPegasusTransport();
 // 7. Render React into the shadow container
-createRoot(container).render(
-    <CacheProvider value={muiCache}>
-        <App />
-    </CacheProvider>
-)
+Promise.all([
+    browsemStoreReady(),
+    channelsStoreReady(),
+    settingsStoreReady(),
+]).then(() => {
+    createRoot(container).render(
+        <CacheProvider value={muiCache}>
+            <App />
+        </CacheProvider>
+    )
+});

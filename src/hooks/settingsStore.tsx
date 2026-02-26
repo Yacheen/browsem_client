@@ -1,10 +1,6 @@
+import { Settings } from '@/background';
 import { create } from 'zustand';
-export type Settings = {
-    microphoneIsOn: boolean,
-    cameraIsOn: boolean,
-    sharingScreen: boolean,
-    deafened: boolean,
-}
+import { initPegasusZustandStoreBackend, pegasusZustandStoreReady } from '@webext-pegasus/store-zustand'
 
 export interface SettingsStore {
     settings: Settings,
@@ -24,3 +20,6 @@ export const useSettingsStore = create<SettingsStore>()(
         },
     }),
 );
+export const STORE_NAME = 'SettingsStore';
+export const settingsStoreBackendReady = () => initPegasusZustandStoreBackend(STORE_NAME, useSettingsStore);
+export const settingsStoreReady = () => pegasusZustandStoreReady(STORE_NAME, useSettingsStore);

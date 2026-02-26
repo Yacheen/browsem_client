@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { ChromeLocalStorage, ChromeSessionStorage } from 'zustand-chrome-storage';
-import { BackgroundMessage, Connected, Disconnected } from '@/popup/App';
+import { initPegasusZustandStoreBackend, pegasusZustandStoreReady } from '@webext-pegasus/store-zustand'
+import { ChatterChannel, Connected, Disconnected } from '@/background';
 
 type SocketState = 'Connected' | 'Disconnected' | 'Connecting';
 export type CurrentSelection = 'Intro' | 'CreatingGuestUsername' | 'Connected' | 'CreatingChannel';
@@ -23,7 +24,9 @@ interface BrowsemStoreState {
     currentUrl: string,
     urlsOpened: string[],
     urlOriginsOpened: string[],
-
+    currentTabId: number | null,
+    callTabId: number | null,
+    chatterChannel: ChatterChannel | null,
     disconnect: () => void,
     disconnected: (message: Disconnected) => void,
     connect: () => void,
@@ -35,6 +38,7 @@ interface BrowsemStoreState {
     setUrlsOpened: (urlsOpened: string[]) => void,
     setUrlOriginsOpened: (urlOriginsOpened: string[]) => void,
     setBrowsemStats: (sessionsOnline: number, sessionsInYourOrigin: number, sessionsInYourUrl: number) => void,
+    setChatterChannel: (chatterChannel: ChatterChannel | null, callTabId: number | null) => void
 }
 
 export const useBrowsemStore = create<BrowsemStoreState>()(
@@ -55,6 +59,9 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             currentUrl: "",
             urlsOpened: [],
             urlOriginsOpened: [],
+            currentTabId: null,
+            callTabId: null,
+            chatterChannel: null,
 
             setUsername: (username: string) => {
                 set({ username });
@@ -88,7 +95,15 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
                 let state = get().socketState;
                 if (state !== 'Disconnected') {
                     if (message.Disconnected.reason === "manual disconnect") {
-                        set({ socketState: 'Disconnected', sessionId: null, sessionsOnline: 0, sessionsInYourUrl: 0, sessionsInYourOrigin: 0 });
+                        set({
+                            socketState: 'Disconnected',
+                            sessionId: null,
+                            sessionsOnline: 0,
+                            sessionsInYourUrl: 0,
+                            sessionsInYourOrigin: 0,
+                            callTabId: null,
+                            chatterChannel: null,
+                        });
                     }
                     else {
                         set({ socketState: 'Disconnected' });
@@ -109,7 +124,10 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             },
             setBrowsemStats: (sessionsOnline: number, sessionsInYourUrl: number, sessionsInYourOrigin: number) => {
                 set({ sessionsOnline, sessionsInYourUrl, sessionsInYourOrigin });
-            }
+            },
+            setChatterChannel: (chatterChannel: ChatterChannel | null, callTabId: number | null) => {
+                set({ chatterChannel, callTabId });
+            },
         }),
         {
             name: "browsem-session-storage",
@@ -117,3 +135,6 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
         }
     )
 );
+export const STORE_NAME = 'BrowsemStore';
+export const browsemStoreBackendReady = () => initPegasusZustandStoreBackend(STORE_NAME, useBrowsemStore);
+export const browsemStoreReady = () => pegasusZustandStoreReady(STORE_NAME, useBrowsemStore);

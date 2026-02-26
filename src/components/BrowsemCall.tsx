@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './BrowsemCall.scss'
 import CallSidebar from './CallSidebar'
-import ChattersBoard from './ChattersBoard'
+import ChattersBoard from './Chattersboard'
 
 function BrowsemCall() {
   return (

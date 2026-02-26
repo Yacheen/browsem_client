@@ -23,20 +23,6 @@ import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
 import HeadsetIcon from '@mui/icons-material/Headset';
 // screenshere
 import MonitorIcon from '@mui/icons-material/Monitor';
-export type ChatterChannel = {
-    sessionId: string,
-    channelName: string,
-    channelOwner: string,
-    chatters: Chatter[],
-    urlOrigin: string,
-    fullUrl: string,
-    maxChatters: number,
-    channelMessages: ChatMessage[],
-};
-export type ChatMessage = {
-    chatter: Chatter,
-    message: string
-};
 
 export default function Channels() {
     const browsemStore = useBrowsemStore();
