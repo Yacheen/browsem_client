@@ -130,9 +130,11 @@
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 8px;
                     padding-left: 8px;
+                    padding-top: 4px;
+                    padding-bottom: 4px;
                     border-radius: 8px;
+                    cursor: pointer;
                     &:hover {
                         background: hsl(0, 0%, 30%);
                     }

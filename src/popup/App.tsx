@@ -9,7 +9,7 @@ import CreateChannel from '@/components/CreateChannel';
 import { useChannelsStore } from '@/hooks/ChannelsStore';
 import { getDomainName } from '@/utils/functions';
 import { useCurrentCallStore } from '@/hooks/currentCallStore';
-import { BackgroundMessage, IceCandidate } from '@/background';
+import { BackgroundMessage, IceCandidate } from '../utils/types.ts';
 
 export default function App() {
     const messageListenerExists = useRef(false);
@@ -19,46 +19,40 @@ export default function App() {
         browsemStore.connect();
     }
     const handleDisconnectFromServer = async () => {
-        // await currentCallStore.disconnectFromCall(true);
-       //  let currentCallTabId = currentCallStore.tabId;
-        // console.log('the state of currentcallstore is: ', useCurrentCallStore.getState());
-        // chrome.tabs.sendMessage(useCurrentCallStore.getState().tabId!, {
-        //     type: "disconnected-from-socket"
-        // })
-        // if (useCurrentCallStore.getState().tabId) {
-        //     console.log('sending tabs messaage to ', useCurrentCallStore.getState().tabId);
-        //     chrome.tabs.sendMessage(useCurrentCallStore.getState().tabId!, {
-        //         type: "disconnected-from-socket",
-        //     });
-        // }
-        // else {
-        //     console.log('currentcallstore tabid is null, not sending a disconnectedfromsocket msg.');
-        // }
-        // await currentCallStore.disconnectFromCall(true);
+        // this wont need to be called when u appropriately leave all related areas (like channels and what-not)
+        // as it'll do it for you whilst disconnecting.
+        useCurrentCallStore.getState().disconnectFromCall(true);
         browsemStore.disconnect();
         browsemStore.setCurrentSelection("Intro");
-        // tell the content script u disconnected from the socket
     };
     const handleCreateGuestUsername = () => {
         browsemStore.setCurrentSelection("CreatingGuestUsername");
     }
-    const messageListener = async (message: BackgroundMessage) => {
-        if (message.type === "offer-from-server") {
-        }
-        else if (message.type === "answer-from-server") {
-        }
-    };
+    // useEffect(() => {
+    //     chrome.runtime.sendMessage({ type: "get-tab-id" }, (response) => {
+    //         if (response?.tabId) {
+    //             console.log('setting currenttabid in popup: ', response);
+    //             useBrowsemStore.getState().setCurrentTabId(response.tabId);
+    //         }
+    //     });
+    // }, []);
+    // const messageListener = async (message: BackgroundMessage) => {
+    //     if (message.type === "offer-from-server") {
+    //     }
+    //     else if (message.type === "answer-from-server") {
+    //     }
+    // };
 
-    useEffect(() => {
-        if (messageListenerExists.current === false) {
-            chrome.runtime.onMessage.addListener(messageListener)
-            messageListenerExists.current = true;
-        }
-        return () => {
-            chrome.runtime.onMessage.removeListener(messageListener);
-            messageListenerExists.current = false;
-        }
-    }, []);
+    // useEffect(() => {
+    //     if (messageListenerExists.current === false) {
+    //         chrome.runtime.onMessage.addListener(messageListener)
+    //         messageListenerExists.current = true;
+    //     }
+    //     return () => {
+    //         chrome.runtime.onMessage.removeListener(messageListener);
+    //         messageListenerExists.current = false;
+    //     }
+    // }, []);
 
   return (
       <>

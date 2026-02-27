@@ -1,6 +1,6 @@
 import { useCurrentCallStore } from '@/hooks/currentCallStore';
 import './BrowsemChatter.scss';
-import { Chatter } from '@/hooks/ChannelsStore';
+import { Chatter } from '@/utils/types';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -33,11 +33,13 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
     const yourUsername = useBrowsemStore(state => state.username);
 
     const currentCallStore = useCurrentCallStore();
-    const chatterChannel = useCurrentCallStore(state => state.chatterChannel);
+    const remoteStreams = useCurrentCallStore(state => state.remoteStreams);
+    const chatterChannel = useBrowsemStore(state => state.chatterChannel);
     const camStream = useCurrentCallStore((state) => state.camStream);
     const micStream = useCurrentCallStore((state) => state.micStream);
     // const screenStream = useCurrentCallStore((state) => state.screenStream);
-    const settings = useSettingsStore();
+    const settings = useSettingsStore(state => state.settings);
+    const setSettings = useSettingsStore(state => state.setSettings);
     const peerConnection = useCurrentCallStore((state) => state.peerConnection);
 
     const handleClickedWindow = (type: 'video' | undefined) => {
@@ -97,8 +99,8 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
             }
             else {
                 // CHECK IF REMOTE STREAMS EXISTS 1st
-                if (currentCallStore.remoteStreams instanceof Map) {
-                    let stream = currentCallStore.remoteStreams.get(`${props.chatter.username}`);
+                if (remoteStreams instanceof Map) {
+                    let stream = remoteStreams.get(`${props.chatter.username}`);
                     if (stream !== undefined) {
                         stream.getTracks().forEach(track => {
                             if (track.kind === "audio") {
@@ -118,7 +120,7 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
                 }
             }
         }
-    }, [props.isFocused, yourUsername, currentCallStore?.remoteStreams, props.focusedWindow, props.chatter.settings?.cameraIsOn])
+    }, [props.isFocused, yourUsername, remoteStreams, props.focusedWindow, props.chatter.settings?.cameraIsOn])
 
     useEffect(() => {
         // set audio elements volume to the volume number
@@ -194,7 +196,7 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
                         ref={audioRef}
                         autoPlay
                         id={`${props.chatter.username}_audio`}
-                        muted={props.chatter.username === yourUsername ? true : settings.settings.deafened ? true : false}
+                        muted={props.chatter.username === yourUsername ? true : settings.deafened ? true : false}
                     />
             }
             <div className="chatter-bottom">

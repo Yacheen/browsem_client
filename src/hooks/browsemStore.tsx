@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { ChromeLocalStorage, ChromeSessionStorage } from 'zustand-chrome-storage';
 import { initPegasusZustandStoreBackend, pegasusZustandStoreReady } from '@webext-pegasus/store-zustand'
-import { ChatterChannel, Connected, Disconnected } from '@/background';
+import { ChatterChannel, Connected, Disconnected } from '@/utils/types';
 
 type SocketState = 'Connected' | 'Disconnected' | 'Connecting';
 export type CurrentSelection = 'Intro' | 'CreatingGuestUsername' | 'Connected' | 'CreatingChannel';
@@ -39,6 +39,7 @@ interface BrowsemStoreState {
     setUrlOriginsOpened: (urlOriginsOpened: string[]) => void,
     setBrowsemStats: (sessionsOnline: number, sessionsInYourOrigin: number, sessionsInYourUrl: number) => void,
     setChatterChannel: (chatterChannel: ChatterChannel | null, callTabId: number | null) => void
+    setCurrentTabId: (currentTabId: number | null) => void,
 }
 
 export const useBrowsemStore = create<BrowsemStoreState>()(
@@ -79,7 +80,7 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
                 chrome.runtime.sendMessage({
                     "type": "disconnect"
                 });
-                set({ socketState: 'Disconnected' });
+                get().disconnected({Disconnected: { reason: "manual disconnect" }});
             },
             connected: (message: Connected) => {
                 let state = get().socketState;
@@ -128,6 +129,9 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             setChatterChannel: (chatterChannel: ChatterChannel | null, callTabId: number | null) => {
                 set({ chatterChannel, callTabId });
             },
+            setCurrentTabId: (currentTabId: number | null) => {
+                set({ currentTabId });
+            },
         }),
         {
             name: "browsem-session-storage",
@@ -136,5 +140,5 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
     )
 );
 export const STORE_NAME = 'BrowsemStore';
-export const browsemStoreBackendReady = () => initPegasusZustandStoreBackend(STORE_NAME, useBrowsemStore);
+export const browsemStoreBackendReady = () => initPegasusZustandStoreBackend(STORE_NAME, useBrowsemStore, {storageStrategy: "session"});
 export const browsemStoreReady = () => pegasusZustandStoreReady(STORE_NAME, useBrowsemStore);

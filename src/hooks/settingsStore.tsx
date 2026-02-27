@@ -1,6 +1,6 @@
-import { Settings } from '@/background';
 import { create } from 'zustand';
 import { initPegasusZustandStoreBackend, pegasusZustandStoreReady } from '@webext-pegasus/store-zustand'
+import { Settings } from '@/utils/types';
 
 export interface SettingsStore {
     settings: Settings,

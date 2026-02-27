@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { ChromeSessionStorage } from 'zustand-chrome-storage';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { initPegasusZustandStoreBackend, pegasusZustandStoreReady } from '@webext-pegasus/store-zustand'
-import { UrlCalls } from '@/background';
+import { UrlCalls } from '@/utils/types';
 
 
 interface ChannelsStoreState {
@@ -27,5 +27,5 @@ export const useChannelsStore = create<ChannelsStoreState>()(
     )
 );
 export const STORE_NAME = 'ChannelsStore';
-export const channelsStoreBackendReady = () => initPegasusZustandStoreBackend(STORE_NAME, useChannelsStore);
+export const channelsStoreBackendReady = () => initPegasusZustandStoreBackend(STORE_NAME, useChannelsStore, { storageStrategy: "session" });
 export const channelsStoreReady = () => pegasusZustandStoreReady(STORE_NAME, useChannelsStore);

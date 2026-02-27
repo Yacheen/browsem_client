@@ -15,6 +15,6 @@ Promise.all([
     settingsStoreReady(),
 ]).then(() => {
     createRoot(document.getElementById('root')!).render(
-        <App />
+            <App />
     )
 });

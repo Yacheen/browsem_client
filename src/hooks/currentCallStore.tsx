@@ -1,12 +1,12 @@
 // for now manage state via storage (thats using zustand), and for content scripts just use another zustand store,
 import { create, StoreApi } from 'zustand';
-import { AnswerFromClient, AnswerFromServer, ConnectedToCall, DisconnectedFromCall, OfferFromClient, OfferFromServer, UserUpdatedSettings } from '@/popup/App';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { ChromeSessionStorage } from 'zustand-chrome-storage';
 import { SettingsStore } from './settingsStore';
 import { UseBoundStore } from 'zustand';
 import { QuickchatterWindow } from '@/components/BrowsemChatter';
-import { IceCandidate } from '@/background';
+import { AnswerFromClient, AnswerFromServer, DisconnectedFromCall, IceCandidate, OfferFromClient, OfferFromServer } from '@/utils/types';
+import { useBrowsemStore } from './browsemStore';
 
 interface CurrentCallStoreState {
     peerConnection: RTCPeerConnection | null,
@@ -30,8 +30,8 @@ interface CurrentCallStoreState {
     setFocusedWindow: (chatterWindow: QuickchatterWindow | null) => void,
     connectToCall: (channelName: string) => void,
     reconnectToCall: (channelName: string) => void,
-    disconnectedFromCall: (msg: DisconnectedFromCall, chatterIsYou: boolean) => Promise<void>,
-    disconnectFromCall: () => void,
+    disconnectedFromCall: (msg: DisconnectedFromCall) => Promise<void>,
+    disconnectFromCall: (killingSocketAsWell: boolean) => Promise<void>,
     startPeerConnection: () => Promise<RTCPeerConnection>,
     handleIceCandidateFromServer: (message: IceCandidate) => Promise<void>,
     handleCreateOffer: () => Promise<void>,
@@ -46,7 +46,6 @@ interface CurrentCallStoreState {
     unmuteMic: () => void;
     turnOffMicrophone: () => void;
     turnOffCamera: () => void;
-    handleUserUpdatedSettings: (msg: UserUpdatedSettings) => void;
 }
 const servers = {
     iceServers: [
@@ -62,46 +61,85 @@ const servers = {
 };
 
 export const useCurrentCallStore = create<CurrentCallStoreState>()(
-    persist(
-        (set, get) => ({
-            chatterChannel: null,
-            tabId: null,
-            connection: "disconnected",
-            makingOffer: false,
-            loadingMyVideo: false,
-            micThreshold: 15,
-            hasMicPermission: false,
-            hasCamPermission: false,
-            pendingIceCandidates: [],
+    (set, get) => ({
+        connection: "disconnected",
+        makingOffer: false,
+        loadingMyVideo: false,
+        micThreshold: 15,
+        hasMicPermission: false,
+        hasCamPermission: false,
+        pendingIceCandidates: [],
 
-            // dont persist any of these in session storage (u cant persist a mediastream, or an audiocontext, peerConnection, etc.))
-            audioTx: null,
-            videoTx: null, 
-            micStream: null,
-            camStream: null,
-            pendingCamStream: false,
-            pendingMicStream: false,
-            audioContext: null,
-            remoteStreams: new Map(),
-            peerConnection: null,
-            monitorSpeakingIntervalIds: new Map(),
-            focusedWindow: null,
-            setFocusedWindow: (windowToBeFocused: QuickchatterWindow | null) => {
-                set({ focusedWindow: windowToBeFocused });
-            },
-            connectToCall: (channelName: string) => {
-                chrome.runtime.sendMessage({
-                    type: "connect-to-call",
-                    channelName: channelName,
+        // dont persist any of these in session storage (u cant persist a mediastream, or an audiocontext, peerConnection, etc.))
+        audioTx: null,
+        videoTx: null, 
+        micStream: null,
+        camStream: null,
+        pendingCamStream: false,
+        pendingMicStream: false,
+        audioContext: null,
+        remoteStreams: new Map(),
+        peerConnection: null,
+        monitorSpeakingIntervalIds: new Map(),
+        focusedWindow: null,
+        setFocusedWindow: (windowToBeFocused: QuickchatterWindow | null) => {
+            set({ focusedWindow: windowToBeFocused });
+        },
+        connectToCall: (channelName: string) => {
+            chrome.runtime.sendMessage({
+                type: "connect-to-call",
+                channelName: channelName,
+            });
+        },
+        reconnectToCall: (channelName: string) => {
+            chrome.runtime.sendMessage({
+                type: "reconnect-to-call",
+                channelName: channelName,
+            });
+        },
+        disconnectedFromCall: async (msg: DisconnectedFromCall) => {
+            let stopMonitoringSpeakers = get().stopMonitoringSpeakers;
+            let audioContext = get().audioContext;
+            let peerConnection = get().peerConnection;
+            let turnOffCam = get().turnOffCamera;
+            let turnOffMicrophone = get().turnOffMicrophone;
+            stopMonitoringSpeakers();
+            await audioContext?.close();
+            turnOffCam();
+            turnOffMicrophone();
+            peerConnection?.close();
+            let yourUsername = useBrowsemStore.getState().username;
+            if (yourUsername === msg.DisconnectedFromCall.disconnectedChatter.username) {
+                set({
+                    connection: "disconnected",
+                    audioContext: null,
+                    audioTx: null,
+                    monitorSpeakingIntervalIds: new Map(),
+                    videoTx: null,
+                    camStream: null,
+                    focusedWindow: null,
+                    loadingMyVideo: false,
+                    makingOffer: false,
+                    micStream: null,
+                    peerConnection: null,
+                    remoteStreams: new Map(),
+                    pendingCamStream: false,
+                    pendingMicStream: false,
+                    pendingIceCandidates: [],
                 });
-            },
-            reconnectToCall: (channelName: string) => {
-                chrome.runtime.sendMessage({
-                    type: "reconnect-to-call",
-                    channelName: channelName,
-                });
-            },
-            disconnectedFromCall: async (msg: DisconnectedFromCall) => {
+                // if (msg.DisconnectedFromCall.reason === "joining another call") {
+                // }
+                // else {
+                // }
+            }
+            // else {
+            // }
+        },
+        disconnectFromCall: async (killingSocketAsWell: boolean) => {
+            chrome.runtime.sendMessage({
+                type: "disconnect-from-call",
+            });
+            if (killingSocketAsWell) {
                 let stopMonitoringSpeakers = get().stopMonitoringSpeakers;
                 let audioContext = get().audioContext;
                 let peerConnection = get().peerConnection;
@@ -129,420 +167,400 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     pendingMicStream: false,
                     pendingIceCandidates: [],
                 });
-                if (msg.DisconnectedFromCall.reason === "joining another call") {
-                }
-                else {
-                }
-            },
-            disconnectFromCall: async () => {
-                chrome.runtime.sendMessage({
-                    type: "disconnect-from-call",
-                });
-            },
-            startPeerConnection: async () => {
-                let peerConnection = new RTCPeerConnection(servers);
-                let audioContext = new AudioContext();
-                
-                peerConnection.oniceconnectionstatechange = () => {
-                    console.log('ICE CONNECTION STATE CHANGE-------------------------');
-                    // handleICEConnectionStateChangeEvent(sessionId, socket);
-                    let micStream = get().micStream;
-                    let camStream = get().camStream;
+            }
+        },
+        startPeerConnection: async () => {
+            let peerConnection = new RTCPeerConnection(servers);
+            let audioContext = new AudioContext();
+            
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log('ICE CONNECTION STATE CHANGE-------------------------');
+                // handleICEConnectionStateChangeEvent(sessionId, socket);
+                let micStream = get().micStream;
+                let camStream = get().camStream;
 
-                    let handleCreateOffer = get().handleCreateOffer;
-                    if (peerConnection) {
-                        console.log(peerConnection.iceConnectionState);
-                        if (peerConnection.iceConnectionState === "failed") {
-                            // retry in x amount of seconds instead of this if disonnected and not failed?
-                            //await handleCreateOffer(sessionId, socket)
-                            // micStream?.getTracks().forEach(track => {
-                            //     track.stop();
-                            // });
-                            // camStream?.getTracks().forEach(track => {
-                            //     track.stop();
-                            // });
-                            // peerConnection.close();
-                            // peerConnection.restartIce();
-                        }
-                        // else if (peerConnection.iceConnectionState === "closed") {
-                        //     peerConnection.restartIce();
-                        // }
-                        if (peerConnection) {
-                            return set((prevState => ({...prevState, connection: peerConnection.iceConnectionState})));
-                        }
+                let handleCreateOffer = get().handleCreateOffer;
+                if (peerConnection) {
+                    console.log(peerConnection.iceConnectionState);
+                    if (peerConnection.iceConnectionState === "failed") {
+                        // retry in x amount of seconds instead of this if disonnected and not failed?
+                        //await handleCreateOffer(sessionId, socket)
+                        // micStream?.getTracks().forEach(track => {
+                        //     track.stop();
+                        // });
+                        // camStream?.getTracks().forEach(track => {
+                        //     track.stop();
+                        // });
+                        // peerConnection.close();
+                        // peerConnection.restartIce();
                     }
-                }
-                peerConnection.onicecandidate = (event) => {
-                    // handleIceCandidateEvent(event, sessionId, socket);
-                    let peerConnection = get().peerConnection;
-                    // send ice cand to serber
-                    if (event.candidate && peerConnection) {
-                        let iceCandidate: IceCandidate = {
-                            IceCandidate: {
-                                candidate: event.candidate.candidate,
-                                sdpMid: event.candidate.sdpMid,
-                                sdpMLineIndex: event.candidate.sdpMLineIndex,
-                                usernameFragment: event.candidate.usernameFragment,
-                            }
-                        };
-                        chrome.runtime.sendMessage({
-                            type: "ice-candidate",
-                            contents: JSON.stringify(iceCandidate),
-                        })
-                    }
-                }
-                peerConnection.ontrack = ({ track, streams }: { track: MediaStreamTrack, streams: readonly MediaStream[] }) => {
-                    console.log('ONTRACK HAPPENED: ', track, streams);
-                    // handleTrackEvent(track, streams);
-                    // stream id format:
-                    // uuid_username_kind
-
-                    // examples (there is no screensharing atm)
-                    // [uuidv4::new()]_joemomma_screenaudio
-                    // [uuidv4::new()]_mynamajeff_video
-                    // [uuidv4::new()]_mynamajeff_audio
-                    // [uuidv4::new()]_joemomma_screen
-                    let stream = streams[0];
-                    let streamId = stream.id;
-                    let streamIdAsArray = streamId.split('_');
-                    let uuid = streamIdAsArray[0];
-                    let username = streamIdAsArray[1];
-                    let type = streamIdAsArray[2];
-
-                    let peerConnection = get().peerConnection;
-                    let remoteStreams = get().remoteStreams;
-                    let monitorSpeaking = get().monitorSpeaking;
-
-                    // if (type === "screen" || type === "screenaudio") {
-                    //
+                    // else if (peerConnection.iceConnectionState === "closed") {
+                    //     peerConnection.restartIce();
                     // }
-                    if (type === "audio" || type === "video") {
-                        if (peerConnection) {
-                            let newRemoteStreams = remoteStreams;
-                            if (newRemoteStreams.has(username)) {
-                                let newRemoteStream = newRemoteStreams.get(username);
-                                if (newRemoteStream !== undefined) {
-                                    newRemoteStream.addTrack(track);
-                                    newRemoteStreams.set(username, newRemoteStream);
-                                    set({ remoteStreams: newRemoteStreams });
-                                }
-                            }
-                            else {
-                                newRemoteStreams.set(username, stream);
+                    if (peerConnection) {
+                        return set((prevState => ({...prevState, connection: peerConnection.iceConnectionState})));
+                    }
+                }
+            }
+            peerConnection.onicecandidate = (event) => {
+                // handleIceCandidateEvent(event, sessionId, socket);
+                let peerConnection = get().peerConnection;
+                // send ice cand to serber
+                if (event.candidate && peerConnection) {
+                    let iceCandidate: IceCandidate = {
+                        IceCandidate: {
+                            candidate: event.candidate.candidate,
+                            sdpMid: event.candidate.sdpMid,
+                            sdpMLineIndex: event.candidate.sdpMLineIndex,
+                            usernameFragment: event.candidate.usernameFragment,
+                        }
+                    };
+                    chrome.runtime.sendMessage({
+                        type: "ice-candidate",
+                        contents: JSON.stringify(iceCandidate),
+                    })
+                }
+            }
+            peerConnection.ontrack = ({ track, streams }: { track: MediaStreamTrack, streams: readonly MediaStream[] }) => {
+                console.log('ONTRACK HAPPENED: ', track, streams);
+                // handleTrackEvent(track, streams);
+                // stream id format:
+                // uuid_username_kind
+
+                // examples (there is no screensharing atm)
+                // [uuidv4::new()]_joemomma_screenaudio
+                // [uuidv4::new()]_mynamajeff_video
+                // [uuidv4::new()]_mynamajeff_audio
+                // [uuidv4::new()]_joemomma_screen
+                let stream = streams[0];
+                let streamId = stream.id;
+                let streamIdAsArray = streamId.split('_');
+                let uuid = streamIdAsArray[0];
+                let username = streamIdAsArray[1];
+                let type = streamIdAsArray[2];
+
+                let peerConnection = get().peerConnection;
+                let remoteStreams = get().remoteStreams;
+                let monitorSpeaking = get().monitorSpeaking;
+
+                // if (type === "screen" || type === "screenaudio") {
+                //
+                // }
+                if (type === "audio" || type === "video") {
+                    if (peerConnection) {
+                        let newRemoteStreams = new Map(remoteStreams);
+                        if (newRemoteStreams.has(username)) {
+                            let newRemoteStream = newRemoteStreams.get(username);
+                            if (newRemoteStream !== undefined) {
+                                newRemoteStream.addTrack(track);
+                                newRemoteStreams.set(username, newRemoteStream);
                                 set({ remoteStreams: newRemoteStreams });
                             }
                         }
+                        else {
+                            newRemoteStreams.set(username, stream);
+                            set({ remoteStreams: newRemoteStreams });
+                        }
                     }
+                }
+                if (type === "audio") {
+                    monitorSpeaking(username, stream, isSpeaking => {
+                        if (isSpeaking) {
+                            // get chatter_camera_on and chatter_camera_off with id of said person
+                            // if theres a chatter_camera_on, highlight that
+                            // else, highlight chatter camera off
+                            console.log('THEYRE SPEAKING');
+                            let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
+                            let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
+                            if (chatterCameraOnElement !== null) {
+                                chatterCameraOnElement?.classList.add('speaking_border');
+                            }
+                            else if (chatterCameraOffElement !== null) {
+                                chatterCameraOffElement?.classList.add('speaking_border');
+                            }
+                        }
+                        else {
+                            let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
+                            let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
+                            if (chatterCameraOnElement !== null) {
+                                chatterCameraOnElement?.classList.remove('speaking_border');
+                            }
+                            else if (chatterCameraOffElement !== null) {
+                                chatterCameraOffElement?.classList.remove('speaking_border');
+                            }
+                        }
+                    })
+                }
+                track.onunmute = () => {
                     if (type === "audio") {
-                        monitorSpeaking(username, stream, isSpeaking => {
-                            if (isSpeaking) {
-                                // get chatter_camera_on and chatter_camera_off with id of said person
-                                // if theres a chatter_camera_on, highlight that
-                                // else, highlight chatter camera off
-                                console.log('THEYRE SPEAKING');
-                                let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
-                                let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
-                                if (chatterCameraOnElement !== null) {
-                                    chatterCameraOnElement?.classList.add('speaking_border');
-                                }
-                                else if (chatterCameraOffElement !== null) {
-                                    chatterCameraOffElement?.classList.add('speaking_border');
-                                }
-                            }
-                            else {
-                                let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
-                                let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
-                                if (chatterCameraOnElement !== null) {
-                                    chatterCameraOnElement?.classList.remove('speaking_border');
-                                }
-                                else if (chatterCameraOffElement !== null) {
-                                    chatterCameraOffElement?.classList.remove('speaking_border');
-                                }
-                            }
-                        })
-                    }
-                    track.onunmute = () => {
-                        if (type === "audio") {
-                            track.enabled = true;
-                            let audio: HTMLAudioElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_audio`);
-                            if (audio) {
-                                audio.srcObject = stream;
-                            }
-                        }
-                        if (type === "video") {
-                            console.log(username,' VIDEO TRACK UNMUTED' );
-                            let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
-                            if (videoElement) {
-                                videoElement.srcObject = stream;
-                            }
+                        track.enabled = true;
+                        let audio: HTMLAudioElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_audio`);
+                        if (audio) {
+                            audio.srcObject = stream;
                         }
                     }
-                    track.onmute = () => {
-                        if (type === "audio") {
-                        } 
-                        if (type === "video") {
-                            console.log(username,' VIDEO TRACK MUTED' );
-                            let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
-                            if (videoElement) {
-                                videoElement.srcObject = null;
-                            }
-                        }
-                    }
-                    // track.onended = () => {}
-                    // stream.onaddtrack = () => {}
-                    // stream.onremovetrack = () => {}
-                }
-                // peerConnection.onnegotiationneeded = async () => {
-                //     console.log('ON NEGOTIATION NEEDED HHAPPENED');
-                //     // handleNegotiationNeededEvent(sessionId, socket)
-                //     let handleCreateOffer = get().handleCreateOffer;
-                //     await handleCreateOffer();
-                // }
-                peerConnection.onconnectionstatechange = () => {
-                }
-                peerConnection.onicecandidateerror = () => {
-                }
-                set({
-                    peerConnection,
-                    connection: peerConnection.iceConnectionState,
-                    remoteStreams: new Map(),
-                    monitorSpeakingIntervalIds: new Map(),
-                    audioContext,
-                });
-                // chrome.runtime.sendMessage({ type: "join-call" });
-                return peerConnection;
-            },
-            handleIceCandidateFromServer: async (message: IceCandidate) => {
-                let peerConnection = get().peerConnection;
-                let pendingIceCandidates = get().pendingIceCandidates;
-                if (peerConnection) {
-                    if (peerConnection.remoteDescription !== null) {
-                        console.log('my peer conns remote desc isnt null. ');
-                        await peerConnection?.addIceCandidate(message.IceCandidate);
-                    }
-                    else {
-                        set({ pendingIceCandidates: [...pendingIceCandidates, message.IceCandidate]});
-                        console.log('my peer conns null. no addicecand.');
-                    }
-                }
-            },
-            handleCreateOffer: async () => {
-                let peerConnection = get().peerConnection;
-                try {
-                    set({ makingOffer: true });
-                    if (peerConnection) {
-                        const offer = await peerConnection.createOffer();
-                        await peerConnection.setLocalDescription(offer);
-                        if (peerConnection.localDescription) {
-                            let offerFromClient: OfferFromClient = {
-                                OfferFromClient: peerConnection.localDescription
-                            };
-                            chrome.runtime.sendMessage({
-                                type: "create-offer",
-                                contents: JSON.stringify(offerFromClient)
-                            });
+                    if (type === "video") {
+                        console.log(username,' VIDEO TRACK UNMUTED' );
+                        let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
+                        if (videoElement) {
+                            videoElement.srcObject = stream;
                         }
                     }
                 }
-                catch (err) {
-                    console.log('handlecreateoffer error: ', err);
-                }
-                finally {
-                    set({ makingOffer: false });
-                }
-            },
-            monitorSpeaking: (username: string, stream: MediaStream, onSpeakingChange: (isSpeaking: boolean) => void) => {
-                let audioContext = get().audioContext;
-
-                if (audioContext) {
-                    const source = audioContext.createMediaStreamSource(stream);
-                    const destNode = audioContext.createMediaStreamDestination();
-                    const analyser = audioContext.createAnalyser();
-                    analyser.fftSize = 512;
-
-                    source.connect(analyser).connect(destNode);
-
-                    const checkVolume = () => {
-                        let peerConnection = get().peerConnection;
-                        let chatterChannel = get().chatterChannel;
-                        let monitorSpeakingIntervalIds = get().monitorSpeakingIntervalIds
-                        // cancel if u cant find urself in independentCall nor connectedToLivepost
-                        if (!peerConnection) {
-                            return;
-                        }
-                        if (chatterChannel) {
-                            if (chatterChannel.chatters.find(chatter => chatter.username === username) === undefined) return;
-                        }
-                        const data = new Uint8Array(analyser.frequencyBinCount);
-                        analyser.getByteFrequencyData(data);
-                        const volume = data.reduce((a, b) => a + b) / data.length;
-
-                        if (volume > 0) {
-                            onSpeakingChange(true);
-                        }
-                        else {
-                            onSpeakingChange(false);
-                        }
-                        
-                        if (monitorSpeakingIntervalIds.get(username) === undefined) {
-                            let newMonitorSpeakingId = requestAnimationFrame(checkVolume);
-                            const newMonitorSpeakingIntervalIds = new Map(monitorSpeakingIntervalIds);
-                            newMonitorSpeakingIntervalIds.set(username, newMonitorSpeakingId);
-
-                            set({ monitorSpeakingIntervalIds: newMonitorSpeakingIntervalIds });
-                        }
-                        else {
-                            requestAnimationFrame(checkVolume);
+                track.onmute = () => {
+                    if (type === "audio") {
+                    } 
+                    if (type === "video") {
+                        console.log(username,' VIDEO TRACK MUTED' );
+                        let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
+                        if (videoElement) {
+                            videoElement.srcObject = null;
                         }
                     }
-                    checkVolume();
+                }
+                // track.onended = () => {}
+                // stream.onaddtrack = () => {}
+                // stream.onremovetrack = () => {}
+            }
+            // peerConnection.onnegotiationneeded = async () => {
+            //     console.log('ON NEGOTIATION NEEDED HHAPPENED');
+            //     // handleNegotiationNeededEvent(sessionId, socket)
+            //     let handleCreateOffer = get().handleCreateOffer;
+            //     await handleCreateOffer();
+            // }
+            peerConnection.onconnectionstatechange = () => {
+            }
+            peerConnection.onicecandidateerror = () => {
+            }
+            set({
+                peerConnection,
+                connection: peerConnection.iceConnectionState,
+                remoteStreams: new Map(),
+                monitorSpeakingIntervalIds: new Map(),
+                audioContext,
+            });
+            return peerConnection;
+        },
+        handleIceCandidateFromServer: async (message: IceCandidate) => {
+            let peerConnection = get().peerConnection;
+            let pendingIceCandidates = get().pendingIceCandidates;
+            if (peerConnection) {
+                if (peerConnection.remoteDescription !== null) {
+                    console.log('my peer conns remote desc isnt null. ');
+                    await peerConnection?.addIceCandidate(message.IceCandidate);
                 }
                 else {
-                    console.log('THERES NO AUDIOCONTEXT!!!');
+                    set({ pendingIceCandidates: [...pendingIceCandidates, message.IceCandidate]});
+                    console.log('my peer conns null. no addicecand.');
                 }
-            },
-            handleAnswerFromServer: async (message: AnswerFromServer) => {
-                let peerConnection = get().peerConnection;
-                let pendingIceCandidates = get().pendingIceCandidates;
-                try {
-                    peerConnection?.setRemoteDescription(message.AnswerFromServer);
-                    for (const cand of pendingIceCandidates) {
-                        await peerConnection?.addIceCandidate(cand);
-                    }
-                    set({ pendingIceCandidates: [] });
-                }
-                catch (err) {
-                    console.log('problem handling answer from server: ', err);
-                }
-            },
-            handleOfferFromServer: async (message: OfferFromServer) => {
-                let peerConnection = get().peerConnection;
-                let makingOffer = get().makingOffer;
-                let pendingIceCandidates = get().pendingIceCandidates;
-                let micStream = get().micStream;
-                let camStream = get().camStream;
-                let pendingMicStream = get().pendingMicStream;
-                let pendingCamStream = get().pendingCamStream;
-                let startPeerConnection = get().startPeerConnection;
-
-                if (peerConnection === null) {
-                    peerConnection = await startPeerConnection();
-                }
-
-                let msgSdp: RTCSessionDescriptionInit = message.OfferFromServer;
-                try {
-                    await peerConnection?.setRemoteDescription(msgSdp);
-                    for (const cand of pendingIceCandidates) {
-                        await peerConnection?.addIceCandidate(cand);
-                    }
-                    set({ pendingIceCandidates: [] });
-                }
-                catch (err) {
-                    console.log('problem setting remote desc in handleofferfromserver: ', err);
-                }
-
+            }
+        },
+        handleCreateOffer: async () => {
+            let peerConnection = get().peerConnection;
+            try {
+                set({ makingOffer: true });
                 if (peerConnection) {
-                    // attach pending camera
-                    if (pendingCamStream && camStream) {
-                        const transceivers = peerConnection?.getTransceivers()
-                        const videoTx = transceivers[transceivers.length - 1];
-                        if (videoTx) {
-                            await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
-                            videoTx.direction = "sendonly";
-                        }
-                        set({ videoTx, pendingCamStream: false });
-                    }
-                    // attach pending mic
-                    if (pendingMicStream && micStream) {
-                        const transceivers = peerConnection.getTransceivers()
-                        const audioTx = transceivers[transceivers.length - 1];
-                        if (audioTx) {
-                            await audioTx.sender.replaceTrack(micStream.getAudioTracks()[0]);
-                            audioTx.direction = "sendonly";
-                        }
-                        set({ audioTx, pendingMicStream: false });
+                    const offer = await peerConnection.createOffer();
+                    await peerConnection.setLocalDescription(offer);
+                    if (peerConnection.localDescription) {
+                        let offerFromClient: OfferFromClient = {
+                            OfferFromClient: peerConnection.localDescription
+                        };
+                        chrome.runtime.sendMessage({
+                            type: "create-offer",
+                            contents: JSON.stringify(offerFromClient)
+                        });
                     }
                 }
+            }
+            catch (err) {
+                console.log('handlecreateoffer error: ', err);
+            }
+            finally {
+                set({ makingOffer: false });
+            }
+        },
+        monitorSpeaking: (username: string, stream: MediaStream, onSpeakingChange: (isSpeaking: boolean) => void) => {
+            let audioContext = get().audioContext;
 
-                const answer = await peerConnection?.createAnswer();
-                await peerConnection?.setLocalDescription(answer);
+            if (audioContext) {
+                const source = audioContext.createMediaStreamSource(stream);
+                const destNode = audioContext.createMediaStreamDestination();
+                const analyser = audioContext.createAnalyser();
+                analyser.fftSize = 512;
 
-                if (peerConnection && peerConnection.localDescription) {
-                    let answerFromClient: AnswerFromClient = {
-                        // what the helly
-                        AnswerFromClient: peerConnection.localDescription
-                    };
-                    chrome.runtime.sendMessage({
-                        type: "answer-from-client",
-                        contents: JSON.stringify(answerFromClient),
-                    });
-                }
-            },
-            stopMonitoringSpeakers: () => {
-                let peerConnection = get().peerConnection;
-                let monitorSpeakingIntervalIds = get().monitorSpeakingIntervalIds;
-                if (peerConnection) {
-                    // cancel all animation frames
-                    monitorSpeakingIntervalIds.forEach(animationId => {
-                        cancelAnimationFrame(animationId);
-                    });
+                source.connect(analyser).connect(destNode);
 
-                    const newMonitorSpeakingIntervalIds = new Map();
-
-                    set({ monitorSpeakingIntervalIds: newMonitorSpeakingIntervalIds });
-                }
-            },
-            // voiceAndVideoSettings: VoiceAndVideoSettings, settings: settings
-            handleApplyMicSettings: (username: string, stream: MediaStream, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => {
-                let audioContext = get().audioContext;
-                let peerConnection = get().peerConnection;
-                let audioTx = get().audioTx;
-
-                console.log('audio context is: ', audioContext);
-                if (audioContext) {
-                    console.log('audio context is: ', audioContext);
-                    const source = audioContext.createMediaStreamSource(stream);
-                    console.log('audio context is: ', audioContext);
-                    const analyser = audioContext.createAnalyser();
-                    analyser.fftSize = 512;
-                    source.connect(analyser);
-
-                    const destNode = audioContext.createMediaStreamDestination();
-                    source.connect(destNode);
-
+                const checkVolume = () => {
+                    let peerConnection = get().peerConnection;
+                    // let chatterChannel = get().chatterChannel;
+                    let chatterChannel = useBrowsemStore.getState().chatterChannel;
+                    let monitorSpeakingIntervalIds = get().monitorSpeakingIntervalIds
+                    // cancel if u cant find urself in independentCall nor connectedToLivepost
+                    if (!peerConnection) {
+                        return;
+                    }
+                    if (chatterChannel) {
+                        if (chatterChannel.chatters.find(chatter => chatter.username === username) === undefined) return;
+                    }
                     const data = new Uint8Array(analyser.frequencyBinCount);
-                    const applyMicSettings = () => {
-                        let micThreshold = get().micThreshold;
-                        if (destNode.stream.getAudioTracks().length > 0) {
-                            let innerPeerConnection = get().peerConnection;
-                            let innerMonitorSpeakingIntervalIds = get().monitorSpeakingIntervalIds
-                            let settings = settingsStore.getState().settings;
-                            if (innerPeerConnection) {
-                                analyser.getByteFrequencyData(data);
-                                const volume = data.reduce((a, b) => a + b, 0) / data.length;
-                                if (settings.microphoneIsOn) {
-                                    if (volume > micThreshold) {
-                                        destNode.stream.getAudioTracks()[0].enabled = true;
-                                        let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
-                                        let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
-                                        if (chatterCameraOnElement !== null) {
-                                            chatterCameraOnElement?.classList.add('speaking_border');
-                                        }
-                                        else if (chatterCameraOffElement !== null) {
-                                            chatterCameraOffElement?.classList.add('speaking_border');
-                                        }
-                                    }
-                                    else {
-                                        destNode.stream.getAudioTracks()[0].enabled = false;
-                                        let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
-                                        let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
-                                        if (chatterCameraOnElement !== null) {
-                                            chatterCameraOnElement?.classList.remove('speaking_border');
-                                        }
-                                        else if (chatterCameraOffElement !== null) {
-                                            chatterCameraOffElement?.classList.remove('speaking_border');
-                                        }
+                    analyser.getByteFrequencyData(data);
+                    const volume = data.reduce((a, b) => a + b) / data.length;
 
+                    if (volume > 0) {
+                        onSpeakingChange(true);
+                    }
+                    else {
+                        onSpeakingChange(false);
+                    }
+                    
+                    if (monitorSpeakingIntervalIds.get(username) === undefined) {
+                        let newMonitorSpeakingId = requestAnimationFrame(checkVolume);
+                        const newMonitorSpeakingIntervalIds = new Map(monitorSpeakingIntervalIds);
+                        newMonitorSpeakingIntervalIds.set(username, newMonitorSpeakingId);
+
+                        set({ monitorSpeakingIntervalIds: newMonitorSpeakingIntervalIds });
+                    }
+                    else {
+                        requestAnimationFrame(checkVolume);
+                    }
+                }
+                checkVolume();
+            }
+            else {
+                console.log('THERES NO AUDIOCONTEXT!!!');
+            }
+        },
+        handleAnswerFromServer: async (message: AnswerFromServer) => {
+            let peerConnection = get().peerConnection;
+            let pendingIceCandidates = get().pendingIceCandidates;
+            try {
+                await peerConnection?.setRemoteDescription(message.AnswerFromServer);
+                for (const cand of pendingIceCandidates) {
+                    await peerConnection?.addIceCandidate(cand);
+                }
+                set({ pendingIceCandidates: [] });
+            }
+            catch (err) {
+                console.log('problem handling answer from server: ', err);
+            }
+        },
+        handleOfferFromServer: async (message: OfferFromServer) => {
+            let peerConnection = get().peerConnection;
+            let startPeerConnection = get().startPeerConnection;
+            if (peerConnection === null) {
+                peerConnection = await startPeerConnection();
+            }
+
+            let makingOffer = get().makingOffer;
+            let pendingIceCandidates = get().pendingIceCandidates;
+            let micStream = get().micStream;
+            let camStream = get().camStream;
+            let pendingMicStream = get().pendingMicStream;
+            let pendingCamStream = get().pendingCamStream;
+
+
+            let msgSdp: RTCSessionDescriptionInit = message.OfferFromServer;
+            try {
+                await peerConnection?.setRemoteDescription(msgSdp);
+                for (const cand of pendingIceCandidates) {
+                    await peerConnection?.addIceCandidate(cand);
+                }
+                set({ pendingIceCandidates: [] });
+            }
+            catch (err) {
+                console.log('problem setting remote desc in handleofferfromserver: ', err);
+            }
+
+            if (peerConnection) {
+                // attach pending camera
+                if (pendingCamStream && camStream) {
+                    const transceivers = peerConnection?.getTransceivers()
+                    const videoTx = transceivers[transceivers.length - 1];
+                    if (videoTx) {
+                        await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
+                        videoTx.direction = "sendonly";
+                    }
+                    set({ videoTx, pendingCamStream: false });
+                }
+                // attach pending mic
+                if (pendingMicStream && micStream) {
+                    const transceivers = peerConnection.getTransceivers()
+                    const audioTx = transceivers[transceivers.length - 1];
+                    if (audioTx) {
+                        await audioTx.sender.replaceTrack(micStream.getAudioTracks()[0]);
+                        audioTx.direction = "sendonly";
+                    }
+                    set({ audioTx, pendingMicStream: false });
+                }
+            }
+
+            const answer = await peerConnection?.createAnswer();
+            await peerConnection?.setLocalDescription(answer);
+
+            if (peerConnection && peerConnection.localDescription) {
+                let answerFromClient: AnswerFromClient = {
+                    // what the helly
+                    AnswerFromClient: peerConnection.localDescription
+                };
+                chrome.runtime.sendMessage({
+                    type: "answer-from-client",
+                    contents: JSON.stringify(answerFromClient),
+                });
+            }
+        },
+        stopMonitoringSpeakers: () => {
+            let peerConnection = get().peerConnection;
+            let monitorSpeakingIntervalIds = get().monitorSpeakingIntervalIds;
+            if (peerConnection) {
+                // cancel all animation frames
+                monitorSpeakingIntervalIds.forEach(animationId => {
+                    cancelAnimationFrame(animationId);
+                });
+
+                const newMonitorSpeakingIntervalIds = new Map();
+
+                set({ monitorSpeakingIntervalIds: newMonitorSpeakingIntervalIds });
+            }
+        },
+        // voiceAndVideoSettings: VoiceAndVideoSettings, settings: settings
+        handleApplyMicSettings: (username: string, stream: MediaStream, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => {
+            let audioContext = get().audioContext;
+            let peerConnection = get().peerConnection;
+            let audioTx = get().audioTx;
+
+            console.log('audio context is: ', audioContext);
+            if (audioContext) {
+                console.log('audio context is: ', audioContext);
+                const source = audioContext.createMediaStreamSource(stream);
+                console.log('audio context is: ', audioContext);
+                const analyser = audioContext.createAnalyser();
+                analyser.fftSize = 512;
+                source.connect(analyser);
+
+                const destNode = audioContext.createMediaStreamDestination();
+                source.connect(destNode);
+
+                const data = new Uint8Array(analyser.frequencyBinCount);
+                const applyMicSettings = () => {
+                    let micThreshold = get().micThreshold;
+                    if (destNode.stream.getAudioTracks().length > 0) {
+                        let innerPeerConnection = get().peerConnection;
+                        let innerMonitorSpeakingIntervalIds = get().monitorSpeakingIntervalIds
+                        let settings = settingsStore.getState().settings;
+                        if (innerPeerConnection) {
+                            analyser.getByteFrequencyData(data);
+                            const volume = data.reduce((a, b) => a + b, 0) / data.length;
+                            if (settings.microphoneIsOn) {
+                                if (volume > micThreshold) {
+                                    destNode.stream.getAudioTracks()[0].enabled = true;
+                                    let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
+                                    let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
+                                    if (chatterCameraOnElement !== null) {
+                                        chatterCameraOnElement?.classList.add('speaking_border');
+                                    }
+                                    else if (chatterCameraOffElement !== null) {
+                                        chatterCameraOffElement?.classList.add('speaking_border');
                                     }
                                 }
                                 else {
@@ -555,168 +573,151 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                                     else if (chatterCameraOffElement !== null) {
                                         chatterCameraOffElement?.classList.remove('speaking_border');
                                     }
-                                }
-                                if (innerMonitorSpeakingIntervalIds.get(username) === undefined) {
-                                    let newMonitorSpeakingId = requestAnimationFrame(applyMicSettings);
-                                    const newMonitorSpeakingIntervalIds = new Map(innerMonitorSpeakingIntervalIds);
-                                    newMonitorSpeakingIntervalIds.set(username, newMonitorSpeakingId);
 
-                                    set({ monitorSpeakingIntervalIds: newMonitorSpeakingIntervalIds });
                                 }
-                                else {
-                                    requestAnimationFrame(applyMicSettings);
+                            }
+                            else {
+                                destNode.stream.getAudioTracks()[0].enabled = false;
+                                let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
+                                let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
+                                if (chatterCameraOnElement !== null) {
+                                    chatterCameraOnElement?.classList.remove('speaking_border');
                                 }
+                                else if (chatterCameraOffElement !== null) {
+                                    chatterCameraOffElement?.classList.remove('speaking_border');
+                                }
+                            }
+                            if (innerMonitorSpeakingIntervalIds.get(username) === undefined) {
+                                let newMonitorSpeakingId = requestAnimationFrame(applyMicSettings);
+                                const newMonitorSpeakingIntervalIds = new Map(innerMonitorSpeakingIntervalIds);
+                                newMonitorSpeakingIntervalIds.set(username, newMonitorSpeakingId);
+
+                                set({ monitorSpeakingIntervalIds: newMonitorSpeakingIntervalIds });
+                            }
+                            else {
+                                requestAnimationFrame(applyMicSettings);
                             }
                         }
                     }
-                    applyMicSettings();
-                    if (audioTx && audioTx.sender) {
-                        audioTx.sender.replaceTrack(destNode.stream.getAudioTracks()[0]);
-                    }
-                    else {
-                        chrome.runtime.sendMessage({ type: "enable-mic" });
-                    }
-                    set({ hasMicPermission: true, micStream: destNode.stream, pendingMicStream: true });
+                }
+                applyMicSettings();
+                if (audioTx && audioTx.sender) {
+                    audioTx.sender.replaceTrack(destNode.stream.getAudioTracks()[0]);
+                    set({ hasMicPermission: true, micStream: destNode.stream });
                 }
                 else {
-                    console.log('THERE IS NO AUDIO CONTEXT.');
-                }
-            },
-            handleGetMicrophone: async (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => {
-                let handleApplyMicSettings = get().handleApplyMicSettings;
-                try {
-                    const micStream = await navigator.mediaDevices.getUserMedia({
-                        video: false,
-                        audio: {
-                            channelCount: 2,
-                            autoGainControl: false,
-                            echoCancellation: false,
-                            noiseSuppression: false,
-                            // deviceId: {}
-                        }
-                    })
-                    handleApplyMicSettings(username, micStream, settingsStore);
-                    return micStream;
-                }
-                catch (err) {
-                    console.log('problem getting mic:', err);
-                    set({ hasMicPermission: false });
-                    return null;
-                }
-            },
-            handleGetCamera: async (username: string) => {
-                console.log(username);
-                let peerConnection = get().peerConnection;
-                let videoTx = get().videoTx;
-                try {
-                    const camStream = await navigator.mediaDevices.getUserMedia({
-                        video: {
-                            width: { ideal: 1920 },
-                            height: { ideal: 1080 },
-                            frameRate: {
-                                ideal: 60,
-                                min: 30,
-                                max: 60,
-                            },
-                            // deviceId: {}
-                        }
-                    })
-                    if (videoTx !== null) {
-                        await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
-                    }
-                    else {
-                        chrome.runtime.sendMessage({ type: "enable-camera" });
-                    }
-                    set({ hasCamPermission: true, camStream, videoTx, pendingCamStream: true });
-                    // let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
-                    // console.log(videoElement);
-                    // if (videoElement) {
-                    //     videoElement.srcObject = camStream;
-                    // }
-                    return camStream;
-                }
-                catch (err) {
-                    console.log('problem getting camera: ', err);
-                    set({ hasCamPermission: false });
-                    return null;
-                }
-            },
-            muteMic: () => {
-                let micStream = get().micStream;
-                if (micStream && micStream.getAudioTracks()[0]) {
-                    micStream.getAudioTracks()[0].enabled = false;
-                    return set({ micStream });
-                }
-            },
-            unmuteMic: () => {
-                let micStream = get().micStream;
-                if (micStream && micStream.getAudioTracks()[0]) {
-                    micStream.getAudioTracks()[0].enabled = true;
-                    set({ micStream });
-                }
-            },
-            turnOffCamera: () => {
-                let camStream = get().camStream;
-                let peerConnection = get().peerConnection;
-                let videoTx = get().videoTx;
-
-                if (camStream && camStream.getVideoTracks()[0]) {
-                    let track = camStream.getVideoTracks()[0];
-                    track.stop();
-                    camStream.removeTrack(track);
-                    if (videoTx && videoTx.sender) {
-                        videoTx?.sender.replaceTrack(null);
-                    }
-                }
-                set({ camStream: null, videoTx, peerConnection, hasCamPermission: false });
-            },
-            turnOffMicrophone: () => {
-                let micStream = get().micStream;
-                let peerConnection = get().peerConnection;
-                let audioTx = get().audioTx;
-                
-                if (micStream && micStream.getAudioTracks()[0]) {
-                    micStream.getAudioTracks().forEach(track => {
-                        track.stop();
-                        micStream?.removeTrack(track);
-                        if (audioTx && audioTx.sender) {
-                            audioTx?.sender.replaceTrack(null);
-                        }
-                    })
-                }
-                set({ micStream: null, audioTx, peerConnection, hasMicPermission: false, });
-            },
-            handleUserUpdatedSettings: (msg: UserUpdatedSettings) => {
-                // update in currentCall.chatters
-                let chatterChannel = get().chatterChannel;
-                if (msg.UserUpdatedSettings.callSessionId === chatterChannel?.sessionId) {
-                    let newChatterChannel = chatterChannel;
-                    newChatterChannel.chatters = newChatterChannel.chatters.map(chatter => {
-                        if (chatter.username === msg.UserUpdatedSettings.username) {
-                            let newChatter: Chatter = {
-                                ...chatter,
-                                username: msg.UserUpdatedSettings.username,
-                                settings: msg.UserUpdatedSettings.settings,
-                            };
-                            return newChatter
-                        }
-                        return chatter;
-                    });
-                    set({ chatterChannel: newChatterChannel });
+                    chrome.runtime.sendMessage({ type: "enable-mic" });
+                    set({ hasMicPermission: true, micStream: destNode.stream, pendingMicStream: true });
                 }
             }
-        }),
-        {
-            name: "current-call-session-storage",
-            storage: createJSONStorage(() => ChromeSessionStorage),
-            // partialize: (state) =>
-            //     Object.fromEntries(
-            //         Object.entries(state).filter(([key]) => !['audioTx', 'micStream', 'micSender', 'camStream', 'camSender', 'audioContext', 'remoteStreams', 'peerConnection', 'monitorSpeakingIntervalIds', 'focusedWindow'].includes(key))
-            //     )
-            partialize: (state => ({
-                chatterChannel: state.chatterChannel,
-                tabId: state.tabId,
-            }))
-        }
-    )
+            else {
+                console.log('THERE IS NO AUDIO CONTEXT.');
+            }
+        },
+        handleGetMicrophone: async (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => {
+            let handleApplyMicSettings = get().handleApplyMicSettings;
+            try {
+                const micStream = await navigator.mediaDevices.getUserMedia({
+                    video: false,
+                    audio: {
+                        channelCount: 2,
+                        autoGainControl: false,
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        // deviceId: {}
+                    }
+                })
+                handleApplyMicSettings(username, micStream, settingsStore);
+                return micStream;
+            }
+            catch (err) {
+                console.log('problem getting mic:', err);
+                set({ hasMicPermission: false });
+                return null;
+            }
+        },
+        handleGetCamera: async (username: string) => {
+            console.log(username);
+            let peerConnection = get().peerConnection;
+            let videoTx = get().videoTx;
+            try {
+                const camStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 },
+                        frameRate: {
+                            ideal: 60,
+                            min: 30,
+                            max: 60,
+                        },
+                        // deviceId: {}
+                    }
+                })
+                if (videoTx !== null) {
+                    await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
+                    set({ hasCamPermission: true, camStream, videoTx, pendingCamStream: true });
+                }
+                else {
+                    chrome.runtime.sendMessage({ type: "enable-camera" });
+                    set({ hasCamPermission: true, camStream, pendingCamStream: true });
+                }
+                // let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
+                // console.log(videoElement);
+                // if (videoElement) {
+                //     videoElement.srcObject = camStream;
+                // }
+                return camStream;
+            }
+            catch (err) {
+                console.log('problem getting camera: ', err);
+                set({ hasCamPermission: false });
+                return null;
+            }
+        },
+        muteMic: () => {
+            let micStream = get().micStream;
+            if (micStream && micStream.getAudioTracks()[0]) {
+                micStream.getAudioTracks()[0].enabled = false;
+                return set({ micStream });
+            }
+        },
+        unmuteMic: () => {
+            let micStream = get().micStream;
+            if (micStream && micStream.getAudioTracks()[0]) {
+                micStream.getAudioTracks()[0].enabled = true;
+                set({ micStream });
+            }
+        },
+        turnOffCamera: () => {
+            let camStream = get().camStream;
+            let peerConnection = get().peerConnection;
+            let videoTx = get().videoTx;
+
+            if (camStream && camStream.getVideoTracks()[0]) {
+                let track = camStream.getVideoTracks()[0];
+                track.stop();
+                camStream.removeTrack(track);
+                if (videoTx && videoTx.sender) {
+                    videoTx?.sender.replaceTrack(null);
+                }
+            }
+            set({ camStream: null, videoTx, peerConnection, hasCamPermission: false });
+        },
+        turnOffMicrophone: () => {
+            let micStream = get().micStream;
+            let peerConnection = get().peerConnection;
+            let audioTx = get().audioTx;
+            
+            if (micStream && micStream.getAudioTracks()[0]) {
+                micStream.getAudioTracks().forEach(track => {
+                    track.stop();
+                    micStream?.removeTrack(track);
+                    if (audioTx && audioTx.sender) {
+                        audioTx?.sender.replaceTrack(null);
+                    }
+                })
+            }
+            set({ micStream: null, audioTx, peerConnection, hasMicPermission: false, });
+        },
+    }),
 );

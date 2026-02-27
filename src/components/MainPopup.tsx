@@ -37,15 +37,15 @@ const channelsDummy = [
 export default function MainPopup() {
     const browsemStore = useBrowsemStore();
     const [error, setError] = useState<{ urlError: string }>({ urlError: "" });
-    const [colorschemePreference, setColorschemePreference] = useState<'light' | 'dark'>(() => {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        if (mediaQuery.matches) {
-            return 'dark'
-        }
-        else {
-            return 'light'
-        }
-    });
+    // const [colorschemePreference, setColorschemePreference] = useState<'light' | 'dark'>(() => {
+    //     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    //     if (mediaQuery.matches) {
+    //         return 'dark'
+    //     }
+    //     else {
+    //         return 'light'
+    //     }
+    // });
 
     const handleStartCreatingChannel = () => {
         browsemStore.setCurrentSelection("CreatingChannel");

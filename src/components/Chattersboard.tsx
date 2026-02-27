@@ -6,6 +6,7 @@ import { useSettingsStore } from '@/hooks/settingsStore';
 
 function ChattersBoard() {
     const currentCallStore = useCurrentCallStore();
+    const chatterChannel = useBrowsemStore(state => state.chatterChannel);
     const yourUsername = useBrowsemStore(state => state.username);
     const focusedWindow = useCurrentCallStore(state => state.focusedWindow);
     const setFocusedWindow = useCurrentCallStore(state => state.setFocusedWindow);
@@ -51,14 +52,14 @@ function ChattersBoard() {
                     {
                         focusedWindow.chatter.username === yourUsername
                         ?
-                        <BrowsemChatter key={focusedWindow.chatter.sessionId} chatter={{...focusedWindow.chatter, settings: yourSettings}} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={true} />
+                        <BrowsemChatter key={focusedWindow.chatter.sessionId} chatter={{ ...(chatterChannel!.chatters.find(chatter => chatter.username === yourUsername)!), settings: yourSettings }} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={true} />
                             :
-                        <BrowsemChatter key={focusedWindow.chatter.sessionId} chatter={focusedWindow.chatter} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={true} />
+                        <BrowsemChatter key={focusedWindow.chatter.sessionId} chatter={chatterChannel!.chatters.find(chatter => chatter.username === focusedWindow.chatter.username)!} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={true} />
                     }
                 </div>
                 <div className="chattersboard_bottom">
                     {
-                        currentCallStore.chatterChannel?.chatters.map(chatter => (
+                        chatterChannel?.chatters.map(chatter => (
                             <>
                                 {
                                     chatter.username === yourUsername
@@ -75,7 +76,7 @@ function ChattersBoard() {
         :
             <div className="chatters-board">
                 {
-                    currentCallStore.chatterChannel?.chatters.map(chatter => (
+                    chatterChannel?.chatters.map(chatter => (
                         chatter.username === yourUsername
                         ?
                             <BrowsemChatter chatter={{...chatter, settings: yourSettings}} handleSetFocusedWindow={handleSetFocusedWindow} focusedWindow={focusedWindow} isFocused={false} />

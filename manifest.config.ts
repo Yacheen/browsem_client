@@ -21,6 +21,7 @@ export default defineManifest({
     'tabs',
     'webNavigation',
   ],
+  host_permissions: ["<all_urls>"],
   content_scripts: [{
     js: ['src/content/main.tsx'],
     matches: ['<all_urls>'],

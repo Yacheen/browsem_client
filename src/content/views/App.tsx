@@ -6,29 +6,42 @@ import { useEffect, useRef, useState } from 'react';
 import { useChannelsStore } from '@/hooks/ChannelsStore';
 import allStyles from "../../components/AllStyles.scss?inline";
 import { useSettingsStore } from '@/hooks/settingsStore';
-import { BackgroundMessage, isAnswerFromServer, isIceCandidate, isOfferFromServer } from '@/background';
+import { BackgroundMessage, isAnswerFromServer, isDisconnectedFromCall, isIceCandidate, isOfferFromServer } from '@/utils/types';
 
 export default function App() {
-    const chatterChannel = useCurrentCallStore(state => state.chatterChannel)
-    const callTabId = useCurrentCallStore(state => state.tabId);
+    const chatterChannel = useBrowsemStore(state => state.chatterChannel)
     const settings = useSettingsStore(state => state.settings);
-    const setSettings = useSettingsStore(state => state.setSettings);
-    const handleOfferFromServer = useCurrentCallStore(state => state.handleOfferFromServer); 
-    const handleAnswerFromServer = useCurrentCallStore(state => state.handleAnswerFromServer);
-    const handleIceCandidateFromServer = useCurrentCallStore(state => state.handleIceCandidateFromServer);
-    const connectedToCall = useCurrentCallStore(state => state.connectedToCall);
     const disconnectFromCall = useCurrentCallStore(state => state.disconnectFromCall);
-    const disconnectedFromCall = useCurrentCallStore(state => state.disconnectedFromCall);
-    const channelsStore = useChannelsStore();
     const browsemStore = useBrowsemStore();
+    const callTabId = useBrowsemStore(state => state.callTabId);
     const currentCallStore = useCurrentCallStore();
-    // im in a call, connectedtocall, its not me, and its in mine
-    
-    const [currentTabId, setCurrentTabId] = useState(null);
+    const peerConnection = useCurrentCallStore(state => state.peerConnection);
     const messageListenerExists = useRef(false);
+    const [currentTabId, setCurrentTabId] = useState<number | null>(null);
+
+    useEffect(() => {
+        chrome.runtime.sendMessage({ type: "get-tab-id" }, (response) => {
+            console.log('content script got a response: ', response);
+            if (response?.tabId) {
+                setCurrentTabId(response.tabId);
+            }
+        });
+    }, []);
+
+    // whenever channelChatter and callTabId changes, handle currentcallstore accordingly.
+    // information about currentcall gets set after receiving an offer from server,
+    // which will in turn show the window. when browsemStore.calltabid and chatterchannel goes null,
+    // we kill the window.
+    // useEffect(() => {
+    //     if (callTabId) {
+    //         if (peerConnection === null) {
+    //             currentCallStore.startPeerConnection();
+    //         }
+    //     }
+    // }, [callTabId, peerConnection]);
 
     const handleCloseCurrentCall = async () => {
-        disconnectFromCall();
+        disconnectFromCall(true);
     };
 
     useEffect(() => {
@@ -46,15 +59,23 @@ export default function App() {
     // handling messages, opens when browsemstore gets username from storage session,
     // which happens when popup is opened.
     const messageListener = async (message: BackgroundMessage) => {
-        if (message.type === "offer-from-server") {
+        console.log('got a message from background server: ', message);
+        if (isOfferFromServer(message.contents)) {
+            currentCallStore.handleOfferFromServer(message.contents);
         }
-        else if (message.type === "answer-from-server") {
+        else if (isAnswerFromServer(message.contents)) {
+            currentCallStore.handleAnswerFromServer(message.contents);
         }
-        else if (message.type === "ice-candidate") {
+        else if (isIceCandidate(message.contents)) {
+            currentCallStore.handleIceCandidateFromServer(message.contents);
+        }
+        else if (isDisconnectedFromCall(message.contents)) {
+            console.log('received isdisconnectedfromcall on content script, dcing..');
+            await currentCallStore.disconnectedFromCall(message.contents);
         }
     }
     const handleRefresh = () => {
-        currentCallStore.disconnectFromCall();
+        currentCallStore.disconnectFromCall(true);
     }
     useEffect(() => {
         if (messageListenerExists.current === false) {
@@ -69,7 +90,7 @@ export default function App() {
         }
     }, []);
     return (
-        browsemStore.callTabId === browsemStore.currentTabId && chatterChannel !== null
+        callTabId === currentTabId && peerConnection !== null 
         ?
             <>
                 <style>{allStyles}</style>

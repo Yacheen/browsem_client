@@ -1,9 +1,9 @@
 import { useBrowsemStore } from '@/hooks/browsemStore';
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import Tooltip from '@mui/material/Tooltip';
 import "./Channels.scss";
-import { Chatter, useChannelsStore } from '@/hooks/ChannelsStore';
+import { useChannelsStore } from '@/hooks/ChannelsStore';
 import { shortenStringWithDots } from '@/utils/functions';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -27,7 +27,7 @@ import MonitorIcon from '@mui/icons-material/Monitor';
 export default function Channels() {
     const browsemStore = useBrowsemStore();
     const channelsStore = useChannelsStore();
-    const currentCallStore = useCurrentCallStore();
+    // const currentCallStore = useCurrentCallStore();
     const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
     const [textColor, setTextColor] = useState<'hsl(0, 0%, 10%)' | 'hsl(0, 0%, 95%)'>(() => {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -63,8 +63,14 @@ export default function Channels() {
       return newUrl.pathname + newUrl.search + newUrl.hash;
   }
   const handleConnectToCall = (channelName: string) => {
-      currentCallStore.connectToCall(channelName);
+    chrome.runtime.sendMessage({
+        type: "connect-to-call",
+        channelName: channelName,
+    });
   }
+  useEffect(() => {
+      console.log('channelsStore is now: ', channelsStore);
+  }, [channelsStore]);
 
   return (
         <div className="url-calls-container">
