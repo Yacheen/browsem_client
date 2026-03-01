@@ -12,6 +12,7 @@ const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
 
 function CallSidebar() {
     const browsemStore = useBrowsemStore();
+    const callUrl = useBrowsemStore(state => state.chatterChannel?.fullUrl);
     const currentCall = useCurrentCallStore();
     const channelsStore = useChannelsStore();
     const settings = useSettingsStore(state => state.settings);
@@ -25,7 +26,7 @@ function CallSidebar() {
                     <p className="channels-on-origin">{useChannelsStore.getState().urlCalls.map(urlCall => urlCall.channels.length).reduce((accumulator, currentValue) => accumulator + currentValue, 0) } channels on {getDomainName(browsemStore.currentUrl)}</p>
             }
             <p className="calls-header">Calls</p>
-            <Channels />
+            <Channels  urlForRenderingDomains={callUrl} />
             <Chatroom />
             <CallButtons chatter={{
                 username: browsemStore.username,

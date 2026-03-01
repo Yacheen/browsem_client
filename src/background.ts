@@ -15,16 +15,6 @@ Promise.all([
     channelsStoreBackendReady(),
     settingsStoreBackendReady(),
 ]).then(([browsemStore, channelsStore, settingsStore]) => {
-    browsemStore.subscribe((state) => {
-        console.log(state);
-    })
-    channelsStore.subscribe((state) => {
-        console.log(state);
-    })
-    settingsStore.subscribe((state) => {
-        console.log(state);
-    })
-
     try {
         chrome.storage.session.setAccessLevel({
             accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS"
@@ -63,6 +53,9 @@ Promise.all([
         }
         else if (message.type === "get-channels-by-origin") {
             await getChannelsByOrigin();
+        }
+        else if (message.type === "get-channels-by-origins") {
+            socket?.send(JSON.stringify("GetChannelsByOrigins"));
         }
         else if (message.type === "connect-to-call") {
             await connectToCall(message.channelName);
@@ -120,6 +113,7 @@ Promise.all([
 
         socket.onmessage = async (event) => {
             let message: ClientMessage = JSON.parse(event.data);
+            console.log('got message: ', message);
             if (isConnected(message)) {
                 browsemStore.getState().connected(message);
                 browsemStore.getState().setCurrentSelection("Connected");
@@ -136,7 +130,7 @@ Promise.all([
                 sendUpdateUrlsMessage();
             }
             else if (isUrlsUpdated(message)) {
-                getChannelsByOrigin();
+                getChannelsByOrigins();
                 getBrowsemStats();
             }
             else if (isDisconnected(message)) {
@@ -186,20 +180,37 @@ Promise.all([
                 browsemStore.getState().setBrowsemStats(sessionsOnline, sessionsInYourOrigin, sessionsInYourUrl);
             }
             else if (isOriginCalls(message)) {
-                console.log('got origin calls: ', message);
                 channelsStore.getState().setUrlCalls(message.OriginCalls.urls);
             }
             else if (isConnectedToCall(message)) {
                 let msg: ConnectedToCall = message;
                 let chatterChannelHandle: ChatterChannel | undefined;
 
-                const newUrlCalls = channelsStore.getState().urlCalls.map(urlCall => {
-                    if (urlCall.urlName !== msg.ConnectedToCall.urlName) return urlCall;
+                // const newUrlCalls = channelsStore.getState().urlCalls.map(urlCall => {
+                //     if (urlCall.urlName !== msg.ConnectedToCall.urlName) return urlCall;
+                //     return {
+                //         ...urlCall,
+                //         channels: urlCall.channels.map(channel => {
+                //             if (channel.channelName !== msg.ConnectedToCall.channelName) return channel;
+                //
+                //             const updatedChannel = {
+                //                 ...channel,
+                //                 chatters: [...channel.chatters, msg.ConnectedToCall.connectedChatter],
+                //             };
+                //             chatterChannelHandle = updatedChannel;
+                //             return updatedChannel;
+                //         }),
+                //     };
+                // });
+                //
+                // channelsStore.getState().setUrlCalls(newUrlCalls);
+
+                channelsStore.getState().setUrlCallsWithPrevState(prev => prev.map(urlCall => {
+                if (urlCall.urlName !== msg.ConnectedToCall.urlName) return urlCall;
                     return {
                         ...urlCall,
                         channels: urlCall.channels.map(channel => {
                             if (channel.channelName !== msg.ConnectedToCall.channelName) return channel;
-
                             const updatedChannel = {
                                 ...channel,
                                 chatters: [...channel.chatters, msg.ConnectedToCall.connectedChatter],
@@ -208,15 +219,12 @@ Promise.all([
                             return updatedChannel;
                         }),
                     };
-                });
-
-                channelsStore.getState().setUrlCalls(newUrlCalls);
+                }));
 
                 if (chatterChannelHandle) {
                     if (msg.ConnectedToCall.connectedChatter.username === browsemStore.getState().username) {
                         let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
                         if (activeTab[0].id) {
-                            console.log('setting the calls calltabid to:', activeTab[0].id);
                             browsemStore.getState().setChatterChannel(chatterChannelHandle, activeTab[0].id);
                         }
                     }
@@ -232,91 +240,70 @@ Promise.all([
                 }
             }
             else if (isDisconnectedFromCall(message)) {
-                // let msg: DisconnectedFromCall = message;
+                let msg: DisconnectedFromCall = message;
                 // const newUrlCalls = channelsStore.getState().urlCalls.map(urlCall => {
                 //     if (urlCall.urlName !== msg.DisconnectedFromCall.urlName) return urlCall;
                 //     return {
                 //         ...urlCall,
                 //         channels: urlCall.channels.map(channel => {
                 //             if (channel.channelName !== msg.DisconnectedFromCall.channelName) return channel;
-                //             const updatedChannel = {
+                //             console.log('the channelName and urlName is the same, filtering...');
+                //             return {
                 //                 ...channel,
-                //                 chatters: channel.chatters.filter(chatter => chatter.username != msg.DisconnectedFromCall.disconnectedChatter.username),
-                //             }
-                //             return updatedChannel;
-                //         })
-                //     }
+                //                 chatters: channel.chatters.filter(chatter => chatter.username !== msg.DisconnectedFromCall.disconnectedChatter.username),
+                //             };
+                //         }),
+                //     };
                 // });
                 //
                 // channelsStore.getState().setUrlCalls(newUrlCalls);
-                //
-                // let callTabId = browsemStore.getState().callTabId;
-                // if (callTabId) {
-                //     chrome.tabs.sendMessage(callTabId, {
-                //         type: "disconnected-from-call",
-                //         contents: message
-                //     });
-                // }
-                // if (message.DisconnectedFromCall.disconnectedChatter.username === browsemStore.getState().username) {
-                //     settingsStore.getState().setSettings({
-                //         ...settingsStore.getState().settings,
-                //         cameraIsOn: false,
-                //         microphoneIsOn: false,
-                //         sharingScreen: false,
-                //     });
-                //     browsemStore.getState().setChatterChannel(null, null);
-                // }
-                // else {
-                //     let chatterChannel = browsemStore.getState().chatterChannel;
-                //     let newChatterChannel = chatterChannel;
-                //     if (newChatterChannel) {
-                //         newChatterChannel.chatters = newChatterChannel.chatters.filter(chatter => chatter.username !== msg.DisconnectedFromCall.disconnectedChatter?.username);
-                //         browsemStore.getState().setChatterChannel(newChatterChannel, browsemStore.getState().callTabId);
-                //     }
-                // }
-                    let msg: DisconnectedFromCall = message;
-                    const newUrlCalls = channelsStore.getState().urlCalls.map(urlCall => {
-                        if (urlCall.urlName !== msg.DisconnectedFromCall.urlName) return urlCall;
-                        return {
-                            ...urlCall,
-                            channels: urlCall.channels.map(channel => {
-                                if (channel.channelName !== msg.DisconnectedFromCall.channelName) return channel;
-                                return {
-                                    ...channel,
-                                    chatters: channel.chatters.filter(chatter => chatter.username !== msg.DisconnectedFromCall.disconnectedChatter.username),
-                                };
-                            }),
-                        };
+
+                channelsStore.getState().setUrlCallsWithPrevState(prev => prev.map(urlCall => {
+                    if (urlCall.urlName !== msg.DisconnectedFromCall.urlName) return urlCall;
+                    return {
+                        ...urlCall,
+                        channels: urlCall.channels.map(channel => {
+                            if (channel.channelName !== msg.DisconnectedFromCall.channelName) return channel;
+                            console.log('the channelName and urlName is the same, filtering...');
+                            return {
+                                ...channel,
+                                chatters: channel.chatters.filter(chatter => chatter.username !== msg.DisconnectedFromCall.disconnectedChatter.username),
+                            };
+                        }),
+                    };
+                }));
+
+
+
+                if (msg.DisconnectedFromCall.disconnectedChatter.username === browsemStore.getState().username) {
+                    console.log('YOU ARE THE ONE THAT DISCONNECTED GET DOWN!!!!!!!!!!!!');
+                    settingsStore.getState().setSettings({
+                        ...settingsStore.getState().settings,
+                        cameraIsOn: false,
+                        microphoneIsOn: false,
+                        sharingScreen: false,
                     });
-
-                    channelsStore.getState().setUrlCalls(newUrlCalls);
-
-
-                    if (msg.DisconnectedFromCall.disconnectedChatter.username === browsemStore.getState().username) {
-                        settingsStore.getState().setSettings({
-                            ...settingsStore.getState().settings,
-                            cameraIsOn: false,
-                            microphoneIsOn: false,
-                            sharingScreen: false,
+                    const callTabId = browsemStore.getState().callTabId;
+                    if (callTabId) {
+                        chrome.tabs.sendMessage(callTabId, {
+                            type: "disconnected-from-call",
+                            contents: message
                         });
-                        const callTabId = browsemStore.getState().callTabId;
-                        if (callTabId) {
-                            chrome.tabs.sendMessage(callTabId, {
-                                type: "disconnected-from-call",
-                                contents: message
-                            });
-                        }
+                    }
+                    if (msg.DisconnectedFromCall.reason !== 'joining another call') {
                         browsemStore.getState().setChatterChannel(null, null);
                     }
-                    else {
-                        const chatterChannel = browsemStore.getState().chatterChannel;
-                        if (chatterChannel) {
-                            browsemStore.getState().setChatterChannel({
-                                ...chatterChannel,
-                                chatters: chatterChannel.chatters.filter(chatter => chatter.username !== msg.DisconnectedFromCall.disconnectedChatter.username),
-                            }, browsemStore.getState().callTabId);
-                        }
+                }
+                else {
+                    console.log('they are the one that disconnected----------');
+                    const chatterChannel = browsemStore.getState().chatterChannel;
+                    if (chatterChannel) {
+                        browsemStore.getState().setChatterChannel({
+                            ...chatterChannel,
+                            chatters: chatterChannel.chatters.filter(chatter => chatter.username !== msg.DisconnectedFromCall.disconnectedChatter.username),
+                        }, browsemStore.getState().callTabId);
                     }
+                }
             }
             else if (isOfferFromServer(message)) {
                 let callTabId = useBrowsemStore.getState().callTabId;
@@ -438,7 +425,6 @@ Promise.all([
                 }
             };
             socket?.send(JSON.stringify(updateUrlsMessage));
-            console.log('yeah this sent..');
         }
     }
     const getBrowsemStats = async () => {
@@ -473,6 +459,22 @@ Promise.all([
             socket?.send(JSON.stringify(message));
         }
     }
+    const getChannelsByOrigins = async () => {
+        // const tabs = await chrome.tabs.query({ });
+        // let urls = tabs.map(tab => (tab.url as string));
+        // let urlOrigins = urls.map(url => new URL((url as string)).origin);
+        // let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+
+        // if (activeTab[0].url) {
+            // let message = {
+            //     GetChannelsByOrigins: {
+            //         // currentUrl: activeTab[0].url,
+            //         currentOrigin: new URL(activeTab[0].url).origin,
+            //     }
+            // };
+        // }
+        socket?.send(JSON.stringify("GetChannelsByOrigins"));
+    }
     const getChannelsByOrigin = async () => {
         const tabs = await chrome.tabs.query({ });
         let urls = tabs.map(tab => (tab.url as string));
@@ -481,8 +483,8 @@ Promise.all([
 
         if (activeTab[0].url) {
             let message = {
-                GetChannelsByOrigin: {
-                    currentUrl: activeTab[0].url,
+                GetChannelsByOrigins: {
+                    // currentUrl: activeTab[0].url,
                     currentOrigin: new URL(activeTab[0].url).origin,
                 }
             };

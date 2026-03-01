@@ -101,7 +101,6 @@ export type ChannelNameTooLong = {
 };
 export type OriginCalls = {
     OriginCalls: {
-        originName: string,
         urls: UrlCalls[],
     }
 }
@@ -145,6 +144,7 @@ export type ConnectedToCall = {
         channelName: string ,
         channelSessionId: string,
         urlName: string,
+        urlOrigin: string,
     }
 }
 export type DisconnectedFromCall = {

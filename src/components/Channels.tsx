@@ -4,7 +4,7 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import Tooltip from '@mui/material/Tooltip';
 import "./Channels.scss";
 import { useChannelsStore } from '@/hooks/ChannelsStore';
-import { shortenStringWithDots } from '@/utils/functions';
+import { getDomainName, shortenStringWithDots } from '@/utils/functions';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
@@ -23,10 +23,15 @@ import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
 import HeadsetIcon from '@mui/icons-material/Headset';
 // screenshere
 import MonitorIcon from '@mui/icons-material/Monitor';
+import { UrlCalls } from '@/utils/types';
 
-export default function Channels() {
-    const browsemStore = useBrowsemStore();
-    const channelsStore = useChannelsStore();
+type ChannelsProps = {
+    urlForRenderingDomains: string | undefined,
+}
+export default function Channels({ urlForRenderingDomains }: ChannelsProps) {
+    const yourCurrentUrl = useBrowsemStore(state => state.currentUrl);
+    const currentChannel = useBrowsemStore(state => state.chatterChannel);
+    const urlCalls = useChannelsStore(state => state.urlCalls);
     // const currentCallStore = useCurrentCallStore();
     const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
     const [textColor, setTextColor] = useState<'hsl(0, 0%, 10%)' | 'hsl(0, 0%, 95%)'>(() => {
@@ -68,14 +73,12 @@ export default function Channels() {
         channelName: channelName,
     });
   }
-  useEffect(() => {
-      console.log('channelsStore is now: ', channelsStore);
-  }, [channelsStore]);
 
   return (
         <div className="url-calls-container">
             {
-                channelsStore.urlCalls.map(urlCall => (
+                // only use currentChannel.fullUrl if ur in a call and this rendering of channels is in the currentCall
+                urlCalls.filter(urlCall => getDomainName(urlCall.urlName) === getDomainName(urlForRenderingDomains ?? yourCurrentUrl)).map(urlCall => (
                     <>
                         <div onClick={() => handleSetCurrentUrlDropdown(urlCall.urlName)} className="url-call-container" key={urlCall.urlName}>
                             <p title={urlCall.urlName} className="url-call-name">{getUrlNameForUrlCall(urlCall.urlName)}</p>

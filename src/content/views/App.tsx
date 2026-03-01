@@ -90,7 +90,7 @@ export default function App() {
         }
     }, []);
     return (
-        callTabId === currentTabId && peerConnection !== null 
+        callTabId === currentTabId
         ?
             <>
                 <style>{allStyles}</style>

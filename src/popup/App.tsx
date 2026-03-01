@@ -14,6 +14,7 @@ import { BackgroundMessage, IceCandidate } from '../utils/types.ts';
 export default function App() {
     const messageListenerExists = useRef(false);
     const browsemStore = useBrowsemStore();
+    const socketState = useBrowsemStore(state => state.socketState);
 
     const handleConnectToServer = () => {
         browsemStore.connect();
@@ -53,6 +54,17 @@ export default function App() {
     //         messageListenerExists.current = false;
     //     }
     // }, []);
+    useEffect(() => {
+        if (socketState === "Connected") {
+            chrome.runtime.sendMessage({
+                "type": "get-browsem-stats",
+            });
+            // can do origins as well instead in future
+            chrome.runtime.sendMessage({
+                "type": "get-channels-by-origins",
+            });
+        }
+    }, []);
 
   return (
       <>

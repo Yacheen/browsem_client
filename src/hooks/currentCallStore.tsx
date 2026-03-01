@@ -110,27 +110,44 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             peerConnection?.close();
             let yourUsername = useBrowsemStore.getState().username;
             if (yourUsername === msg.DisconnectedFromCall.disconnectedChatter.username) {
-                set({
-                    connection: "disconnected",
-                    audioContext: null,
-                    audioTx: null,
-                    monitorSpeakingIntervalIds: new Map(),
-                    videoTx: null,
-                    camStream: null,
-                    focusedWindow: null,
-                    loadingMyVideo: false,
-                    makingOffer: false,
-                    micStream: null,
-                    peerConnection: null,
-                    remoteStreams: new Map(),
-                    pendingCamStream: false,
-                    pendingMicStream: false,
-                    pendingIceCandidates: [],
-                });
-                // if (msg.DisconnectedFromCall.reason === "joining another call") {
-                // }
-                // else {
-                // }
+                if (msg.DisconnectedFromCall.reason === "joining another call") {
+                    set({
+                        connection: "disconnected",
+                        audioContext: null,
+                        audioTx: null,
+                        monitorSpeakingIntervalIds: new Map(),
+                        videoTx: null,
+                        camStream: null,
+                        focusedWindow: null,
+                        loadingMyVideo: false,
+                        makingOffer: false,
+                        micStream: null,
+                        peerConnection: null,
+                        remoteStreams: new Map(),
+                        pendingCamStream: false,
+                        pendingMicStream: false,
+                        pendingIceCandidates: [],
+                    });
+                }
+                else {
+                    set({
+                        connection: "disconnected",
+                        audioContext: null,
+                        audioTx: null,
+                        monitorSpeakingIntervalIds: new Map(),
+                        videoTx: null,
+                        camStream: null,
+                        focusedWindow: null,
+                        loadingMyVideo: false,
+                        makingOffer: false,
+                        micStream: null,
+                        peerConnection: null,
+                        remoteStreams: new Map(),
+                        pendingCamStream: false,
+                        pendingMicStream: false,
+                        pendingIceCandidates: [],
+                    });
+                }
             }
             // else {
             // }
@@ -250,17 +267,15 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     if (peerConnection) {
                         let newRemoteStreams = new Map(remoteStreams);
                         if (newRemoteStreams.has(username)) {
-                            let newRemoteStream = newRemoteStreams.get(username);
-                            if (newRemoteStream !== undefined) {
-                                newRemoteStream.addTrack(track);
-                                newRemoteStreams.set(username, newRemoteStream);
-                                set({ remoteStreams: newRemoteStreams });
-                            }
+                            let existingStream = newRemoteStreams.get(username)!;
+                            existingStream.getTracks().forEach(t => {
+                                if (t.kind !== track.kind) {
+                                    stream.addTrack(t);
+                                }
+                            });
                         }
-                        else {
-                            newRemoteStreams.set(username, stream);
-                            set({ remoteStreams: newRemoteStreams });
-                        }
+                        newRemoteStreams.set(username, stream);
+                        set({ remoteStreams: newRemoteStreams });
                     }
                 }
                 if (type === "audio") {
@@ -475,23 +490,50 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             if (peerConnection) {
                 // attach pending camera
                 if (pendingCamStream && camStream) {
-                    const transceivers = peerConnection?.getTransceivers()
-                    const videoTx = transceivers[transceivers.length - 1];
+                    const videoTx = peerConnection.getTransceivers().find(tx => {
+                        const mid = tx.mid;
+                        const remoteDesc = peerConnection.remoteDescription?.sdp;
+                        if (!remoteDesc || !mid) return false;
+                        // find the m-section for this mid and check if server said recvonly
+                        const section = remoteDesc.split('\r\nm=').find(s => s.includes(`a=mid:${mid}`));
+                        return tx.receiver.track.kind === 'video' && section?.includes('a=recvonly');
+                    });
                     if (videoTx) {
                         await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
-                        videoTx.direction = "sendonly";
+                        videoTx.direction = 'sendonly';
+                        set({ videoTx, pendingCamStream: false });
                     }
-                    set({ videoTx, pendingCamStream: false });
+                    // const transceivers = peerConnection?.getTransceivers()
+                    // const videoTx = transceivers[transceivers.length - 1];
+                    // if (videoTx) {
+                    //     await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
+                    //     videoTx.direction = "sendonly";
+                    // }
+                    // set({ videoTx, pendingCamStream: false });
                 }
                 // attach pending mic
                 if (pendingMicStream && micStream) {
-                    const transceivers = peerConnection.getTransceivers()
-                    const audioTx = transceivers[transceivers.length - 1];
+                    const audioTx = peerConnection.getTransceivers().find(tx => {
+                        const mid = tx.mid;
+                        const remoteDesc = peerConnection.remoteDescription?.sdp;
+                        if (!remoteDesc || !mid) return false;
+                        // find the m-section for this mid and check if server said recvonly
+                        const section = remoteDesc.split('\r\nm=').find(s => s.includes(`a=mid:${mid}`));
+                        return tx.receiver.track.kind === 'audio' && section?.includes('a=recvonly');
+                    });
                     if (audioTx) {
                         await audioTx.sender.replaceTrack(micStream.getAudioTracks()[0]);
-                        audioTx.direction = "sendonly";
+                        audioTx.direction = 'sendonly';
+                        set({ audioTx, pendingCamStream: false });
                     }
-                    set({ audioTx, pendingMicStream: false });
+
+                    // const transceivers = peerConnection.getTransceivers()
+                    // const audioTx = transceivers[transceivers.length - 1];
+                    // if (audioTx) {
+                    //     await audioTx.sender.replaceTrack(micStream.getAudioTracks()[0]);
+                    //     audioTx.direction = "sendonly";
+                    // }
+                    // set({ audioTx, pendingMicStream: false });
                 }
             }
 
@@ -698,7 +740,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 track.stop();
                 camStream.removeTrack(track);
                 if (videoTx && videoTx.sender) {
-                    videoTx?.sender.replaceTrack(null);
+                    videoTx.sender.replaceTrack(null);
                 }
             }
             set({ camStream: null, videoTx, peerConnection, hasCamPermission: false });
