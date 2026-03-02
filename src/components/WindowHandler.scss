@@ -42,7 +42,7 @@
       line-height: 1.1;
     }
     p {
-        color: hsl(0, 0%, 95%);
+        color: var(--light-text) !important; 
         margin: 0;
         line-height: 1.5;
     }
@@ -172,7 +172,7 @@
             background-color: var(--dark-button-background);
         }
         p {
-          color: hsl(0, 0%, 10%);
+          color: var(--dark-text);
         }
         .MuiSvgIcon-root { 
             color: var(--dark-text);

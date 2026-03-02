@@ -65,7 +65,7 @@ export default function Channels({ urlForRenderingDomains }: ChannelsProps) {
   }
   const getUrlNameForUrlCall = (urlCall: string) => {
       let newUrl = new URL(urlCall);
-      return newUrl.pathname + newUrl.search + newUrl.hash;
+      return  decodeURIComponent(newUrl.pathname + newUrl.search + newUrl.hash);
   }
   const handleConnectToCall = (channelName: string) => {
     chrome.runtime.sendMessage({
@@ -80,10 +80,10 @@ export default function Channels({ urlForRenderingDomains }: ChannelsProps) {
                 // only use currentChannel.fullUrl if ur in a call and this rendering of channels is in the currentCall
                 urlCalls.filter(urlCall => getDomainName(urlCall.urlName) === getDomainName(urlForRenderingDomains ?? yourCurrentUrl)).map(urlCall => (
                     <>
-                        <div onClick={() => handleSetCurrentUrlDropdown(urlCall.urlName)} className="url-call-container" key={urlCall.urlName}>
-                            <p title={urlCall.urlName} className="url-call-name">{getUrlNameForUrlCall(urlCall.urlName)}</p>
+                        <div title={urlCall.urlName} onClick={() => handleSetCurrentUrlDropdown(urlCall.urlName)} className="url-call-container" key={urlCall.urlName}>
+                            <p className={`url-call-name ${getUrlNameForUrlCall(urlCall.urlName) === "/" ? 'homepage-text' : ''}`}>{getUrlNameForUrlCall(urlCall.urlName) === "/" ? "/homepage" : getUrlNameForUrlCall(urlCall.urlName)}</p>
                             <div className="url-call-right">
-                                <div className="url-call-channel-count">{urlCall.channels.length}</div>
+                                <div className={`${getUrlNameForUrlCall(urlCall.urlName) === "/" ? 'homepage-text' : ''} url-call-channel-count`}>{urlCall.channels.length}</div>
                                 <div className="url-call-dropped-down-icon-container">
                                     {
                                         currentUrlDropdown.find(urlDroppeddown => urlDroppeddown === urlCall.urlName)
@@ -101,7 +101,7 @@ export default function Channels({ urlForRenderingDomains }: ChannelsProps) {
                                 <div className="channels-container"> 
                                     {
                                         urlCall.channels.map(channel => (
-                                            <div onClick={() => handleConnectToCall(channel.channelName)} key={channel.sessionId} className="channel">
+                                            <div key={channel.sessionId} className="channel">
                                                 <Tooltip placement='top' title="Join" arrow disableInteractive slotProps={{
                                                     popper: {
                                                         style: {
@@ -114,12 +114,12 @@ export default function Channels({ urlForRenderingDomains }: ChannelsProps) {
                                                         }
                                                     }
                                                 }}>
-                                                    <div className="channel-meta">
+                                                    <div onClick={() => handleConnectToCall(channel.channelName)} className="channel-meta">
                                                         <div className="channel-meta-left">
                                                             <div className="channel-voice-icon">
                                                                 <VolumeUpIcon className="channel-icon" />
                                                             </div>
-                                                            <p title={channel.channelName} className="channel-name">{shortenStringWithDots(channel.channelName, 25)}</p>
+                                                            <p title={channel.channelName} className="channel-name">{decodeURIComponent(shortenStringWithDots(channel.channelName, 25))}</p>
                                                         </div>
                                                         <div className="channel-max-chatters">
                                                             {channel.chatters.length}/{channel.maxChatters} <div className="max-chatters-icon-container"><PersonIcon className="max-chatters-icon" /></div>

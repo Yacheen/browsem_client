@@ -75,7 +75,8 @@ export default function App() {
         }
     }
     const handleRefresh = () => {
-        currentCallStore.disconnectFromCall(true);
+        // console.log('running beforeunload.--------------');
+        // currentCallStore.disconnectFromCall(true);
     }
     useEffect(() => {
         if (messageListenerExists.current === false) {
@@ -90,7 +91,7 @@ export default function App() {
         }
     }, []);
     return (
-        callTabId === currentTabId
+        callTabId === currentTabId && callTabId !== null
         ?
             <>
                 <style>{allStyles}</style>
