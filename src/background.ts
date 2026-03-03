@@ -1,11 +1,13 @@
 import { initPegasusTransport } from '@webext-pegasus/transport/background';
 import { browsemStoreBackendReady, useBrowsemStore } from "./hooks/browsemStore";
 import { settingsStoreBackendReady} from './hooks/settingsStore';
-import { channelsStoreBackendReady} from './hooks/ChannelsStore';
+import { channelsStoreBackendReady, useChannelsStore} from './hooks/ChannelsStore';
 import { isConnected, isOriginCalls, isUrlsUpdated, isBrowsemStats, isDisconnected, isErrorMessage, isIceCandidate, isNoChannelName, isChannelCreated, isConnectedToCall, isOfferFromServer, isAnswerFromServer, isChannelNameExists,
     isChannelNameTooLong, isUserUpdatedSettings, isDisconnectedFromCall, Chatter, Settings, UrlCalls, Connected, ErrorType, ChatMessage, MessageType, OriginCalls, UrlsUpdated, BrowsemStats, Disconnected, 
     ErrorMessage, IceCandidate, ClientMessage, NoChannelName, ChannelCreated, ChatterChannel, ConnectedToCall, OfferFromClient, OfferFromServer, AnswerFromClient, AnswerFromServer, BackgroundMessage, ChannelNameExists,
-    ChannelNameTooLong, UserUpdatedSettings, DisconnectedFromCall, 
+    ChannelNameTooLong, UserUpdatedSettings, DisconnectedFromCall,
+    isReconnectedToCall,
+    ReconnectedToCall, 
 } from "./utils/types.ts";
 
 initPegasusTransport();
@@ -58,7 +60,7 @@ Promise.all([
             socket?.send(JSON.stringify("GetChannelsByOrigins"));
         }
         else if (message.type === "connect-to-call") {
-            await connectToCall(message.channelName);
+            await connectToCall(message.channelName, message.urlName);
         }
         else if (message.type === "get-tab-id") {
             if (sender.tab?.id) {
@@ -86,6 +88,9 @@ Promise.all([
         }
         else if (message.type === "disconnect-from-call") {
             socket?.send(JSON.stringify("DisconnectFromCall"));
+        }
+        else if (message.type === "reconnect-to-call") {
+            await reconnectToCall();
         }
         return true;
     });
@@ -226,6 +231,7 @@ Promise.all([
                         let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
                         if (activeTab[0].id) {
                             browsemStore.getState().setChatterChannel(chatterChannelHandle, activeTab[0].id);
+                            browsemStore.getState().setPendingReconnectionFromRefresh(null);
                         }
                     }
                     else {
@@ -293,6 +299,7 @@ Promise.all([
                     if (msg.DisconnectedFromCall.reason !== 'joining another call') {
                         browsemStore.getState().setChatterChannel(null, null);
                     }
+                    browsemStore.getState().setPendingReconnectionFromRefresh(null);
                 }
                 else {
                     console.log('they are the one that disconnected----------');
@@ -333,58 +340,51 @@ Promise.all([
                 }
             }
             else if (isUserUpdatedSettings(message)) {
-                // let newUrlCalls = channelsStore.getState().urlCalls;
-                // let msg: UserUpdatedSettings = message;
-                // newUrlCalls.map(urlCall => {
-                //     urlCall.channels.map(channel => {
-                //         if (channel.sessionId === msg.UserUpdatedSettings.callSessionId) {
-                //             channel.chatters = channel.chatters.filter(chatter => chatter.username != msg.UserUpdatedSettings.username);
-                //         }
-                //         return channel;
-                //     })
-                //     return urlCall;
-                // })
-                // channelsStore.getState().setUrlCalls(newUrlCalls);
-                //
-                // let chatterChannel = browsemStore.getState().chatterChannel;
-                // let newChatterChannel = chatterChannel;
-                // if (newChatterChannel) {
-                //     newChatterChannel.chatters.map(chatter => {
-                //         if (chatter.username === msg.UserUpdatedSettings.username)  {
-                //             chatter.settings = msg.UserUpdatedSettings.settings;
-                //         }
-                //         return chatter;
-                //     })
-                //     browsemStore.getState().setChatterChannel(newChatterChannel, browsemStore.getState().callTabId);
-                // }
-                    let msg: UserUpdatedSettings = message;
-                    const newUrlCalls = channelsStore.getState().urlCalls.map(urlCall => ({
-                        ...urlCall,
-                        channels: urlCall.channels.map(channel => {
-                            if (channel.sessionId !== msg.UserUpdatedSettings.callSessionId) return channel;
-                            return {
-                                ...channel,
-                                chatters: channel.chatters.map(chatter =>
-                                    chatter.username === msg.UserUpdatedSettings.username
-                                        ? { ...chatter, settings: msg.UserUpdatedSettings.settings }
-                                        : chatter
-                                ),
-                            };
-                        }),
-                    }));
-                    channelsStore.getState().setUrlCalls(newUrlCalls);
-
-                    const chatterChannel = browsemStore.getState().chatterChannel;
-                    if (chatterChannel) {
-                        browsemStore.getState().setChatterChannel({
-                            ...chatterChannel,
-                            chatters: chatterChannel.chatters.map(chatter =>
+                let msg: UserUpdatedSettings = message;
+                const newUrlCalls = channelsStore.getState().urlCalls.map(urlCall => ({
+                    ...urlCall,
+                    channels: urlCall.channels.map(channel => {
+                        if (channel.sessionId !== msg.UserUpdatedSettings.callSessionId) return channel;
+                        return {
+                            ...channel,
+                            chatters: channel.chatters.map(chatter =>
                                 chatter.username === msg.UserUpdatedSettings.username
                                     ? { ...chatter, settings: msg.UserUpdatedSettings.settings }
                                     : chatter
                             ),
-                        }, browsemStore.getState().callTabId);
-                    }
+                        };
+                    }),
+                }));
+                channelsStore.getState().setUrlCalls(newUrlCalls);
+
+                const chatterChannel = browsemStore.getState().chatterChannel;
+                if (chatterChannel) {
+                    browsemStore.getState().setChatterChannel({
+                        ...chatterChannel,
+                        chatters: chatterChannel.chatters.map(chatter =>
+                            chatter.username === msg.UserUpdatedSettings.username
+                                ? { ...chatter, settings: msg.UserUpdatedSettings.settings }
+                                : chatter
+                        ),
+                    }, browsemStore.getState().callTabId);
+                }
+            }
+            // set new channel in channelsstore, and browsemstores chatterchannel
+            else if (isReconnectedToCall(message)) {
+                // set chatterchannel only
+                let msg: ReconnectedToCall = message
+                const newUrlCalls = channelsStore.getState().urlCalls.map(urlCall => ({
+                    ...urlCall,
+                    channels: urlCall.channels.map(channel => {
+                        if (channel.sessionId !== msg.ReconnectedToCall.channelSessionId) return channel;
+                        return {
+                            ...msg.ReconnectedToCall.chatterChannel
+                        };
+                    }),
+                }));
+                channelsStore.getState().setUrlCalls(newUrlCalls);
+
+                browsemStore.getState().setChatterChannel(msg.ReconnectedToCall.chatterChannel, browsemStore.getState().callTabId);
             }
         }
         socket.onclose = (event) => {
@@ -491,16 +491,19 @@ Promise.all([
             socket?.send(JSON.stringify(message));
         }
     }
-    const connectToCall = async (channelName: string) => {
+    const connectToCall = async (channelName: string, urlName: string) => {
+        socket?.send(JSON.stringify({
+            ConnectToCall: {
+                channelName: channelName,
+                urlName: urlName,
+            }
+        }));
+    }
+    const reconnectToCall = async () => {
         let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
 
         if (activeTab[0].url) {
-            socket?.send(JSON.stringify({
-                ConnectToCall: {
-                    channelName: channelName,
-                    urlName: activeTab[0].url,
-                }
-            }));
+            socket?.send(JSON.stringify("ReconnectToCall"));
         }
     }
     // const keepAlive = () => {

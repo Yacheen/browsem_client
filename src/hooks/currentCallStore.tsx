@@ -28,8 +28,6 @@ interface CurrentCallStoreState {
     hasCamPermission: boolean,
     pendingIceCandidates: RTCIceCandidateInit[],
     setFocusedWindow: (chatterWindow: QuickchatterWindow | null) => void,
-    connectToCall: (channelName: string) => void,
-    reconnectToCall: (channelName: string) => void,
     disconnectedFromCall: (msg: DisconnectedFromCall) => Promise<void>,
     disconnectFromCall: (killingSocketAsWell: boolean) => Promise<void>,
     startPeerConnection: () => Promise<RTCPeerConnection>,
@@ -84,18 +82,6 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
         focusedWindow: null,
         setFocusedWindow: (windowToBeFocused: QuickchatterWindow | null) => {
             set({ focusedWindow: windowToBeFocused });
-        },
-        connectToCall: (channelName: string) => {
-            chrome.runtime.sendMessage({
-                type: "connect-to-call",
-                channelName: channelName,
-            });
-        },
-        reconnectToCall: (channelName: string) => {
-            chrome.runtime.sendMessage({
-                type: "reconnect-to-call",
-                channelName: channelName,
-            });
         },
         disconnectedFromCall: async (msg: DisconnectedFromCall) => {
             let stopMonitoringSpeakers = get().stopMonitoringSpeakers;
@@ -372,11 +358,15 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
         },
         handleCreateOffer: async () => {
             let peerConnection = get().peerConnection;
+            console.log('got here 1 -----------');
             try {
                 set({ makingOffer: true });
+                console.log('got here 2 -----------');
                 if (peerConnection) {
                     const offer = await peerConnection.createOffer();
+                    console.log('got here 3 -----------');
                     await peerConnection.setLocalDescription(offer);
+                    console.log('got here 4 -----------');
                     if (peerConnection.localDescription) {
                         let offerFromClient: OfferFromClient = {
                             OfferFromClient: peerConnection.localDescription
@@ -385,6 +375,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                             type: "create-offer",
                             contents: JSON.stringify(offerFromClient)
                         });
+                        console.log('send the offer.');
                     }
                 }
             }

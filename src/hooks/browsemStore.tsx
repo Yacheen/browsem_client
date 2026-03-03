@@ -11,6 +11,9 @@ type BrowsemErrors = {
     channelNameTooLong: string | null,
     channelNameExists: string | null,
 };
+type PendingReconnection = {
+    channelName: string,
+}
 
 interface BrowsemStoreState {
     socketState: SocketState,
@@ -27,6 +30,7 @@ interface BrowsemStoreState {
     currentTabId: number | null,
     callTabId: number | null,
     chatterChannel: ChatterChannel | null,
+    pendingReconnectionFromRefresh: PendingReconnection | null,
     disconnect: () => void,
     disconnected: (message: Disconnected) => void,
     connect: () => void,
@@ -40,6 +44,7 @@ interface BrowsemStoreState {
     setBrowsemStats: (sessionsOnline: number, sessionsInYourOrigin: number, sessionsInYourUrl: number) => void,
     setChatterChannel: (chatterChannel: ChatterChannel | null, callTabId: number | null) => void
     setCurrentTabId: (currentTabId: number | null) => void,
+    setPendingReconnectionFromRefresh: (pendingReconnectionFromRefresh: PendingReconnection | null) => void,
 }
 
 export const useBrowsemStore = create<BrowsemStoreState>()(
@@ -63,6 +68,7 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             currentTabId: null,
             callTabId: null,
             chatterChannel: null,
+            pendingReconnectionFromRefresh: null,
 
             setUsername: (username: string) => {
                 set({ username });
@@ -104,6 +110,7 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
                             sessionsInYourOrigin: 0,
                             callTabId: null,
                             chatterChannel: null,
+                            pendingReconnectionFromRefresh: null,
                         });
                     }
                     else {
@@ -132,6 +139,9 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             setCurrentTabId: (currentTabId: number | null) => {
                 set({ currentTabId });
             },
+            setPendingReconnectionFromRefresh: (pendingReconnectionFromRefresh: PendingReconnection | null) => {
+                set({ pendingReconnectionFromRefresh });
+            }
         }),
         {
             name: "browsem-session-storage",

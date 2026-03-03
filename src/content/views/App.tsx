@@ -2,7 +2,7 @@ import WindowHandler from '@/components/WindowHandler';
 import BrowsemCall from '@/components/BrowsemCall';
 import { useBrowsemStore } from '@/hooks/browsemStore';
 import { useCurrentCallStore } from '@/hooks/currentCallStore';
-import { useEffect, useRef, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { useChannelsStore } from '@/hooks/ChannelsStore';
 import allStyles from "../../components/AllStyles.scss?inline";
 import { useSettingsStore } from '@/hooks/settingsStore';
@@ -11,6 +11,7 @@ import { BackgroundMessage, isAnswerFromServer, isDisconnectedFromCall, isIceCan
 export default function App() {
     const chatterChannel = useBrowsemStore(state => state.chatterChannel)
     const settings = useSettingsStore(state => state.settings);
+    const setSettings = useSettingsStore(state => state.setSettings);
     const disconnectFromCall = useCurrentCallStore(state => state.disconnectFromCall);
     const browsemStore = useBrowsemStore();
     const callTabId = useBrowsemStore(state => state.callTabId);
@@ -18,6 +19,8 @@ export default function App() {
     const peerConnection = useCurrentCallStore(state => state.peerConnection);
     const messageListenerExists = useRef(false);
     const [currentTabId, setCurrentTabId] = useState<number | null>(null);
+    const [refreshPendingInfo, setRefreshPendingInfo] = useState<null | { urlName: string, channelName: string }>(null);
+
 
     useEffect(() => {
         chrome.runtime.sendMessage({ type: "get-tab-id" }, (response) => {
@@ -27,6 +30,11 @@ export default function App() {
             }
         });
     }, []);
+    useEffect(() => {
+        if (chatterChannel && !refreshPendingInfo) {
+            setRefreshPendingInfo({ urlName: chatterChannel.fullUrl, channelName: chatterChannel.channelName });
+        }
+    }, [chatterChannel, refreshPendingInfo]);
 
     // whenever channelChatter and callTabId changes, handle currentcallstore accordingly.
     // information about currentcall gets set after receiving an offer from server,
@@ -75,8 +83,9 @@ export default function App() {
         }
     }
     const handleRefresh = () => {
-        // console.log('running beforeunload.--------------');
-        // currentCallStore.disconnectFromCall(true);
+        if (useBrowsemStore.getState().chatterChannel) {
+            useBrowsemStore.getState().setPendingReconnectionFromRefresh({ channelName: useBrowsemStore.getState().chatterChannel!.channelName });
+        }
     }
     useEffect(() => {
         if (messageListenerExists.current === false) {
@@ -90,6 +99,30 @@ export default function App() {
             window.removeEventListener('beforeunload', handleRefresh);
         }
     }, []);
+    useEffect(() => {
+        if (useBrowsemStore.getState().pendingReconnectionFromRefresh) {
+            setSettings({
+                ...useSettingsStore.getState().settings,
+                cameraIsOn: false,
+                microphoneIsOn: false,
+                sharingScreen: false,
+            });
+            chrome.runtime.sendMessage({
+                type: "reconnect-to-call",
+            });
+        }
+    }, []);
+    // useEffect(() => {
+    //     chrome.runtime.sendMessage({
+    //         "type": "update-user-info",
+    //         "contents": JSON.stringify({
+    //             UpdateInfo: {
+    //                 username: useBrowsemStore.getState().username,
+    //                 settings: settings,
+    //             }
+    //         })
+    //     });
+    // }, [settings]);
     return (
         callTabId === currentTabId && callTabId !== null
         ?

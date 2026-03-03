@@ -67,10 +67,11 @@ export default function Channels({ urlForRenderingDomains }: ChannelsProps) {
       let newUrl = new URL(urlCall);
       return  decodeURIComponent(newUrl.pathname + newUrl.search + newUrl.hash);
   }
-  const handleConnectToCall = (channelName: string) => {
+  const handleConnectToCall = (channelName: string, urlName: String) => {
     chrome.runtime.sendMessage({
         type: "connect-to-call",
         channelName: channelName,
+        urlName:  urlName,
     });
   }
 
@@ -114,7 +115,7 @@ export default function Channels({ urlForRenderingDomains }: ChannelsProps) {
                                                         }
                                                     }
                                                 }}>
-                                                    <div onClick={() => handleConnectToCall(channel.channelName)} className="channel-meta">
+                                                    <div onClick={() => handleConnectToCall(channel.channelName, channel.fullUrl)} className="channel-meta">
                                                         <div className="channel-meta-left">
                                                             <div className="channel-voice-icon">
                                                                 <VolumeUpIcon className="channel-icon" />

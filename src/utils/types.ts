@@ -48,6 +48,9 @@ export const isIceCandidate = (message: any): message is IceCandidate => {
 export const isUserUpdatedSettings = (message: any): message is UserUpdatedSettings => {
     return (message as UserUpdatedSettings).UserUpdatedSettings !== undefined;
 }
+export const isReconnectedToCall = (message: any): message is ReconnectedToCall => {
+    return (message as ReconnectedToCall).ReconnectedToCall !== undefined;
+}
 export type IceCandidate = {
     IceCandidate: RTCIceCandidateInit,
 }
@@ -175,6 +178,15 @@ export type UserUpdatedSettings = {
         currentCall: string,
         username: string,
         callSessionId: string,
+    }
+}
+export type ReconnectedToCall = {
+    ReconnectedToCall: {
+        connectedChatter: Chatter,
+        urlOrigin: string,
+        urlName: string,
+        channelSessionId: string,
+        chatterChannel: ChatterChannel,
     }
 }
 
