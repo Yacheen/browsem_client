@@ -7,6 +7,9 @@ import { useChannelsStore } from '@/hooks/ChannelsStore';
 import allStyles from "../../components/AllStyles.scss?inline";
 import { useSettingsStore } from '@/hooks/settingsStore';
 import { BackgroundMessage, isAnswerFromServer, isDisconnectedFromCall, isIceCandidate, isOfferFromServer } from '@/utils/types';
+import { useSnackbarStore } from '@/hooks/snackbarStore';
+import { Alert, Snackbar } from '@mui/material';
+import Slide from '@mui/material/Slide';
 
 export default function App() {
     const chatterChannel = useBrowsemStore(state => state.chatterChannel)
@@ -20,6 +23,10 @@ export default function App() {
     const messageListenerExists = useRef(false);
     const [currentTabId, setCurrentTabId] = useState<number | null>(null);
     const [refreshPendingInfo, setRefreshPendingInfo] = useState<null | { urlName: string, channelName: string }>(null);
+    const message = useSnackbarStore(state => state.message);
+    const open = useSnackbarStore(state => state.open);
+    const type = useSnackbarStore(state => state.type);
+    const setSnackbar = useSnackbarStore(state => state.setSnackbar);
 
 
     useEffect(() => {
@@ -35,18 +42,6 @@ export default function App() {
             setRefreshPendingInfo({ urlName: chatterChannel.fullUrl, channelName: chatterChannel.channelName });
         }
     }, [chatterChannel, refreshPendingInfo]);
-
-    // whenever channelChatter and callTabId changes, handle currentcallstore accordingly.
-    // information about currentcall gets set after receiving an offer from server,
-    // which will in turn show the window. when browsemStore.calltabid and chatterchannel goes null,
-    // we kill the window.
-    // useEffect(() => {
-    //     if (callTabId) {
-    //         if (peerConnection === null) {
-    //             currentCallStore.startPeerConnection();
-    //         }
-    //     }
-    // }, [callTabId, peerConnection]);
 
     const handleCloseCurrentCall = async () => {
         disconnectFromCall(true);
@@ -112,17 +107,6 @@ export default function App() {
             });
         }
     }, []);
-    // useEffect(() => {
-    //     chrome.runtime.sendMessage({
-    //         "type": "update-user-info",
-    //         "contents": JSON.stringify({
-    //             UpdateInfo: {
-    //                 username: useBrowsemStore.getState().username,
-    //                 settings: settings,
-    //             }
-    //         })
-    //     });
-    // }, [settings]);
     return (
         callTabId === currentTabId && callTabId !== null
         ?
@@ -131,6 +115,38 @@ export default function App() {
                 <WindowHandler minWidth={570} minHeight={46} type='BrowsemCall' description={chatterChannel?.fullUrl} closeMyWindow={handleCloseCurrentCall}>
                     <BrowsemCall />
                 </WindowHandler>
+                {
+                    open 
+                    ?
+                        <Snackbar
+                            anchorOrigin={{vertical: "top", horizontal: "center"}}
+                            open={open}
+                            TransitionComponent={Slide}
+                            message={message}
+                            key={message}
+                            sx={{
+                                zIndex: 6942013375,
+                                pointerEvents: "auto",
+                                '& .MuiSvgIcon-root': {
+                                    fontSize: '20px', // Increases icon size
+                                    // color: type === "success" ? "hsl(120, 93%, 70%)" : type === "info" ? 'hsl(0, 0%, 90%)' : type === "error" ? "hsl(0, 99%, 67%)" : type === "warning" ? "hsl(22, 100%, 60%)" : "hsl(0, 0%, 90%)",
+                                },
+                                '& .MuiAlert-icon': {
+                                    fontSize: '20px', // Increases icon size
+                                    color: type === "success" ? "hsl(120, 93%, 70%)" : type === "info" ? 'hsl(0, 0%, 90%)' : type === "error" ? "hsl(0, 99%, 67%)" : type === "warning" ? "hsl(22, 100%, 60%)" : "hsl(0, 0%, 90%)",
+                                },
+                                '& .MuiAlert-message': {
+                                    fontSize: '14px', // Increases text size
+                                },
+                            }}
+                        >
+                            <Alert style={{background: "hsla(0, 0%, 30%, 1)", color: "white"}} onClose={() => setSnackbar(false, "", "success")} severity={type}>
+                                {message}
+                            </Alert>
+                        </Snackbar>
+                    :
+                        null
+                }
             </>
         :
             null

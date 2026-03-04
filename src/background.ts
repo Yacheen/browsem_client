@@ -11,6 +11,8 @@ import { isConnected, isOriginCalls, isUrlsUpdated, isBrowsemStats, isDisconnect
     isChannelMessageSent,
     ChannelMessageSent, 
 } from "./utils/types.ts";
+import { snackbarStoreBackendReady } from './hooks/snackbarStore.tsx';
+import { AlertColor } from '@mui/material';
 
 initPegasusTransport();
 
@@ -18,7 +20,9 @@ Promise.all([
     browsemStoreBackendReady(),
     channelsStoreBackendReady(),
     settingsStoreBackendReady(),
-]).then(([browsemStore, channelsStore, settingsStore]) => {
+    snackbarStoreBackendReady(),
+]).then(([browsemStore, channelsStore, settingsStore, snackbarStore]) => {
+    console.log(snackbarStore);
     try {
         chrome.storage.session.setAccessLevel({
             accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS"
@@ -171,15 +175,25 @@ Promise.all([
             }
             // error msges
             else if (isErrorMessage(message)) {
+                let severity: AlertColor = "info";
+                let msg = "Unknown Error...";
                 if (isNoChannelName(message.ErrorMessage)) {
                     browsemStore.getState().setErrors({ ...browsemStore.getState().errors, noChannelName: message.ErrorMessage.NoChannelName });
+                    severity = "warning";
+                    msg = message.ErrorMessage.NoChannelName;
                 }
                 else if (isChannelNameTooLong(message.ErrorMessage)) {
                     browsemStore.getState().setErrors({ ...browsemStore.getState().errors, channelNameTooLong: message.ErrorMessage.ChannelNameTooLong });
+                    severity = "warning";
+                    msg = message.ErrorMessage.ChannelNameTooLong;
                 }
                 else if (isChannelNameExists(message.ErrorMessage)) {
                     browsemStore.getState().setErrors({ ...browsemStore.getState().errors, channelNameExists: message.ErrorMessage.ChannelNameExists });
+                    severity = "warning";
+                    msg = message.ErrorMessage.ChannelNameExists;
                 }
+                // active, message, type
+                snackbarStore.getState().setSnackbar(true, msg, severity);
             }
             else if (isBrowsemStats(message)) {
                 let { sessionsOnline, sessionsInYourUrl, sessionsInYourOrigin } = message.BrowsemStats;

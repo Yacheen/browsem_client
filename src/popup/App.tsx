@@ -10,11 +10,18 @@ import { useChannelsStore } from '@/hooks/ChannelsStore';
 import { getDomainName } from '@/utils/functions';
 import { useCurrentCallStore } from '@/hooks/currentCallStore';
 import { BackgroundMessage, IceCandidate } from '../utils/types.ts';
+import { Alert, Snackbar } from '@mui/material';
+import Slide from '@mui/material/Slide';
+import { useSnackbarStore } from '@/hooks/snackbarStore.tsx';
 
 export default function App() {
     const messageListenerExists = useRef(false);
     const browsemStore = useBrowsemStore();
     const socketState = useBrowsemStore(state => state.socketState);
+    const message = useSnackbarStore(state => state.message);
+    const open = useSnackbarStore(state => state.open);
+    const type = useSnackbarStore(state => state.type);
+    const setSnackbar = useSnackbarStore(state => state.setSnackbar);
 
     const handleConnectToServer = () => {
         browsemStore.connect();
@@ -128,6 +135,35 @@ export default function App() {
             :
                 null
         }
+        {
+            open 
+            ?
+                <Snackbar
+                    anchorOrigin={{vertical: "top", horizontal: "center"}}
+                    open={open}
+                    TransitionComponent={Slide}
+                    message={message}
+                    key={message}
+                    sx={{
+                        '& .MuiSvgIcon-root': {
+                            color: type === "success" ? "$light-green" : type === "info" ? 'hsl(0, 0%, 90%)' : type === "error" ? "$light-red" : type === "warning" ? "$light-orange" : "hsl(0, 0%, 90%)",
+                        },
+                        '& .MuiAlert-icon': {
+                            fontSize: '20px', // Increases icon size
+                        },
+                        '& .MuiAlert-message': {
+                            fontSize: '14px', // Increases text size
+                        },
+                    }}
+                >
+                    <Alert style={{background: "hsla(0, 0%, 30%, 1)", color: "white"}} onClose={() => setSnackbar(false, "", "success")} severity={type}>
+                        {message}
+                    </Alert>
+                </Snackbar>
+            :
+                null
+        }
+
         </>
   )
 }

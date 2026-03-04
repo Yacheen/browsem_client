@@ -7,6 +7,7 @@ import { CacheProvider } from '@emotion/react';
 import { browsemStoreReady } from '@/hooks/browsemStore.tsx';
 import { channelsStoreReady } from '@/hooks/ChannelsStore.tsx';
 import { settingsStoreReady } from '@/hooks/settingsStore.tsx';
+import { snackbarStoreReady } from '@/hooks/snackbarStore.tsx';
 console.log('CONTENT SCRIPT EXECUTING', window.location.href);
 console.log('__browsemTransportInit:', (window as any).__browsemTransportInit);
 
@@ -24,6 +25,8 @@ Promise.all([
     browsemStoreReady(),
     channelsStoreReady(),
     settingsStoreReady(),
+    snackbarStoreReady(),
+    
 ]).then(() => {
     console.log('6. all stores ready, mounting React');
     console.log('document.body:', document.body);

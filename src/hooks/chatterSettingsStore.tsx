@@ -28,6 +28,3 @@ export const useChatterSettingsStore = create<ChatterSettingsState>()(
         }
     )
 );
-export const STORE_NAME = 'ChatterSettingsStore';
-export const channelsStoreBackendReady = () => initPegasusZustandStoreBackend(STORE_NAME, useChatterSettingsStore, { storageStrategy: "session" });
-export const channelsStoreReady = () => pegasusZustandStoreReady(STORE_NAME, useChatterSettingsStore);

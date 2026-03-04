@@ -6,6 +6,7 @@ import { initPegasusTransport } from '@webext-pegasus/transport/popup'
 import { channelsStoreReady } from '@/hooks/ChannelsStore.tsx'
 import { browsemStoreReady } from '@/hooks/browsemStore.tsx'
 import { settingsStoreReady } from '@/hooks/settingsStore.tsx'
+import { snackbarStoreReady } from '@/hooks/snackbarStore.tsx'
 
 initPegasusTransport();
 
@@ -13,6 +14,7 @@ Promise.all([
     browsemStoreReady(),
     channelsStoreReady(),
     settingsStoreReady(),
+    snackbarStoreReady(),
 ]).then(() => {
     createRoot(document.getElementById('root')!).render(
             <App />
