@@ -12,6 +12,8 @@ import { useEffect, useRef } from 'react';
 import { useSettingsStore } from '@/hooks/settingsStore';
 import { useBrowsemStore } from '@/hooks/browsemStore';
 import { CircularProgress } from '@mui/material';
+import { ChatterSetting, useChatterSettingsStore } from '@/hooks/chatterSettingsStore';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
 
 export type QuickchatterWindow = {
@@ -21,12 +23,6 @@ export type QuickchatterWindow = {
         type: 'video' | 'screen' | undefined,
     }
 };
-export type ChatterSetting = {
-    username: string,
-    screenshareVolume: number,
-    microphoneVolume: number,
-    hidingVideo: false,
-}
 function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (windowToBeFocused: QuickchatterWindow | null) => void, isFocused?: boolean, focusedWindow?: QuickchatterWindow | null, chatterSetting?: ChatterSetting }) {
     let videoRef = useRef<HTMLVideoElement| null>(null);
     let audioRef = useRef<HTMLAudioElement| null>(null);
@@ -41,6 +37,8 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
     const settings = useSettingsStore(state => state.settings);
     const setSettings = useSettingsStore(state => state.setSettings);
     const peerConnection = useCurrentCallStore((state) => state.peerConnection);
+    const chatterSettings = useChatterSettingsStore(state => state.chatterSettings);
+    const setChatterSettings = useChatterSettingsStore(state => state.setChatterSettings);
 
     const handleClickedWindow = (type: 'video' | undefined) => {
         if (type !== undefined) {
@@ -128,6 +126,32 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
             audioRef.current.volume = props.chatterSetting.microphoneVolume * 0.01;
         }
     }, [props.chatterSetting]);
+    const handleChatterMicVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        let exists = chatterSettings.find(chatter => chatter.username === props.chatter.username);
+        if (exists) {
+            const newChatterSettings = chatterSettings.map(chatter => {
+                if (chatter.username === props.chatter.username) {
+                    return {
+                        ...chatter,
+                        microphoneVolume: event.currentTarget.valueAsNumber
+                    };
+                }
+                else {
+                    return chatter;
+                }
+            })
+            setChatterSettings(newChatterSettings);
+        }
+        else {
+            let newSettings: ChatterSetting = {
+                username: props.chatter.username,
+                screenshareVolume: 50,
+                microphoneVolume: event.currentTarget.valueAsNumber,
+                hidingVideo: false,
+            };
+            setChatterSettings([...chatterSettings, newSettings]);
+        }
+    }
 
     return (
         <div className={`chatter-container ${props.isFocused ? 'focused_window' : null} ${props.focusedWindow !== null && !props.isFocused ? 'non_focused_window' : null}`}>
@@ -201,6 +225,21 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
             }
             <div className="chatter-bottom">
                 <p>{props.chatter.username}</p> 
+
+                {
+                    props.chatter.username === yourUsername
+                    ?
+                        null
+                    :
+                        <div className={`input-slider-container`}>
+                            <div className={`chatter-volume-meta-container`}>
+                                <VolumeUpIcon className={`chatter-volume-icon`} />
+                                <p className={`chatter-volume-meta`}>{chatterSettings.find(chatter => chatter.username ===  props.chatter.username)?.microphoneVolume ?? 50}</p>
+                            </div>
+                            <input onChange={handleChatterMicVolumeChange} type="range" min="0" max="100" value={chatterSettings.find(chatter => chatter.username === props.chatter.username)?.microphoneVolume ?? 50} className={`input-slider`} id="input-slider" />
+                        </div>
+                }
+
                 <div className="chatter-settings">
                     <div className="chatter-settings-icon-container">
                         {props.chatter.settings.microphoneIsOn ? null : <MicOffIcon />}
