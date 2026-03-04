@@ -51,6 +51,9 @@ export const isUserUpdatedSettings = (message: any): message is UserUpdatedSetti
 export const isReconnectedToCall = (message: any): message is ReconnectedToCall => {
     return (message as ReconnectedToCall).ReconnectedToCall !== undefined;
 }
+export const isChannelMessageSent = (message: any): message is ChannelMessageSent => {
+    return (message as ChannelMessageSent).ChannelMessageSent !== undefined;
+}
 export type IceCandidate = {
     IceCandidate: RTCIceCandidateInit,
 }
@@ -113,9 +116,18 @@ export type Settings = {
     sharingScreen: boolean,
     deafened: boolean,
 }
-export type ChatMessage = {
+export type ChannelMessage = {
     chatter: Chatter,
     message: string
+    timestamp: number,
+};
+export type ChannelMessageSent = {
+    ChannelMessageSent: {
+        message: ChannelMessage,
+        channelSessionId: string,
+        urlOrigin: string,
+        urlName: string,
+    }
 };
 export type Chatter = {
     username: string,
@@ -131,7 +143,7 @@ export type ChatterChannel = {
     urlOrigin: string,
     fullUrl: string,
     maxChatters: number,
-    channelMessages: ChatMessage[],
+    channelMessages: ChannelMessage[],
 };
 export type UrlCalls = {
     urlName: string,

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { ChromeLocalStorage, ChromeSessionStorage } from 'zustand-chrome-storage';
 import { initPegasusZustandStoreBackend, pegasusZustandStoreReady } from '@webext-pegasus/store-zustand'
-import { ChatterChannel, Connected, Disconnected } from '@/utils/types';
+import { ChannelMessage, ChannelMessageSent, ChatterChannel, Connected, Disconnected } from '@/utils/types';
 
 type SocketState = 'Connected' | 'Disconnected' | 'Connecting';
 export type CurrentSelection = 'Intro' | 'CreatingGuestUsername' | 'Connected' | 'CreatingChannel';
@@ -141,7 +141,7 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             },
             setPendingReconnectionFromRefresh: (pendingReconnectionFromRefresh: PendingReconnection | null) => {
                 set({ pendingReconnectionFromRefresh });
-            }
+            },
         }),
         {
             name: "browsem-session-storage",

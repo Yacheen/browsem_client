@@ -53,6 +53,7 @@
         }
         .homepage-text {
             color: $light-yellow !important;
+            font-size: 16px;
         }
         .url-call-right {
             position: relative;
@@ -62,6 +63,7 @@
             .url-call-channel-count {
                 color: var(--light-text);
                 user-select: none;
+                font-size: 14px;
             }
             .url-call-dropped-down-icon-container {
                 display: flex;
@@ -110,6 +112,7 @@
                         text-overflow: ellipsis;
                         white-space: nowrap;
                         user-select: none;
+                        font-size: 12px;
                     }
                 }
                 .channel-max-chatters {
@@ -118,6 +121,7 @@
                     position: relative;
                     color: var(--light-text);
                     user-select: none;
+                    font-size: 14px;
                     .max-chatters-icon-container {
                         .max-chatters-icon {
                             font-size: 18px;

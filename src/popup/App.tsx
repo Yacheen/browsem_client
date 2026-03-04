@@ -111,7 +111,7 @@ export default function App() {
         {
             browsemStore.currentSelection === 'Intro'
             ?
-                <IntroPopup msg="Vite + React + CRXJS" handleCreateGuestUsername={handleCreateGuestUsername} />
+                <IntroPopup handleCreateGuestUsername={handleCreateGuestUsername} />
             :
             browsemStore.currentSelection === 'CreatingGuestUsername'
             ?

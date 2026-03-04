@@ -3,11 +3,13 @@ import { browsemStoreBackendReady, useBrowsemStore } from "./hooks/browsemStore"
 import { settingsStoreBackendReady} from './hooks/settingsStore';
 import { channelsStoreBackendReady, useChannelsStore} from './hooks/ChannelsStore';
 import { isConnected, isOriginCalls, isUrlsUpdated, isBrowsemStats, isDisconnected, isErrorMessage, isIceCandidate, isNoChannelName, isChannelCreated, isConnectedToCall, isOfferFromServer, isAnswerFromServer, isChannelNameExists,
-    isChannelNameTooLong, isUserUpdatedSettings, isDisconnectedFromCall, Chatter, Settings, UrlCalls, Connected, ErrorType, ChatMessage, MessageType, OriginCalls, UrlsUpdated, BrowsemStats, Disconnected, 
+    isChannelNameTooLong, isUserUpdatedSettings, isDisconnectedFromCall, Chatter, Settings, UrlCalls, Connected, ErrorType, ChannelMessage, MessageType, OriginCalls, UrlsUpdated, BrowsemStats, Disconnected, 
     ErrorMessage, IceCandidate, ClientMessage, NoChannelName, ChannelCreated, ChatterChannel, ConnectedToCall, OfferFromClient, OfferFromServer, AnswerFromClient, AnswerFromServer, BackgroundMessage, ChannelNameExists,
     ChannelNameTooLong, UserUpdatedSettings, DisconnectedFromCall,
     isReconnectedToCall,
-    ReconnectedToCall, 
+    ReconnectedToCall,
+    isChannelMessageSent,
+    ChannelMessageSent, 
 } from "./utils/types.ts";
 
 initPegasusTransport();
@@ -76,10 +78,6 @@ Promise.all([
         else if (message.type === "answer-from-client") {
             socket?.send(message.contents);
         }
-        //  probably handle reconnection of peer stuff
-        else if (message.type === "join-call") {
-            socket?.send(JSON.stringify("JoinCall"));
-        }
         else if (message.type === "enable-mic") {
             socket?.send(JSON.stringify("EnableMic"));
         }
@@ -91,6 +89,9 @@ Promise.all([
         }
         else if (message.type === "reconnect-to-call") {
             await reconnectToCall();
+        }
+        else if (message.type === "send-channel-message") {
+            socket?.send(JSON.stringify(message.contents));
         }
         return true;
     });
@@ -372,7 +373,7 @@ Promise.all([
             // set new channel in channelsstore, and browsemstores chatterchannel
             else if (isReconnectedToCall(message)) {
                 // set chatterchannel only
-                let msg: ReconnectedToCall = message
+                let msg: ReconnectedToCall = message;
                 const newUrlCalls = channelsStore.getState().urlCalls.map(urlCall => ({
                     ...urlCall,
                     channels: urlCall.channels.map(channel => {
@@ -385,6 +386,42 @@ Promise.all([
                 channelsStore.getState().setUrlCalls(newUrlCalls);
 
                 browsemStore.getState().setChatterChannel(msg.ReconnectedToCall.chatterChannel, browsemStore.getState().callTabId);
+            }
+            else if (isChannelMessageSent(message)) {
+                // set the chatterchannel, and channelsstore chatmessage.
+                let msg: ChannelMessageSent = message;
+                const newUrlCalls = channelsStore.getState().urlCalls.map(urlCall => ({
+                    ...urlCall,
+                    channels: urlCall.channels.map(channel => {
+                        if (channel.sessionId !== msg.ChannelMessageSent.channelSessionId) return channel;
+                        return {
+                            ...channel,                         
+                            channelMessages: [...channel.channelMessages, msg.ChannelMessageSent.message]
+                        };
+                    }),
+                }));
+                
+                channelsStore.getState().setUrlCalls(newUrlCalls);
+
+                const chatterChannel = browsemStore.getState().chatterChannel;
+                if (chatterChannel && chatterChannel.sessionId === msg.ChannelMessageSent.channelSessionId) {
+                    browsemStore.getState().setChatterChannel({
+                        ...chatterChannel,
+                        channelMessages: [...browsemStore.getState().chatterChannel!.channelMessages, msg.ChannelMessageSent.message],
+                    },
+                    browsemStore.getState().callTabId);
+                }
+
+                // const newChatterChannel = channelsStore.getState().urlCalls.map(urlCall => ({
+                //     ...urlCall,
+                //     channels: urlCall.channels.map(channel => {
+                //         if (channel.sessionId !== msg.ChannelMessageSent.channelSessionId) return channel;
+                //         return {
+                //             ...channel,                         
+                //             channelMessages: [...channel.channelMessages, msg.ChannelMessageSent.message]
+                //         };
+                //     }),
+                // }));
             }
         }
         socket.onclose = (event) => {
