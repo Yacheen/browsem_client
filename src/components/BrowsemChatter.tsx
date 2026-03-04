@@ -58,6 +58,33 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
         }
     }
 
+    const handleChatterMicVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        let exists = chatterSettings.find(chatter => chatter.username === props.chatter.username);
+        if (exists) {
+            const newChatterSettings = chatterSettings.map(chatter => {
+                if (chatter.username === props.chatter.username) {
+                    return {
+                        ...chatter,
+                        microphoneVolume: event.currentTarget.valueAsNumber
+                    };
+                }
+                else {
+                    return chatter;
+                }
+            })
+            setChatterSettings(newChatterSettings);
+        }
+        else {
+            let newSettings: ChatterSetting = {
+                username: props.chatter.username,
+                screenshareVolume: 50,
+                microphoneVolume: event.currentTarget.valueAsNumber,
+                hidingVideo: false,
+            };
+            setChatterSettings([...chatterSettings, newSettings]);
+        }
+    }
+
     // whenever ur cam or micstream changes, refresh
     // make sure this chatter is you first
     useEffect(() => {
@@ -126,32 +153,6 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
             audioRef.current.volume = props.chatterSetting.microphoneVolume * 0.01;
         }
     }, [props.chatterSetting]);
-    const handleChatterMicVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        let exists = chatterSettings.find(chatter => chatter.username === props.chatter.username);
-        if (exists) {
-            const newChatterSettings = chatterSettings.map(chatter => {
-                if (chatter.username === props.chatter.username) {
-                    return {
-                        ...chatter,
-                        microphoneVolume: event.currentTarget.valueAsNumber
-                    };
-                }
-                else {
-                    return chatter;
-                }
-            })
-            setChatterSettings(newChatterSettings);
-        }
-        else {
-            let newSettings: ChatterSetting = {
-                username: props.chatter.username,
-                screenshareVolume: 50,
-                microphoneVolume: event.currentTarget.valueAsNumber,
-                hidingVideo: false,
-            };
-            setChatterSettings([...chatterSettings, newSettings]);
-        }
-    }
 
     return (
         <div className={`chatter-container ${props.isFocused ? 'focused_window' : null} ${props.focusedWindow !== null && !props.isFocused ? 'non_focused_window' : null}`}>
@@ -234,9 +235,9 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
                         <div className={`input-slider-container`}>
                             <div className={`chatter-volume-meta-container`}>
                                 <VolumeUpIcon className={`chatter-volume-icon`} />
-                                <p className={`chatter-volume-meta`}>{chatterSettings.find(chatter => chatter.username ===  props.chatter.username)?.microphoneVolume ?? 50}</p>
+                                <p className={`chatter-volume-meta`}>{props.chatterSetting?.microphoneVolume ?? 50}</p>
                             </div>
-                            <input onChange={handleChatterMicVolumeChange} type="range" min="0" max="100" value={chatterSettings.find(chatter => chatter.username === props.chatter.username)?.microphoneVolume ?? 50} className={`input-slider`} id="input-slider" />
+                            <input onChange={handleChatterMicVolumeChange} type="range" min="0" max="100" value={props.chatterSetting?.microphoneVolume ?? 50} className={`input-slider`} id="input-slider" />
                         </div>
                 }
 
