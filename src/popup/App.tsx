@@ -22,9 +22,11 @@ export default function App() {
     const open = useSnackbarStore(state => state.open);
     const type = useSnackbarStore(state => state.type);
     const setSnackbar = useSnackbarStore(state => state.setSnackbar);
+    const username = useBrowsemStore(state => state.username);
+    const setUsername = useBrowsemStore(state => state.setUsername);
 
-    const handleConnectToServer = () => {
-        browsemStore.connect();
+    const handleConnectToServer = (username: string) => {
+        browsemStore.connect(username);
     }
     const handleDisconnectFromServer = async () => {
         // this wont need to be called when u appropriately leave all related areas (like channels and what-not)
@@ -122,7 +124,7 @@ export default function App() {
             :
             browsemStore.currentSelection === 'CreatingGuestUsername'
             ?
-                <CreateGuestUsernamePopup username={browsemStore.username} setUsername={browsemStore.setUsername} handleConnectToServer={handleConnectToServer} />
+                <CreateGuestUsernamePopup username={username} setUsername={setUsername} handleConnectToServer={handleConnectToServer} />
             :
 
             browsemStore.currentSelection === 'Connected'

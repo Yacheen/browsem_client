@@ -71,6 +71,14 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        .chatter-bottom-username {
+            width: 33%;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 16px;
+        }
         .input-slider-container {
             display: flex;
             align-items: center;

@@ -38,7 +38,12 @@ Promise.all([
     chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         if (message.type === "connect") {
             if (socket === null) {
-                connect();
+                if (message.username.length > 30) {
+                    snackbarStore.getState().setSnackbar(true, "Username exceeds 30 characters.", "warning");
+                }
+                else {
+                    connect();
+                }
             }
         }
         else if (message.type === "disconnect") {
@@ -105,7 +110,11 @@ Promise.all([
             await sendUpdateUrlsMessage();
         }
     })
-    chrome.tabs.onRemoved.addListener(async () => {
+    chrome.tabs.onRemoved.addListener(async (tabId) => {
+        if (tabId === browsemStore.getState().callTabId) {
+            // u closed the tab that was of the call, send a disconnectfromcall msg
+            socket?.send(JSON.stringify("DisconnectFromCall"));
+        }
         await sendUpdateUrlsMessage();
     })
     // onclicked is handled on the components within the useEffect after messagelistener
@@ -285,7 +294,6 @@ Promise.all([
                         ...urlCall,
                         channels: urlCall.channels.map(channel => {
                             if (channel.channelName !== msg.DisconnectedFromCall.channelName) return channel;
-                            console.log('the channelName and urlName is the same, filtering...');
                             return {
                                 ...channel,
                                 chatters: channel.chatters.filter(chatter => chatter.username !== msg.DisconnectedFromCall.disconnectedChatter.username),
@@ -297,7 +305,6 @@ Promise.all([
 
 
                 if (msg.DisconnectedFromCall.disconnectedChatter.username === browsemStore.getState().username) {
-                    console.log('YOU ARE THE ONE THAT DISCONNECTED GET DOWN!!!!!!!!!!!!');
                     settingsStore.getState().setSettings({
                         ...settingsStore.getState().settings,
                         cameraIsOn: false,

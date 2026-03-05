@@ -3,7 +3,7 @@ import { ChangeEvent, useState } from 'react'
 import "./CreateGuestUsernamePopup.css";
 import GoBack from './GoBack';
 
-export default function CreateGuestUsernamePopup(props: { username: string, setUsername: (newUsername: string) => void, handleConnectToServer: () => void, }) {
+export default function CreateGuestUsernamePopup(props: { username: string, setUsername: (newUsername: string) => void, handleConnectToServer: (username: string) => void, }) {
   const browsemStore = useBrowsemStore();
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
       console.log(event.currentTarget.value);
@@ -22,7 +22,7 @@ export default function CreateGuestUsernamePopup(props: { username: string, setU
                 <label htmlFor="username" className="username-label">Username: </label>
                 <input onChange={handleInputChange} type="text" name="username" id="username" value={props.username} />
             </div>
-            <button onClick={props.handleConnectToServer}>Continue As Guest</button>
+            <button onClick={() => props.handleConnectToServer(props.username)}>Continue As Guest</button>
         </div>
 
     </>

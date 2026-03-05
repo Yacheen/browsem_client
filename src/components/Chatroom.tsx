@@ -85,6 +85,13 @@ function Chatroom() {
                     <input value={inputMessage} onKeyDown={handleKeyPress} onChange={handleSetMessage} placeholder="message..." type="text" />
                 </div>
                 <div className="input-bottom">
+                    {
+                        inputMessage.length > 0
+                        ?
+                            <p className={`input-characters-remaining ${inputMessage.length > 250 ? 'none-remaining' : ''}`}>{250 - inputMessage.length}</p>
+                        :
+                            null
+                    }
                     <Tooltip placement='top' title="Chat settings" arrow disableInteractive slotProps={{
                         popper: {
                             style: {

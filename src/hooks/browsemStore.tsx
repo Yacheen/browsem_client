@@ -33,7 +33,7 @@ interface BrowsemStoreState {
     pendingReconnectionFromRefresh: PendingReconnection | null,
     disconnect: () => void,
     disconnected: (message: Disconnected) => void,
-    connect: () => void,
+    connect: (username: string) => void,
     connected: (message: Connected) => void,
     setUsername: (username: string) => void,
     setCurrentSelection: (currentSelection: CurrentSelection) => void,
@@ -76,9 +76,10 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             setCurrentSelection: (currentSelection: CurrentSelection) => {
                 set({ currentSelection })
             },
-            connect: () => {
+            connect: (username: string) => {
                 chrome.runtime.sendMessage({
-                    "type": "connect"
+                    "type": "connect",
+                    username: username,
                 });
                 set({ socketState: 'Connecting' });
             },

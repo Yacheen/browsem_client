@@ -1,3 +1,4 @@
+@import "./variables.scss";
 .call-chatroom-container {
     .call-chatroom {
         background: hsl(0, 0%, 25%);
@@ -51,6 +52,12 @@
             display: flex;
             justify-content: flex-end;
             align-items: center;
+            .input-characters-remaining {
+                font-size: 12px;
+            }
+            .none-remaining {
+                color: $light-red !important;
+            }
             button {
                 margin-left: 4px;
                 cursor: pointer;

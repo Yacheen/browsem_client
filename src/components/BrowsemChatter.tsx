@@ -225,7 +225,7 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
                     />
             }
             <div className="chatter-bottom">
-                <p>{props.chatter.username}</p> 
+                <p className={`chatter-bottom-username`}>{props.chatter.username}</p> 
 
                 {
                     props.chatter.username === yourUsername
