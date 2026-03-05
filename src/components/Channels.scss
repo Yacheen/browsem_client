@@ -1,4 +1,4 @@
-
+@import "./variables.scss";
 /* :root { */
 /*     // backgrounds */
 /*     --light-background: hsl(0, 0%, 95%); */
@@ -31,7 +31,7 @@
     max-width: 100%;
     min-width: 200px;
     min-height: 200px;
-    max-height: 200px;
+    max-height: 360px;
 
     .url-call-container {
         display: flex;
@@ -40,9 +40,8 @@
         cursor: pointer;
         border-radius: 4px;
         padding: 0px 12px 0px 4px;
-        &:hover {
-            background: hsl(0, 0%, 30%);
-        }
+        position: relative;
+        max-width: 290px;
         .url-call-name {
             font-size: 16px;
             font-weight: bold;
@@ -50,6 +49,11 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             user-select: none;
+            max-width: 100%;;
+        }
+        .homepage-text {
+            color: $light-yellow !important;
+            font-size: 16px;
         }
         .url-call-right {
             position: relative;
@@ -59,6 +63,7 @@
             .url-call-channel-count {
                 color: var(--light-text);
                 user-select: none;
+                font-size: 14px;
             }
             .url-call-dropped-down-icon-container {
                 display: flex;
@@ -70,6 +75,9 @@
                 }
             }
         }
+    }
+    .url-call-container:hover .url-call-name, .url-call-container:hover .url-call-right .url-call-channel-count, .url-call-container:hover .url-call-right .url-call-dropped-down-icon-container svg {
+        color: hsl(0, 0%, 60%) !important;
     }
 
     .channels-container {
@@ -83,6 +91,7 @@
                 justify-content: space-between;
                 cursor: pointer;
                 margin-bottom: 4px;
+                padding: 4px 0px;
                 .channel-meta-left {
                     display: flex;
                     align-items: center;
@@ -103,6 +112,7 @@
                         text-overflow: ellipsis;
                         white-space: nowrap;
                         user-select: none;
+                        font-size: 12px;
                     }
                 }
                 .channel-max-chatters {
@@ -111,6 +121,7 @@
                     position: relative;
                     color: var(--light-text);
                     user-select: none;
+                    font-size: 14px;
                     .max-chatters-icon-container {
                         .max-chatters-icon {
                             font-size: 18px;
@@ -121,8 +132,9 @@
                     }
                 }
             }
-            .channel-meta:hover .channel-name, .channel-meta:hover .channel-icon, .channel-meta:hover .channel-max-chatters {
-                color: hsl(0, 0%, 60%);
+            .channel-meta:hover {
+                background: hsl(0, 0%, 30%);
+                border-radius: 8px;
             }
             .channel-chatters {
                 padding-left: 12px;
@@ -130,9 +142,11 @@
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 8px;
                     padding-left: 8px;
+                    padding-top: 4px;
+                    padding-bottom: 4px;
                     border-radius: 8px;
+                    cursor: pointer;
                     &:hover {
                         background: hsl(0, 0%, 30%);
                     }
@@ -175,7 +189,7 @@
         background: hsl(0, 0%, 85%);
         .url-call-container {
             &:hover {
-                background: hsl(0, 0%, 80%);
+                color: hsl(0, 0%, 40%);
             }
             .url-call-name {
             }
@@ -205,7 +219,7 @@
                     }
                 }
                 .channel-meta:hover .channel-name, .channel-meta:hover .channel-icon, .channel-meta:hover .channel-max-chatters {
-                    color: hsl(0, 0%, 40%);
+                    background: hsl(0, 0%, 80%);
                 }
                 .channel-chatters {
                     .channel-chatter {

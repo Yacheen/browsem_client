@@ -12,20 +12,24 @@ const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
 
 function CallSidebar() {
     const browsemStore = useBrowsemStore();
+    const callUrl = useBrowsemStore(state => state.chatterChannel?.fullUrl);
     const currentCall = useCurrentCallStore();
     const channelsStore = useChannelsStore();
     const settings = useSettingsStore(state => state.settings);
+    const urlCalls = useChannelsStore(state => state.urlCalls)
+    const chatterChannel = useBrowsemStore(state => state.chatterChannel);
     return (
         <div className="call-sidebar">
             {
-                useChannelsStore.getState().urlCalls.map(urlCall => urlCall.channels.length).reduce((accumulator, currentValue) => accumulator + currentValue, 0) === 1
+                urlCalls.filter(urlCall => getDomainName(urlCall.urlName) === getDomainName(chatterChannel?.fullUrl ?? "")).map(urlCall => urlCall.channels.length).reduce((accumulator, currentValue) => accumulator + currentValue, 0) === 1
                 ?
-                    <p className="channels-on-origin">{useChannelsStore.getState().urlCalls.map(urlCall => urlCall.channels.length).reduce((accumulator, currentValue) => accumulator + currentValue, 0) } channel on {getDomainName(browsemStore.currentUrl)}</p>
+                    <p className="channels-on-origin">{urlCalls.filter(urlCall => getDomainName(urlCall.urlName) === getDomainName(chatterChannel?.fullUrl ?? "")).map(urlCall => urlCall.channels.length).reduce((accumulator, currentValue) => accumulator + currentValue, 0) } channel on {getDomainName(browsemStore.currentUrl)}</p>
                 :
-                    <p className="channels-on-origin">{useChannelsStore.getState().urlCalls.map(urlCall => urlCall.channels.length).reduce((accumulator, currentValue) => accumulator + currentValue, 0) } channels on {getDomainName(browsemStore.currentUrl)}</p>
+                    <p className="channels-on-origin">{urlCalls.filter(urlCall => getDomainName(urlCall.urlName) === getDomainName(chatterChannel?.fullUrl ?? "")).map(urlCall => urlCall.channels.length).reduce((accumulator, currentValue) => accumulator + currentValue, 0) } channels on {getDomainName(chatterChannel?.fullUrl ?? "")}</p>
             }
             <p className="calls-header">Calls</p>
-            <Channels />
+            <Channels  urlForRenderingDomains={callUrl} />
+            <p className="chat-header">Chat</p>
             <Chatroom />
             <CallButtons chatter={{
                 username: browsemStore.username,

@@ -42,13 +42,17 @@
       line-height: 1.1;
     }
     p {
-        color: hsl(0, 0%, 95%);
+        color: var(--light-text) !important; 
         margin: 0;
         line-height: 1.5;
     }
     .MuiSvgIcon-root {
         color: var(--light-text);
         font-size: 18px;
+    }
+    .MuiSnackbar-root .MuiSnackbarContent-message {
+      font-size: 16px !important; /* Force override */
+      font-weight: 500 !important;
     }
     svg {
         color: var(--light-text);
@@ -172,7 +176,7 @@
             background-color: var(--dark-button-background);
         }
         p {
-          color: hsl(0, 0%, 10%);
+          color: var(--dark-text);
         }
         .MuiSvgIcon-root { 
             color: var(--dark-text);

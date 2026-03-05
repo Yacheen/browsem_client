@@ -15,19 +15,17 @@ import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
 import HeadsetIcon from '@mui/icons-material/Headset';
 
-import { Chatter } from '@/hooks/ChannelsStore';
 import aniviaUltAsset from "../assets/aniviault.png";
 import "./CallButtons.scss";
 import { Tooltip } from '@mui/material';
 import { useSettingsStore } from '@/hooks/settingsStore';
 import { useCurrentCallStore } from '@/hooks/currentCallStore';
+import { Chatter } from '@/utils/types';
 const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
 
 function CallButtons(props: { chatter: Chatter }) {
     // const settings = useSettingsStore(state => state.settings);
     const setSettings = useSettingsStore(state => state.setSettings);
-    const peerConnection = useCurrentCallStore(state => state.peerConnection);
-    const chatterChannel = useCurrentCallStore(state => state.chatterChannel);
     const hasMicPermission = useCurrentCallStore(state => state.hasMicPermission);
     const hasCampermission = useCurrentCallStore(state => state.hasCamPermission);
     const handleGetMicrophone = useCurrentCallStore(state => state.handleGetMicrophone);
@@ -36,6 +34,10 @@ function CallButtons(props: { chatter: Chatter }) {
     const unmuteMic = useCurrentCallStore(state => state.unmuteMic);
     const turnOffCamera = useCurrentCallStore(state => state.turnOffCamera);
     const iceConnectionState = useCurrentCallStore(state => state.connection);
+    const disconnectFromCall = useCurrentCallStore(state => state.disconnectFromCall);
+    const handleDisconnectButtonClicked = () => {
+        disconnectFromCall(true);
+    }
 
     const handleSetVideo = async () => {
         if (hasCampermission) {
@@ -134,7 +136,25 @@ function CallButtons(props: { chatter: Chatter }) {
             <div className="call-buttons-top">
                 <div className="rtc-status-container">
                     <div className="rtc-status-icon-container">
-                        <PhoneDisabledIcon className="rtc-status-icon" />
+                        {
+                            iceConnectionState === "connected"
+                            ?
+                                <PhoneInTalkIcon className="rtc-status-icon connected-state" />
+                            :
+                            iceConnectionState === "disconnected"
+                            ?
+                                <PhoneDisabledIcon className="rtc-status-icon disconnected-state" />
+                            :
+                            iceConnectionState === "checking"
+                            ?
+                                <SettingsPhoneIcon className="rtc-status-icon checking-state" />
+                            :
+                            iceConnectionState === "new"
+                            ?
+                                <CallEndIcon className="rtc-status-icon" />
+                            :
+                                null
+                        }
                     </div>
                     <p className="rtc-status-text">{iceConnectionState}</p>
                 </div>
@@ -145,7 +165,7 @@ function CallButtons(props: { chatter: Chatter }) {
                         }
                     },
                 }}>
-                    <div className="rtc-disconnect-icon-container">
+                    <div onClick={handleDisconnectButtonClicked} className="rtc-disconnect-icon-container">
                         <CallEndIcon className="rtc-disconnect-icon" />
                     </div>
                 </Tooltip>
@@ -162,8 +182,8 @@ function CallButtons(props: { chatter: Chatter }) {
                         }
                     </div>
                 </Tooltip>
-                <Tooltip arrow disableInteractive title={props.chatter.settings.cameraIsOn ? 'Turn on camera' : 'Turn off camera'} placement="top" slotProps={{ popper: { style: { zIndex: 6942013383, } } }}>
-                    <div onClick={handleSetVideo} className="video-icon-container">
+                <Tooltip arrow disableInteractive title={props.chatter.settings.cameraIsOn ? 'Turn off camera' : 'Turn on camera'} placement="top" slotProps={{ popper: { style: { zIndex: 6942013383, } } }}>
+                    <div onClick={handleSetVideo} className={`${props.chatter.settings.cameraIsOn ? 'green_background_for_camera' : ''} video-icon-container`}>
                         {
                             props.chatter.settings.cameraIsOn
                             ?

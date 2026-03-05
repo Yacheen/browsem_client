@@ -4,398 +4,74 @@ import { useBrowsemStore } from '@/hooks/browsemStore';
 import IntroPopup from '@/components/IntroPopup';
 import MainPopup from '@/components/MainPopup';
 import CreateGuestUsernamePopup from '@/components/CreateGuestUsernamePopup';
-import { Settings, useSettingsStore } from '@/hooks/settingsStore';
+import { useSettingsStore } from '@/hooks/settingsStore';
 import CreateChannel from '@/components/CreateChannel';
-import { ChatterChannel } from '@/components/Channels';
-import { Chatter, useChannelsStore } from '@/hooks/ChannelsStore';
+import { useChannelsStore } from '@/hooks/ChannelsStore';
 import { getDomainName } from '@/utils/functions';
-import { IceCandidate, useCurrentCallStore } from '@/hooks/currentCallStore';
-
-export type BackgroundMessage = {
-    // this type field is used exclusively for sending messages back and forth for
-    // the background script and thats it, I think.
-    // any different "types" of msgs will be checked with a typeguard in clientmessage
-    type: MessageType,
-    contents: ClientMessage
-}
-type MessageType = "disconnected-from-socket" | "any";
-export type ClientMessage = Disconnected | Connected | ErrorMessage | ChannelCreated | BrowsemStats | OriginCalls | UrlsUpdated | ConnectedToCall | DisconnectedFromCall | AnswerFromServer | OfferFromServer | IceCandidate | UserUpdatedSettings;
-
-// general messages
-export type BrowsemStats = {
-    BrowsemStats: {
-        sessionsOnline: number,
-        sessionsInYourOrigin: number,
-        sessionsInYourUrl: number
-    }
-}
-export type ChannelCreated = {
-    ChannelCreated: UrlCalls,
-};
-export type Connected = {
-    Connected: {
-        sessionId: string,
-        sessionsOnline: number,
-    }
-};
-export type Disconnected = {
-    Disconnected: {
-        reason: string
-    }
-};
-// errors
-type ErrorMessage = {
-    ErrorMessage: ErrorType
-};
-type ErrorType = NoChannelName | ChannelNameTooLong | ChannelNameExists;
-
-type ChannelNameExists = {
-    ChannelNameExists: string,
-};
-type NoChannelName = {
-    NoChannelName: string,
-};
-type ChannelNameTooLong = {
-    ChannelNameTooLong: string,
-};
-export type OriginCalls = {
-    OriginCalls: {
-        originName: string,
-        urls: UrlCalls[],
-    }
-}
-export type UrlCalls = {
-    urlName: string,
-    channels: ChatterChannel[],
-}
-type UrlsUpdated = {
-    UrlsUpdated: string,
-}
- // ConnectedToCall | DisconnectedFromCall | AnswerFromServer | OfferFromServer
-export type ConnectedToCall = {
-    ConnectedToCall: {
-        connectedChatter: Chatter,
-        channelName: string ,
-        channelSessionId: string,
-        urlName: string,
-    }
-}
-export type DisconnectedFromCall = {
-    DisconnectedFromCall: {
-        disconnectedChatter: Chatter,
-        channelName: string,
-        urlName: string,
-        reason: string,
-        // joiningAnotherCall
-    } 
-}
-export type AnswerFromServer = {
-    AnswerFromServer: RTCSessionDescription 
-}
-export type OfferFromServer = {
-    OfferFromServer: RTCSessionDescription 
-}
-export type OfferFromClient = {
-    OfferFromClient: RTCSessionDescription 
-}
-export type AnswerFromClient = {
-    AnswerFromClient: RTCSessionDescription 
-}
-export type UserUpdatedSettings = {
-    UserUpdatedSettings: {
-        settings: Settings,
-        // SESSIONS ID, NOT CALL NAME
-        currentCall: string,
-        username: string,
-        callSessionId: string,
-    }
-}
-
-// typeguard fns
-export const isConnected = (msg: ClientMessage): msg is Connected => {
-    return (msg as Connected).Connected !== undefined;
-};
-export const isDisconnected = (msg: ClientMessage): msg is Disconnected => {
-    return (msg as Disconnected).Disconnected !== undefined;
-};
-export const isErrorMessage = (msg: ClientMessage): msg is ErrorMessage => {
-    return (msg as ErrorMessage).ErrorMessage !== undefined;
-};
-export const isNoChannelName = (msg: ErrorType): msg is NoChannelName => {
-    return (msg as NoChannelName).NoChannelName !== undefined;
-};
-export const isChannelNameTooLong = (msg: ErrorType): msg is ChannelNameTooLong => {
-    return (msg as ChannelNameTooLong).ChannelNameTooLong !== undefined;
-};
-export const isChannelNameExists = (msg: ErrorType): msg is ChannelNameExists => {
-    return (msg as ChannelNameExists).ChannelNameExists !== undefined;
-};
-export const isChannelCreated = (msg: ClientMessage): msg is ChannelCreated => {
-    return (msg as ChannelCreated).ChannelCreated !== undefined;
-};
-export const isBrowsemStats = (msg: ClientMessage): msg is BrowsemStats => {
-    return (msg as BrowsemStats).BrowsemStats !== undefined;
-};
-export const isUrlsUpdated = (msg: ClientMessage): msg is UrlsUpdated => {
-    return (msg as UrlsUpdated).UrlsUpdated !== undefined;
-};
-export const isOriginCalls = (msg: ClientMessage): msg is OriginCalls => {
-    return (msg as OriginCalls).OriginCalls !== undefined;
-};
-
-export const isConnectedToCall = (msg: ClientMessage): msg is ConnectedToCall => {
-    return (msg as ConnectedToCall).ConnectedToCall !== undefined;
-};
-export const isDisconnectedFromCall = (msg: ClientMessage): msg is DisconnectedFromCall => {
-    return (msg as DisconnectedFromCall).DisconnectedFromCall !== undefined;
-};
-export const isAnswerFromServer = (msg: ClientMessage): msg is AnswerFromServer => {
-    return (msg as AnswerFromServer).AnswerFromServer !== undefined;
-};
-export const isOfferFromServer = (msg: ClientMessage): msg is OfferFromServer => {
-    return (msg as OfferFromServer).OfferFromServer !== undefined;
-};
-export const isIceCandidate = (message: any): message is IceCandidate => {
-    return (message as IceCandidate).IceCandidate !== undefined;
-}
-export const isUserUpdatedSettings = (message: any): message is UserUpdatedSettings => {
-    return (message as UserUpdatedSettings).UserUpdatedSettings !== undefined;
-}
+import { useCurrentCallStore } from '@/hooks/currentCallStore';
+import { BackgroundMessage, IceCandidate } from '../utils/types.ts';
+import { Alert, Snackbar } from '@mui/material';
+import Slide from '@mui/material/Slide';
+import { useSnackbarStore } from '@/hooks/snackbarStore.tsx';
 
 export default function App() {
     const messageListenerExists = useRef(false);
     const browsemStore = useBrowsemStore();
-    const settingsStore = useSettingsStore();
-    const setSettings = useSettingsStore(state => state.setSettings);
-    const channelsStore = useChannelsStore();
-    const currentCallStore = useCurrentCallStore();
+    const socketState = useBrowsemStore(state => state.socketState);
+    const message = useSnackbarStore(state => state.message);
+    const open = useSnackbarStore(state => state.open);
+    const type = useSnackbarStore(state => state.type);
+    const setSnackbar = useSnackbarStore(state => state.setSnackbar);
 
     const handleConnectToServer = () => {
         browsemStore.connect();
     }
     const handleDisconnectFromServer = async () => {
-        // await currentCallStore.disconnectFromCall(true);
-       //  let currentCallTabId = currentCallStore.tabId;
-        // console.log('the state of currentcallstore is: ', useCurrentCallStore.getState());
-        // chrome.tabs.sendMessage(useCurrentCallStore.getState().tabId!, {
-        //     type: "disconnected-from-socket"
-        // })
-        if (useCurrentCallStore.getState().tabId) {
-            console.log('sending tabs messaage to ', useCurrentCallStore.getState().tabId);
-            chrome.tabs.sendMessage(useCurrentCallStore.getState().tabId!, {
-                type: "disconnected-from-socket",
-            });
-        }
-        else {
-            console.log('currentcallstore tabid is null, not sending a disconnectedfromsocket msg.');
-        }
-        await currentCallStore.disconnectFromCall(true);
+        // this wont need to be called when u appropriately leave all related areas (like channels and what-not)
+        // as it'll do it for you whilst disconnecting.
+        useCurrentCallStore.getState().disconnectFromCall(true);
         browsemStore.disconnect();
         browsemStore.setCurrentSelection("Intro");
-        // tell the content script u disconnected from the socket
     };
     const handleCreateGuestUsername = () => {
         browsemStore.setCurrentSelection("CreatingGuestUsername");
     }
-    const messageListener = async (message: BackgroundMessage) => {
-        console.log('message on client: ', message);
-        // connected by socket, then send update-user-info & update-urls, THEN fetch urls and browsem stats
-        // u receive a urlsfetched message
-        if (isConnected(message.contents)) {
-            browsemStore.connected(message.contents);
-            browsemStore.setCurrentSelection("Connected");
-            chrome.runtime.sendMessage({
-                "type": "update-user-info",
-                "contents": JSON.stringify({
-                    UpdateInfo: {
-                        username: useBrowsemStore.getState().username,
-                        settings: settingsStore.settings,
-                        // currentUrl: browsemStore.currentUrl,
-                        // currentOrigin: new URL(browsemStore.currentUrl).origin,
-                        // urlsOpened: browsemStore.urlsOpened,
-                        // urlOriginsOpened: browsemStore.urlOriginsOpened,
-                    }
-                })
-            });
-            chrome.runtime.sendMessage({
-                "type": "update-urls"
-            });
-        } 
-        else if (isUrlsUpdated(message.contents)) {
-            chrome.runtime.sendMessage({
-                "type": "get-channels-by-origin"
-            });
-            chrome.runtime.sendMessage({
-                "type": "get-browsem-stats"
-            });
-        }
-        else if (isDisconnected(message.contents)) {
-            browsemStore.disconnected(message.contents);
-           //  await currentCallStore.disconnectedFromCall({DisconnectedFromCall: { reason: message.contents.Disconnected.reason, disconnectedChatter: null }});
-        }
-        else if (isChannelCreated(message.contents)) {
-            let channelCreated = message.contents;
-            // find a url of calls, if it exists, set its channels, otherwise push a new urlcalls to the originCalls
-
-            let urlCallFound = useChannelsStore.getState().urlCalls.find(urlCall => urlCall.urlName === channelCreated.ChannelCreated.urlName);
-            if (urlCallFound) {
-                // edit channels of this url
-                let newUrlCalls = useChannelsStore.getState().urlCalls.map(urlCall => {
-                    if (urlCall.urlName === channelCreated.ChannelCreated.urlName) {
-                        urlCall.channels = channelCreated.ChannelCreated.channels;
-                    }
-                    return urlCall;
-                });
-                channelsStore.setUrlCalls(newUrlCalls);
-            }
-            else {
-                let newUrlCalls = [...useChannelsStore.getState().urlCalls, channelCreated.ChannelCreated];
-                channelsStore.setUrlCalls(newUrlCalls);
-            }
-            browsemStore.setCurrentSelection("Connected");
-        }
-        // error msges
-        else if (isErrorMessage(message.contents)) {
-            if (isNoChannelName(message.contents.ErrorMessage)) {
-                browsemStore.setErrors({ ...useBrowsemStore.getState().errors, noChannelName: message.contents.ErrorMessage.NoChannelName });
-            }
-            else if (isChannelNameTooLong(message.contents.ErrorMessage)) {
-                browsemStore.setErrors({ ...useBrowsemStore.getState().errors, channelNameTooLong: message.contents.ErrorMessage.ChannelNameTooLong });
-            }
-            else if (isChannelNameExists(message.contents.ErrorMessage)) {
-                browsemStore.setErrors({ ...useBrowsemStore.getState().errors, channelNameExists: message.contents.ErrorMessage.ChannelNameExists });
-            }
-        }
-        else if (isBrowsemStats(message.contents)) {
-            let { sessionsOnline, sessionsInYourUrl, sessionsInYourOrigin } = message.contents.BrowsemStats;
-            browsemStore.setBrowsemStats(sessionsOnline, sessionsInYourOrigin, sessionsInYourUrl);
-        }
-        else if (isOriginCalls(message.contents)) {
-            console.log('got origin calls: ', message.contents);
-            channelsStore.setUrlCalls(message.contents.OriginCalls.urls);
-        }
-        else if (isConnectedToCall(message.contents)) {
-            console.log('received isconnected message. (on popup)');
-            // add them to the channel they were added to.
-            let newUrlCalls = useChannelsStore.getState().urlCalls;
-            let msg: ConnectedToCall = message.contents;
-            let chatterChannelHandle: ChatterChannel | undefined;
-            newUrlCalls.map(urlCall => {
-                if (urlCall.urlName === msg.ConnectedToCall.urlName) {
-                    urlCall.channels.map(channel => {
-                        if (channel.channelName === msg.ConnectedToCall.channelName) {
-                            chatterChannelHandle = channel;
-                            channel.chatters.push(msg.ConnectedToCall.connectedChatter);
-                        }
-                        return channel;
-                    })
-                }
-                return urlCall;
-            })
-
-            channelsStore.setUrlCalls(newUrlCalls);
-
-            if (chatterChannelHandle) {
-                if (msg.ConnectedToCall.connectedChatter.username === useBrowsemStore.getState().username) {
-                    await currentCallStore.connectedToCall(message.contents, true, chatterChannelHandle);
-                }
-                else {
-                    await currentCallStore.connectedToCall(message.contents, false, chatterChannelHandle);
-                }
-            }
-        }
-        else if (isDisconnectedFromCall(message.contents)) {
-            let newUrlCalls = useChannelsStore.getState().urlCalls;
-            let msg: DisconnectedFromCall = message.contents;
-            newUrlCalls.map(urlCall => {
-                if (urlCall.urlName === msg.DisconnectedFromCall.urlName) {
-                    urlCall.channels.map(channel => {
-                        if (channel.channelName === msg.DisconnectedFromCall.channelName) {
-                            channel.chatters = channel.chatters.filter(chatter => chatter.username != msg.DisconnectedFromCall.disconnectedChatter.username);
-                        }
-                        return channel;
-                    })
-                }
-                return urlCall;
-            })
-            channelsStore.setUrlCalls(newUrlCalls);
-            if (msg.DisconnectedFromCall.channelName === useCurrentCallStore.getState().chatterChannel?.channelName) {
-                if (msg.DisconnectedFromCall.disconnectedChatter.username === useBrowsemStore.getState().username) {
-                    setSettings({
-                        ...useSettingsStore.getState().settings,
-                        cameraIsOn: false,
-                        microphoneIsOn: false,
-                        sharingScreen: false,
-                    });
-                    await currentCallStore.disconnectedFromCall(message.contents, true);
-                }
-                else {
-                    await currentCallStore.disconnectedFromCall(message.contents, false);
-                }
-            }
-        }
-        // else if (isOfferFromServer(message.contents)) {
-        //     await currentCallStore.handleOfferFromServer(message.contents);
-        // }
-        // else if (isAnswerFromServer(message.contents)) {
-        //     await currentCallStore.handleAnswerFromServer(message.contents);
-        //     console.log('HI I GOT AN ANSWER FROM SERVER IT COMPLETED SUCCESSFULLY');
-        // }
-        // else if (isIceCandidate(message.contents)) {
-        //     console.log('its an ice cand: ', message.contents);
-        //     await currentCallStore.handleIceCandidateFromServer(message.contents);
-        // }
-        else if (isUserUpdatedSettings(message.contents)) {
-            currentCallStore.handleUserUpdatedSettings(message.contents);
-        }
-    };
-
-    // handling messages, opens when browsemstore gets username from storage session,
-    // which happens when popup is opened.
-    useEffect(() => {
-        if (messageListenerExists.current === false) {
-            chrome.runtime.onMessage.addListener(messageListener)
-            messageListenerExists.current = true;
-            // get stuff now that message listener is ready and component is mounted
-            if (browsemStore.socketState === "Connected") {
-                chrome.runtime.sendMessage({
-                    "type": "get-browsem-stats",
-                });
-                // can do origins as well instead in future
-                chrome.runtime.sendMessage({
-                    "type": "get-channels-by-origin",
-                });
-            }
-        }
-        return () => {
-            chrome.runtime.onMessage.removeListener(messageListener);
-            messageListenerExists.current = false;
-        }
-    }, []);
-    useEffect(() => {
-        console.log('currentCallStore is now: ', currentCallStore);
-    }, [currentCallStore]);
-
-    // setting info on ws whenever settings or profile updates are made
     // useEffect(() => {
-    //     if (browsemStore.currentSelection === "Connected") {
-    //         chrome.runtime.sendMessage({
-    //             "type": "update-profile",
-    //             "contents": JSON.stringify({
-    //                 UpdateInfo: {
-    //                     username: browsemStore.username,
-    //                     settings: settingsStore.settings,
-    //                     currentUrl: browsemStore.currentUrl,
-    //                     currentOrigin: new URL(browsemStore.currentUrl).origin,
-    //                     urlsOpened: browsemStore.urlsOpened,
-    //                     urlOriginsOpened: browsemStore.urlOriginsOpened,
-    //                 }
-    //             })
-    //         });
+    //     chrome.runtime.sendMessage({ type: "get-tab-id" }, (response) => {
+    //         if (response?.tabId) {
+    //             console.log('setting currenttabid in popup: ', response);
+    //             useBrowsemStore.getState().setCurrentTabId(response.tabId);
+    //         }
+    //     });
+    // }, []);
+    // const messageListener = async (message: BackgroundMessage) => {
+    //     if (message.type === "offer-from-server") {
+    //     }
+    //     else if (message.type === "answer-from-server") {
+    //     }
+    // };
+
+    // useEffect(() => {
+    //     if (messageListenerExists.current === false) {
+    //         chrome.runtime.onMessage.addListener(messageListener)
+    //         messageListenerExists.current = true;
+    //     }
+    //     return () => {
+    //         chrome.runtime.onMessage.removeListener(messageListener);
+    //         messageListenerExists.current = false;
     //     }
     // }, []);
-
-    // test
+    useEffect(() => {
+        if (socketState === "Connected") {
+            chrome.runtime.sendMessage({
+                "type": "get-browsem-stats",
+            });
+            // can do origins as well instead in future
+            chrome.runtime.sendMessage({
+                "type": "get-channels-by-origins",
+            });
+        }
+    }, []);
 
   return (
       <>
@@ -442,7 +118,7 @@ export default function App() {
         {
             browsemStore.currentSelection === 'Intro'
             ?
-                <IntroPopup msg="Vite + React + CRXJS" handleCreateGuestUsername={handleCreateGuestUsername} />
+                <IntroPopup handleCreateGuestUsername={handleCreateGuestUsername} />
             :
             browsemStore.currentSelection === 'CreatingGuestUsername'
             ?
@@ -459,6 +135,35 @@ export default function App() {
             :
                 null
         }
+        {
+            open 
+            ?
+                <Snackbar
+                    anchorOrigin={{vertical: "top", horizontal: "center"}}
+                    open={open}
+                    TransitionComponent={Slide}
+                    message={message}
+                    key={message}
+                    sx={{
+                        '& .MuiSvgIcon-root': {
+                            color: type === "success" ? "$light-green" : type === "info" ? 'hsl(0, 0%, 90%)' : type === "error" ? "$light-red" : type === "warning" ? "$light-orange" : "hsl(0, 0%, 90%)",
+                        },
+                        '& .MuiAlert-icon': {
+                            fontSize: '20px', // Increases icon size
+                        },
+                        '& .MuiAlert-message': {
+                            fontSize: '14px', // Increases text size
+                        },
+                    }}
+                >
+                    <Alert style={{background: "hsla(0, 0%, 30%, 1)", color: "white"}} onClose={() => setSnackbar(false, "", "success")} severity={type}>
+                        {message}
+                    </Alert>
+                </Snackbar>
+            :
+                null
+        }
+
         </>
   )
 }

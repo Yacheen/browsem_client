@@ -71,6 +71,26 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        .input-slider-container {
+            display: flex;
+            align-items: center;
+            .chatter-volume-meta-container {
+                display: flex;
+                align-items: center;
+                .chatter-volume-meta {
+                    font-size: 12px;
+                }
+                .chatter-volume-icon {
+                    display: flex;
+                    align-items: center;
+                    font-size: 12px;
+                }
+            }
+            .input-slider {
+                cursor: pointer;
+                width: 100%;
+            }
+        }
         .chatter-settings {
             display: flex;
             align-items: center;

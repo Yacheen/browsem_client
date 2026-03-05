@@ -1,10 +1,10 @@
 import { useBrowsemStore } from '@/hooks/browsemStore';
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import Tooltip from '@mui/material/Tooltip';
 import "./Channels.scss";
-import { Chatter, useChannelsStore } from '@/hooks/ChannelsStore';
-import { shortenStringWithDots } from '@/utils/functions';
+import { useChannelsStore } from '@/hooks/ChannelsStore';
+import { getDomainName, shortenStringWithDots } from '@/utils/functions';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
@@ -23,25 +23,16 @@ import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
 import HeadsetIcon from '@mui/icons-material/Headset';
 // screenshere
 import MonitorIcon from '@mui/icons-material/Monitor';
-export type ChatterChannel = {
-    sessionId: string,
-    channelName: string,
-    channelOwner: string,
-    chatters: Chatter[],
-    urlOrigin: string,
-    fullUrl: string,
-    maxChatters: number,
-    channelMessages: ChatMessage[],
-};
-export type ChatMessage = {
-    chatter: Chatter,
-    message: string
-};
+import { UrlCalls } from '@/utils/types';
 
-export default function Channels() {
-    const browsemStore = useBrowsemStore();
-    const channelsStore = useChannelsStore();
-    const currentCallStore = useCurrentCallStore();
+type ChannelsProps = {
+    urlForRenderingDomains: string | undefined,
+}
+export default function Channels({ urlForRenderingDomains }: ChannelsProps) {
+    const yourCurrentUrl = useBrowsemStore(state => state.currentUrl);
+    const currentChannel = useBrowsemStore(state => state.chatterChannel);
+    const urlCalls = useChannelsStore(state => state.urlCalls);
+    // const currentCallStore = useCurrentCallStore();
     const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
     const [textColor, setTextColor] = useState<'hsl(0, 0%, 10%)' | 'hsl(0, 0%, 95%)'>(() => {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -74,21 +65,26 @@ export default function Channels() {
   }
   const getUrlNameForUrlCall = (urlCall: string) => {
       let newUrl = new URL(urlCall);
-      return newUrl.pathname + newUrl.search + newUrl.hash;
+      return  decodeURIComponent(newUrl.pathname + newUrl.search + newUrl.hash);
   }
-  const handleConnectToCall = (channelName: string) => {
-      currentCallStore.connectToCall(channelName);
+  const handleConnectToCall = (channelName: string, urlName: String) => {
+    chrome.runtime.sendMessage({
+        type: "connect-to-call",
+        channelName: channelName,
+        urlName:  urlName,
+    });
   }
 
   return (
         <div className="url-calls-container">
             {
-                channelsStore.urlCalls.map(urlCall => (
+                // only use currentChannel.fullUrl if ur in a call and this rendering of channels is in the currentCall
+                urlCalls.filter(urlCall => getDomainName(urlCall.urlName) === getDomainName(urlForRenderingDomains ?? yourCurrentUrl)).map(urlCall => (
                     <>
-                        <div onClick={() => handleSetCurrentUrlDropdown(urlCall.urlName)} className="url-call-container" key={urlCall.urlName}>
-                            <p title={urlCall.urlName} className="url-call-name">{getUrlNameForUrlCall(urlCall.urlName)}</p>
+                        <div title={urlCall.urlName} onClick={() => handleSetCurrentUrlDropdown(urlCall.urlName)} className="url-call-container" key={urlCall.urlName}>
+                            <p className={`url-call-name ${getUrlNameForUrlCall(urlCall.urlName) === "/" ? 'homepage-text' : ''}`}>{getUrlNameForUrlCall(urlCall.urlName) === "/" ? "/homepage" : getUrlNameForUrlCall(urlCall.urlName)}</p>
                             <div className="url-call-right">
-                                <div className="url-call-channel-count">{urlCall.channels.length}</div>
+                                <div className={`${getUrlNameForUrlCall(urlCall.urlName) === "/" ? 'homepage-text' : ''} url-call-channel-count`}>{urlCall.channels.length}</div>
                                 <div className="url-call-dropped-down-icon-container">
                                     {
                                         currentUrlDropdown.find(urlDroppeddown => urlDroppeddown === urlCall.urlName)
@@ -106,7 +102,7 @@ export default function Channels() {
                                 <div className="channels-container"> 
                                     {
                                         urlCall.channels.map(channel => (
-                                            <div onClick={() => handleConnectToCall(channel.channelName)} key={channel.sessionId} className="channel">
+                                            <div key={channel.sessionId} className="channel">
                                                 <Tooltip placement='top' title="Join" arrow disableInteractive slotProps={{
                                                     popper: {
                                                         style: {
@@ -119,12 +115,12 @@ export default function Channels() {
                                                         }
                                                     }
                                                 }}>
-                                                    <div className="channel-meta">
+                                                    <div onClick={() => handleConnectToCall(channel.channelName, channel.fullUrl)} className="channel-meta">
                                                         <div className="channel-meta-left">
                                                             <div className="channel-voice-icon">
                                                                 <VolumeUpIcon className="channel-icon" />
                                                             </div>
-                                                            <p title={channel.channelName} className="channel-name">{shortenStringWithDots(channel.channelName, 25)}</p>
+                                                            <p title={channel.channelName} className="channel-name">{decodeURIComponent(shortenStringWithDots(channel.channelName, 25))}</p>
                                                         </div>
                                                         <div className="channel-max-chatters">
                                                             {channel.chatters.length}/{channel.maxChatters} <div className="max-chatters-icon-container"><PersonIcon className="max-chatters-icon" /></div>
