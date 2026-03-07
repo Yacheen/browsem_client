@@ -9,7 +9,7 @@ const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Tooltip } from '@mui/material';
 import { ChannelMessage } from '@/utils/types';
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { useBrowsemStore } from '@/hooks/browsemStore';
 // let bla: ChannelMessage[] = [{
 //     chatter: {
@@ -33,22 +33,22 @@ function Chatroom() {
     const handleSetMessage = (event: ChangeEvent<HTMLInputElement>) => {
         setInputMessage(event.currentTarget.value);
     }
+    const scrollToBottom = (element: HTMLElement) => {
+        // element.lastElementChild?.scrollIntoView({ block: "nearest", inline: "end" });
+        element.scrollTop = element.scrollHeight;
+    };
+    useEffect(() => {
+        let chat = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`call-chatroom`);
+        if (chat) {
+            scrollToBottom(chat);
+        }
+    }, [chatterChannel?.channelMessages])
 
     const handleKeyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
         if (event.key === "Enter" && !event.shiftKey && inputMessage.length > 0) {
             event.preventDefault();
             handleSendChannelMessage();
         }
-        // if (event.key === "Enter") {
-        // }
-        // if ((event.key === "" || e.keyCode === 13) && e.target.value === "") {
-        //     e.preventDefault();
-        // } else if ((e.which === 13 || e.keyCode === 13) && e.shiftKey) {
-        //     e.preventDefault();
-        // } else if ((e.which === 13 || e.keyCode === 13) && !e.shiftKey) {
-        //     e.preventDefault();
-        //     handleSubmitMessage(e);
-        // }
     }
     const handleSendChannelMessage = () => {
         chrome.runtime.sendMessage({
@@ -62,10 +62,9 @@ function Chatroom() {
         setInputMessage('');
     }
 
-
     return (
         <div className="call-chatroom-container">
-            <div className="call-chatroom">
+            <div id="call-chatroom" className="call-chatroom">
                 {
                     chatterChannel === null
                     ?

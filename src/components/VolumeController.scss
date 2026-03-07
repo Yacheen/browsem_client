@@ -1,0 +1,23 @@
+@import "./variables.scss";
+.sfx-container {
+    position: relative;
+    input {
+        min-width: 100%;
+    }
+    .sfx-header-container {
+        display: flex;
+        align-items: center;
+        h4 {
+            position: relative;
+            bottom: 2px;
+            margin: 0;
+        }
+        .input-icon {
+            margin-right: 4px;
+        }
+        .input-icon-no-gesture {
+            color: $light-red;
+            margin-right: 4px;
+        }
+    }
+}

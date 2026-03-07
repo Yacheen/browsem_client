@@ -1,5 +1,5 @@
 import { useBrowsemStore } from '@/hooks/browsemStore';
-import { useEffect, useState } from 'react'
+import { SetStateAction, useEffect, useState } from 'react'
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import Tooltip from '@mui/material/Tooltip';
 import "./Channels.scss";
@@ -27,13 +27,13 @@ import { UrlCalls } from '@/utils/types';
 
 type ChannelsProps = {
     urlForRenderingDomains: string | undefined,
+    currentUrlDropdown: string[],
+    setCurrentUrlDropdown: React.Dispatch<SetStateAction<string[]>>,
 }
-export default function Channels({ urlForRenderingDomains }: ChannelsProps) {
+export default function Channels({ urlForRenderingDomains, currentUrlDropdown, setCurrentUrlDropdown }: ChannelsProps) {
     const yourCurrentUrl = useBrowsemStore(state => state.currentUrl);
     const currentChannel = useBrowsemStore(state => state.chatterChannel);
     const urlCalls = useChannelsStore(state => state.urlCalls);
-    // const currentCallStore = useCurrentCallStore();
-    const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
     const [textColor, setTextColor] = useState<'hsl(0, 0%, 10%)' | 'hsl(0, 0%, 95%)'>(() => {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         if (mediaQuery.matches) {
@@ -99,6 +99,8 @@ export default function Channels({ urlForRenderingDomains }: ChannelsProps) {
                         {
                             currentUrlDropdown.find(urlDroppeddown => urlDroppeddown === urlCall.urlName)
                             ?
+                                null
+                            :
                                 <div className="channels-container"> 
                                     {
                                         urlCall.channels.map(channel => (
@@ -157,8 +159,6 @@ export default function Channels({ urlForRenderingDomains }: ChannelsProps) {
                                         ))
                                     }
                                 </div>
-                            :
-                                null
                         }
                     </>
                 ))

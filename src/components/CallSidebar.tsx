@@ -8,6 +8,7 @@ import Chatroom from './Chatroom';
 import CallButtons from './CallButtons';
 import aniviaUltAsset from "../assets/aniviault.png";
 import { useSettingsStore } from '@/hooks/settingsStore';
+import { useState } from 'react';
 const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
 
 function CallSidebar() {
@@ -18,6 +19,7 @@ function CallSidebar() {
     const settings = useSettingsStore(state => state.settings);
     const urlCalls = useChannelsStore(state => state.urlCalls)
     const chatterChannel = useBrowsemStore(state => state.chatterChannel);
+    const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
     return (
         <div className="call-sidebar">
             {
@@ -28,7 +30,7 @@ function CallSidebar() {
                     <p className="channels-on-origin">{urlCalls.filter(urlCall => getDomainName(urlCall.urlName) === getDomainName(chatterChannel?.fullUrl ?? "")).map(urlCall => urlCall.channels.length).reduce((accumulator, currentValue) => accumulator + currentValue, 0) } channels on {getDomainName(chatterChannel?.fullUrl ?? "")}</p>
             }
             <p className="calls-header">Calls</p>
-            <Channels  urlForRenderingDomains={callUrl} />
+            <Channels  urlForRenderingDomains={callUrl} currentUrlDropdown={currentUrlDropdown} setCurrentUrlDropdown={setCurrentUrlDropdown} />
             <p className="chat-header">Chat</p>
             <Chatroom />
             <CallButtons chatter={{

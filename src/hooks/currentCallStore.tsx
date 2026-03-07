@@ -50,11 +50,6 @@ const servers = {
         {
             urls: "stun:stun.l.google.com:19302",
         },
-        // {
-        //     urls: "turn:numb.viagenie.ca",
-        //     username: "sj0016092@gmail.com",
-        //     credential: "turnserver",
-        // }
     ],
 };
 

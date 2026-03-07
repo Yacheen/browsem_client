@@ -99,7 +99,12 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
                     });
                 }
             },
-            disconnected: (message: Disconnected) => {
+            disconnected: async (message: Disconnected) => {
+                await chrome.runtime.sendMessage({
+                    type: "play-sound",
+                    action: "play",
+                    path: "src/assets/sounds/screenshare_stopped_sound.wav",
+                });
                 let state = get().socketState;
                 if (state !== 'Disconnected') {
                     if (message.Disconnected.reason === "manual disconnect") {

@@ -9,6 +9,7 @@ import XIcon from '@mui/icons-material/X';
 import twitchIcon from '../assets/twitch_logo.svg';
 import kickIcon from '../assets/kick_logo.svg';
 import { useCreatingChannelStore } from '@/hooks/CreatingChannelStore';
+import VolumeController from './VolumeController';
 const channelsDummy = [
     {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
         {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
@@ -38,6 +39,7 @@ export default function MainPopup() {
     const browsemStore = useBrowsemStore();
     const [error, setError] = useState<{ urlError: string }>({ urlError: "" });
     const urlForRenderingDomains = useBrowsemStore(state => state.currentUrl);
+    const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
     // const [colorschemePreference, setColorschemePreference] = useState<'light' | 'dark'>(() => {
     //     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     //     if (mediaQuery.matches) {
@@ -140,9 +142,10 @@ export default function MainPopup() {
                 <input title={browsemStore.currentUrl} className="where-am-i-input" type="text" disabled value={browsemStore.currentUrl} />
                 <p className="calls-header">Calls</p>
                 <div className="channels-and-buttons">
-                    <Channels urlForRenderingDomains={urlForRenderingDomains} />
+                    <Channels currentUrlDropdown={currentUrlDropdown} setCurrentUrlDropdown={setCurrentUrlDropdown} urlForRenderingDomains={urlForRenderingDomains} />
                     <div className="main-buttons">
                         <button onClick={handleStartCreatingChannel} className="new-channel-btn">New channel</button>
+                        <VolumeController />
                     </div>
                 </div>
             </div>
