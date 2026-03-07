@@ -78,10 +78,25 @@ function CallButtons(props: { chatter: Chatter }) {
                     microphoneIsOn: false
                 });
                 muteMic();
+                await chrome.runtime.sendMessage({
+                    type: "play-sound",
+                    action: "play",
+                    path: "src/assets/sounds/click_sound.wav",
+                });
             }
             else {
+                await chrome.runtime.sendMessage({
+                    type: "play-sound",
+                    action: "play",
+                    path: "src/assets/sounds/click_sound.wav",
+                });
                 if (props.chatter.settings.deafened === true) {
                     // play undeafened sound
+                    await chrome.runtime.sendMessage({
+                        type: "play-sound",
+                        action: "play",
+                        path: "src/assets/sounds/deafen_false.wav",
+                    });
                 }
                 unmuteMic();
                 setSettings({
@@ -94,8 +109,18 @@ function CallButtons(props: { chatter: Chatter }) {
         else {
             let possibleMediaStreamWithMicrophone = await handleGetMicrophone(props.chatter.username, useSettingsStore);
             if (possibleMediaStreamWithMicrophone !== null) {
+                await chrome.runtime.sendMessage({
+                    type: "play-sound",
+                    action: "play",
+                    path: "src/assets/sounds/click_sound.wav",
+                });
                 if (props.chatter.settings.deafened === true) {
                     // play undeafened sound
+                    await chrome.runtime.sendMessage({
+                        type: "play-sound",
+                        action: "play",
+                        path: "src/assets/sounds/deafen_false.wav",
+                    });
                 }
                 setSettings({
                     ...props.chatter.settings,
@@ -105,9 +130,14 @@ function CallButtons(props: { chatter: Chatter }) {
             }
         }
     }
-    const handleSetDeafen = () => {
+    const handleSetDeafen = async () => {
         if (props.chatter.settings !== undefined) {
             if (props.chatter.settings.deafened) {
+                await chrome.runtime.sendMessage({
+                    type: "play-sound",
+                    action: "play",
+                    path: "src/assets/sounds/deafen_false.wav",
+                });
                 setSettings({
                     ...props.chatter.settings,
                     deafened: false,
@@ -118,6 +148,11 @@ function CallButtons(props: { chatter: Chatter }) {
                 // }
             }
             else {
+                await chrome.runtime.sendMessage({
+                    type: "play-sound",
+                    action: "play",
+                    path: "src/assets/sounds/deafen_true.wav",
+                });
                 setSettings({
                     ...props.chatter.settings,
                     deafened: true,

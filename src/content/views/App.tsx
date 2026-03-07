@@ -28,7 +28,6 @@ export default function App() {
     const type = useSnackbarStore(state => state.type);
     const setSnackbar = useSnackbarStore(state => state.setSnackbar);
 
-
     useEffect(() => {
         chrome.runtime.sendMessage({ type: "get-tab-id" }, (response) => {
             console.log('content script got a response: ', response);

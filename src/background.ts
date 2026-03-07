@@ -13,6 +13,38 @@ import { isConnected, isOriginCalls, isUrlsUpdated, isBrowsemStats, isDisconnect
 } from "./utils/types.ts";
 import { snackbarStoreBackendReady } from './hooks/snackbarStore.tsx';
 import { AlertColor } from '@mui/material';
+import { volumeStoreBackendReady } from './hooks/volumeStore.tsx';
+
+// ripped lines 17-29 from chrome offscreen docs
+let creating: any; // A global promise to avoid concurrency issues
+async function setupOffscreenDocument(path: string) {
+  // Check all windows controlled by the service worker to see if one
+  // of them is the offscreen document with the given path
+  const offscreenUrl = chrome.runtime.getURL(path);
+  const existingContexts = await chrome.runtime.getContexts({
+    contextTypes: ['OFFSCREEN_DOCUMENT'],
+    documentUrls: [offscreenUrl]
+  });
+
+  if (existingContexts.length > 0) {
+    return;
+  }
+
+  // create offscreen document
+  if (creating) {
+    await creating;
+  } else {
+    creating = chrome.offscreen.createDocument({
+      url: path,
+      reasons: ['AUDIO_PLAYBACK'],
+      justification: 'Audio SFX',
+    });
+    await creating;
+    creating = null;
+  }
+  // for some reason its not actually ready after being awaited so i put this in here.
+  await new Promise(resolve => setTimeout(resolve, 100));
+}
 
 initPegasusTransport();
 
@@ -21,8 +53,17 @@ Promise.all([
     channelsStoreBackendReady(),
     settingsStoreBackendReady(),
     snackbarStoreBackendReady(),
-]).then(([browsemStore, channelsStore, settingsStore, snackbarStore]) => {
-    console.log(snackbarStore);
+    volumeStoreBackendReady(),
+]).then(([browsemStore, channelsStore, settingsStore, snackbarStore, volumeStore]) => {
+    volumeStore.subscribe(async state => {
+        await setupOffscreenDocument("offscreen.html");
+        console.log('new state: ', state);
+        chrome.runtime.sendMessage({
+            type: 'offscreen',
+            action: 'change-volume',
+            newVolume: state.volume
+        });
+    });
     try {
         chrome.storage.session.setAccessLevel({
             accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS"
@@ -36,10 +77,17 @@ Promise.all([
     let socket: WebSocket | null = null;
 
     chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+        console.log('message on bg script received: ', message);
         if (message.type === "connect") {
             if (socket === null) {
                 if (message.username.length > 30) {
                     snackbarStore.getState().setSnackbar(true, "Username exceeds 30 characters.", "warning");
+                    await setupOffscreenDocument("offscreen.html");
+                    await chrome.runtime.sendMessage({
+                        type: "offscreen",
+                        action: "play",
+                        path: "src/assets/sounds/chat_error_msg_sound.wav",
+                    });
                 }
                 else {
                     connect();
@@ -102,6 +150,17 @@ Promise.all([
         else if (message.type === "send-channel-message") {
             socket?.send(JSON.stringify(message.contents));
         }
+        else if (message.type === "play-sound") {
+            await setupOffscreenDocument("offscreen.html");
+            await chrome.runtime.sendMessage({
+                type: "offscreen",
+                action: "play",
+                path: message.path,
+            });
+        }
+        else if (message.type === "console-log") {
+            console.log(message.logs);
+        }
         return true;
     });
     // (tabId, changeInfo, updatedTab)
@@ -147,6 +206,12 @@ Promise.all([
                         }
                 }));
                 sendUpdateUrlsMessage();
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/notification_sound.wav",
+                });
             }
             else if (isUrlsUpdated(message)) {
                 getChannelsByOrigins();
@@ -154,6 +219,12 @@ Promise.all([
             }
             else if (isDisconnected(message)) {
                 browsemStore.getState().disconnected(message);
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/screenshare_stopped_sound.wav",
+                });
             }
             else if (isChannelCreated(message)) {
                 let channelCreated = message;
@@ -181,6 +252,13 @@ Promise.all([
                     ]);
                 }
                 browsemStore.getState().setCurrentSelection("Connected");
+
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/click_sound.wav",
+                });
             }
             // error msges
             else if (isErrorMessage(message)) {
@@ -203,6 +281,12 @@ Promise.all([
                 }
                 // active, message, type
                 snackbarStore.getState().setSnackbar(true, msg, severity);
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/chat_error_msg_sound.wav",
+                });
             }
             else if (isBrowsemStats(message)) {
                 let { sessionsOnline, sessionsInYourUrl, sessionsInYourOrigin } = message.BrowsemStats;
@@ -268,6 +352,12 @@ Promise.all([
                         }
                     }
                 }
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/joined_call_sound.wav",
+                });
             }
             else if (isDisconnectedFromCall(message)) {
                 let msg: DisconnectedFromCall = message;
@@ -333,6 +423,12 @@ Promise.all([
                         }, browsemStore.getState().callTabId);
                     }
                 }
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/joined_call_sound.wav",
+                });
             }
             else if (isOfferFromServer(message)) {
                 let callTabId = useBrowsemStore.getState().callTabId;
@@ -407,6 +503,12 @@ Promise.all([
                 channelsStore.getState().setUrlCalls(newUrlCalls);
 
                 browsemStore.getState().setChatterChannel(msg.ReconnectedToCall.chatterChannel, browsemStore.getState().callTabId);
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/joined_call_sound.wav",
+                });
             }
             else if (isChannelMessageSent(message)) {
                 // set the chatterchannel, and channelsstore chatmessage.
@@ -443,10 +545,22 @@ Promise.all([
                 //         };
                 //     }),
                 // }));
+
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/chat_general_msg_sound.wav",
+                });
             }
         }
-        socket.onclose = (event) => {
-            console.log('onclosed. reason: ', event.reason);
+        socket.onclose = async (event) => {
+            await setupOffscreenDocument("offscreen.html");
+            await chrome.runtime.sendMessage({
+                type: "offscreen",
+                action: "play",
+                path: "src/assets/sounds/screenshare_stopped_sound.wav",
+            });
             if (event.reason !== "manual disconnect") {
                 socket = null;
                 chrome.runtime.sendMessage({

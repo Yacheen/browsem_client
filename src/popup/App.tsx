@@ -13,6 +13,7 @@ import { BackgroundMessage, IceCandidate } from '../utils/types.ts';
 import { Alert, Snackbar } from '@mui/material';
 import Slide from '@mui/material/Slide';
 import { useSnackbarStore } from '@/hooks/snackbarStore.tsx';
+import { useVolumeStore } from '@/hooks/volumeStore.tsx';
 
 export default function App() {
     const messageListenerExists = useRef(false);
@@ -24,6 +25,8 @@ export default function App() {
     const setSnackbar = useSnackbarStore(state => state.setSnackbar);
     const username = useBrowsemStore(state => state.username);
     const setUsername = useBrowsemStore(state => state.setUsername);
+    const volume = useVolumeStore(state => state.volume);
+    const setVolume = useVolumeStore(state => state.setVolume);
 
     const handleConnectToServer = (username: string) => {
         browsemStore.connect(username);
@@ -73,6 +76,9 @@ export default function App() {
                 "type": "get-channels-by-origins",
             });
         }
+    }, []);
+    useEffect(() => {
+        setVolume(25);
     }, []);
 
   return (

@@ -15,11 +15,11 @@ export default defineManifest({
     default_popup: 'src/popup/index.html',
   },
   permissions: [
-    'sidePanel',
     'contentSettings',
     'storage',
     'tabs',
     'webNavigation',
+    'offscreen'
   ],
   host_permissions: ["<all_urls>"],
   content_scripts: [{
@@ -27,9 +27,9 @@ export default defineManifest({
     matches: ['<all_urls>'],
     // run_at: "document_start"
   }],
-  side_panel: {
-    default_path: 'src/sidepanel/index.html',
-  },
+  // side_panel: {
+  //   default_path: 'src/sidepanel/index.html',
+  // },
   background: {
     "service_worker": "src/background.ts",
     "type": "module"
