@@ -10,6 +10,7 @@ type BrowsemErrors = {
     noChannelName: string | null,
     channelNameTooLong: string | null,
     channelNameExists: string | null,
+    bannedFromChannel: string | null,
 };
 type PendingReconnection = {
     channelName: string,
@@ -57,7 +58,8 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             errors: {
                 noChannelName: null,
                 channelNameTooLong: null,
-                channelNameExists: null
+                channelNameExists: null,
+                bannedFromChannel: null,
             },
             sessionsOnline: 0,
             sessionsInYourOrigin: 0,

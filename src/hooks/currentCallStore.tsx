@@ -7,6 +7,8 @@ import { UseBoundStore } from 'zustand';
 import { QuickchatterWindow } from '@/components/BrowsemChatter';
 import { AnswerFromClient, AnswerFromServer, DisconnectedFromCall, IceCandidate, OfferFromClient, OfferFromServer } from '@/utils/types';
 import { useBrowsemStore } from './browsemStore';
+import { Dispatch, SetStateAction } from 'react';
+import { AlertColor } from '@mui/material';
 
 interface CurrentCallStoreState {
     peerConnection: RTCPeerConnection | null,
@@ -38,8 +40,8 @@ interface CurrentCallStoreState {
     handleOfferFromServer: (message: OfferFromServer) => Promise<void>,
     stopMonitoringSpeakers: () => void,
     handleApplyMicSettings: (username: string, stream: MediaStream, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => void,
-    handleGetMicrophone: (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => Promise<MediaStream | null>,
-    handleGetCamera: (username: string) => Promise<MediaStream | null>,
+    handleGetMicrophone: (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>, setSnackbar: (active: boolean, message: string, type: AlertColor) => void) => Promise<MediaStream | null>,
+    handleGetCamera: (username: string, setSnackbar: (active: boolean, message: string, type: AlertColor) => void) => Promise<MediaStream | null>,
     muteMic: () => void;
     unmuteMic: () => void;
     turnOffMicrophone: () => void;
@@ -642,7 +644,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 console.log('THERE IS NO AUDIO CONTEXT.');
             }
         },
-        handleGetMicrophone: async (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => {
+        handleGetMicrophone: async (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>, setSnackbar: (active: boolean, message: string, type: AlertColor) => void) => {
             let handleApplyMicSettings = get().handleApplyMicSettings;
             try {
                 const micStream = await navigator.mediaDevices.getUserMedia({
@@ -659,12 +661,18 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 return micStream;
             }
             catch (err) {
+                if (err instanceof Error) {
+                    setSnackbar(true, err.message, "error");
+                }
+                else {
+                    setSnackbar(true, "Unknown error getting microphone", "error");
+                }
                 console.log('problem getting mic:', err);
                 set({ hasMicPermission: false });
                 return null;
             }
         },
-        handleGetCamera: async (username: string) => {
+        handleGetCamera: async (username: string, setSnackbar: (active: boolean, message: string, type: AlertColor) => void) => {
             console.log(username);
             let peerConnection = get().peerConnection;
             let videoTx = get().videoTx;
@@ -697,6 +705,12 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 return camStream;
             }
             catch (err) {
+                if (err instanceof Error) {
+                    setSnackbar(true, err.message, "error");
+                }
+                else {
+                    setSnackbar(true, "Unknown error getting camera", "error");
+                }
                 console.log('problem getting camera: ', err);
                 set({ hasCamPermission: false });
                 return null;

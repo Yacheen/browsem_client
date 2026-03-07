@@ -9,7 +9,9 @@ import { isConnected, isOriginCalls, isUrlsUpdated, isBrowsemStats, isDisconnect
     isReconnectedToCall,
     ReconnectedToCall,
     isChannelMessageSent,
-    ChannelMessageSent, 
+    ChannelMessageSent,
+    isBannedFromChannel,
+    isChannelMessageTooLong, 
 } from "./utils/types.ts";
 import { snackbarStoreBackendReady } from './hooks/snackbarStore.tsx';
 import { AlertColor } from '@mui/material';
@@ -198,6 +200,26 @@ Promise.all([
             });
             console.log('two');
         }
+        else if (message.type === "kick-chatter") {
+            socket?.send(JSON.stringify({
+                KickChatter: {
+                  username: message.username,
+                  channelName: message.channelName,
+                  urlName: message.urlName,
+                  urlOrigin: message.urlOrigin,
+                }
+            }))
+        }
+        else if (message.type === "ban-chatter") {
+            socket?.send(JSON.stringify({
+                BanChatter: {
+                  username: message.username,
+                  channelName: message.channelName,
+                  urlName: message.urlName,
+                  urlOrigin: message.urlOrigin,
+                }
+            }))
+        }
         return true;
     });
     // (tabId, changeInfo, updatedTab)
@@ -314,6 +336,16 @@ Promise.all([
                     browsemStore.getState().setErrors({ ...browsemStore.getState().errors, channelNameExists: message.ErrorMessage.ChannelNameExists });
                     severity = "warning";
                     msg = message.ErrorMessage.ChannelNameExists;
+                }
+                else if (isBannedFromChannel(message.ErrorMessage)) {
+                    browsemStore.getState().setErrors({ ...browsemStore.getState().errors, bannedFromChannel: message.ErrorMessage.BannedFromChannel });
+                    severity = "error";
+                    msg = message.ErrorMessage.BannedFromChannel;
+                }
+                else if (isChannelMessageTooLong(message.ErrorMessage)) {
+                    browsemStore.getState().setErrors({ ...browsemStore.getState().errors, bannedFromChannel: message.ErrorMessage.ChannelMessageTooLong });
+                    severity = "error";
+                    msg = message.ErrorMessage.ChannelMessageTooLong;
                 }
                 // active, message, type
                 snackbarStore.getState().setSnackbar(true, msg, severity);

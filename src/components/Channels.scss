@@ -137,19 +137,11 @@
                 border-radius: 8px;
             }
             .channel-chatters {
-                padding-left: 12px;
                 .channel-chatter {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding-left: 8px;
-                    padding-top: 4px;
-                    padding-bottom: 4px;
-                    border-radius: 8px;
                     cursor: pointer;
-                    &:hover {
-                        background: hsl(0, 0%, 30%);
-                    }
                     p {
                         overflow: hidden;
                         text-overflow: ellipsis;
@@ -164,20 +156,59 @@
                         border-radius: 50%;
                         user-select: none;
                     }
-                    .channel-chatter-left {
+                    .channel-chatter-kick-or-ban {
                         display: flex;
                         align-items: center;
-                        p {
-                            max-width: 132px;
-                            white-space: nowrap;
-                            overflow: hidden;
-                            text-overflow: ellipsis;
-                            font-size: 12px;
+                        position: relative;
+                        .channel-chatter-kick-icon-container {
+                            display: flex;
+                            align-items: center;
+                            svg {
+                                max-width: 18px;
+                                color: $light-red;
+                                &:hover {
+                                    color: $light-red-hover; 
+                                }
+                            }
+                        }
+                        .channel-chatter-ban-icon-container {
+                            display: flex;
+                            align-items: center;
+                            svg {
+                                max-width: 18px;
+                                color: $light-red;
+                                &:hover {
+                                    color: $light-red-hover; 
+                                }
+                            }
                         }
                     }
                     .channel-chatter-right {
                         display: flex;
                         align-items: center;
+                        min-width: 0;
+                        width: 100%;
+                        padding-top: 2px;
+                        padding-bottom: 2px;
+                        border-radius: 8px;
+                        &:hover {
+                            background: hsl(0, 0%, 30%);
+                        }
+                        .channel-chatter-meta {
+                            display: flex;
+                            align-items: center;
+                            min-width: auto;
+                            flex: 1;
+                            min-width: 0;
+                            p {
+                                // max-width: auto;
+                                width: 100%;
+                                white-space: nowrap;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                                font-size: 12px;
+                            }
+                        }
                         .chatter-settings-icon-container {
                             display: flex;
                             align-items: center;

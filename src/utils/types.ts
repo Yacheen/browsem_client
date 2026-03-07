@@ -17,6 +17,12 @@ export const isChannelNameTooLong = (msg: ErrorType): msg is ChannelNameTooLong 
 export const isChannelNameExists = (msg: ErrorType): msg is ChannelNameExists => {
     return (msg as ChannelNameExists).ChannelNameExists !== undefined;
 };
+export const isBannedFromChannel = (msg: ErrorType): msg is BannedFromChannel => {
+    return (msg as BannedFromChannel).BannedFromChannel !== undefined;
+};
+export const isChannelMessageTooLong = (msg: ErrorType): msg is ChannelMessageTooLong => {
+    return (msg as ChannelMessageTooLong).ChannelMessageTooLong !== undefined;
+};
 export const isChannelCreated = (msg: ClientMessage): msg is ChannelCreated => {
     return (msg as ChannelCreated).ChannelCreated !== undefined;
 };
@@ -94,8 +100,11 @@ export type Disconnected = {
 export type ErrorMessage = {
     ErrorMessage: ErrorType
 };
-export type ErrorType = NoChannelName | ChannelNameTooLong | ChannelNameExists;
+export type ErrorType = NoChannelName | ChannelNameTooLong | ChannelNameExists | BannedFromChannel | ChannelMessageTooLong;
 
+export type ChannelMessageTooLong = {
+    ChannelMessageTooLong: string,
+}
 export type ChannelNameExists = {
     ChannelNameExists: string,
 };
@@ -105,6 +114,9 @@ export type NoChannelName = {
 export type ChannelNameTooLong = {
     ChannelNameTooLong: string,
 };
+export type BannedFromChannel = {
+    BannedFromChannel: string,
+}
 export type OriginCalls = {
     OriginCalls: {
         urls: UrlCalls[],
@@ -201,4 +213,3 @@ export type ReconnectedToCall = {
         chatterChannel: ChatterChannel,
     }
 }
-

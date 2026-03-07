@@ -21,6 +21,7 @@ import { Tooltip } from '@mui/material';
 import { useSettingsStore } from '@/hooks/settingsStore';
 import { useCurrentCallStore } from '@/hooks/currentCallStore';
 import { Chatter } from '@/utils/types';
+import { useSnackbarStore } from '@/hooks/snackbarStore';
 const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
 
 function CallButtons(props: { chatter: Chatter }) {
@@ -35,6 +36,7 @@ function CallButtons(props: { chatter: Chatter }) {
     const turnOffCamera = useCurrentCallStore(state => state.turnOffCamera);
     const iceConnectionState = useCurrentCallStore(state => state.connection);
     const disconnectFromCall = useCurrentCallStore(state => state.disconnectFromCall);
+    const setSnackbar = useSnackbarStore(state => state.setSnackbar);
     const handleDisconnectButtonClicked = () => {
         disconnectFromCall(true);
     }
@@ -49,7 +51,7 @@ function CallButtons(props: { chatter: Chatter }) {
                 });
             }
             else {
-                let camStream = await handleGetCamera(props.chatter.username);
+                let camStream = await handleGetCamera(props.chatter.username, setSnackbar);
                 if (camStream) {
                     setSettings({
                         ...props.chatter.settings,
@@ -61,7 +63,7 @@ function CallButtons(props: { chatter: Chatter }) {
             }
         }
         else {
-            let camStream = await handleGetCamera(props.chatter.username);
+            let camStream = await handleGetCamera(props.chatter.username, setSnackbar);
             if (camStream) {
                 setSettings({
                     ...props.chatter.settings,
@@ -107,7 +109,7 @@ function CallButtons(props: { chatter: Chatter }) {
             }
         }
         else {
-            let possibleMediaStreamWithMicrophone = await handleGetMicrophone(props.chatter.username, useSettingsStore);
+            let possibleMediaStreamWithMicrophone = await handleGetMicrophone(props.chatter.username, useSettingsStore, setSnackbar);
             if (possibleMediaStreamWithMicrophone !== null) {
                 await chrome.runtime.sendMessage({
                     type: "play-sound",

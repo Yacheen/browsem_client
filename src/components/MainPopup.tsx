@@ -10,6 +10,7 @@ import twitchIcon from '../assets/twitch_logo.svg';
 import kickIcon from '../assets/kick_logo.svg';
 import { useCreatingChannelStore } from '@/hooks/CreatingChannelStore';
 import VolumeController from './VolumeController';
+import { useSnackbarStore } from '@/hooks/snackbarStore';
 const channelsDummy = [
     {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
         {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
@@ -40,6 +41,7 @@ export default function MainPopup() {
     const [error, setError] = useState<{ urlError: string }>({ urlError: "" });
     const urlForRenderingDomains = useBrowsemStore(state => state.currentUrl);
     const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
+    const setSnackbar = useSnackbarStore(state => state.setSnackbar);
     // const [colorschemePreference, setColorschemePreference] = useState<'light' | 'dark'>(() => {
     //     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     //     if (mediaQuery.matches) {
@@ -82,6 +84,7 @@ export default function MainPopup() {
                 }
             }
             catch (err) {
+                setSnackbar(true, "Could not get current url for Browsem.", "error");
                 console.log('problem getting tabs: ', err);
                 browsemStore.setCurrentUrl(`Could not get url: ${err}`);
             }
