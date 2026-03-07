@@ -128,7 +128,7 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
                 set({ currentUrl });
             },
             setErrors: (errors: BrowsemErrors) => {
-                set({ errors });
+                set(state => ({ ...state, errors }));
             },
             setUrlsOpened: (urlsOpened: string[]) => {
                 set({ urlsOpened });

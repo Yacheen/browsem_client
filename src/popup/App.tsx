@@ -79,8 +79,12 @@ export default function App() {
     }, []);
 
     useEffect(() => {
-        setVolume(25);
-    }, []);
+        console.log('volume is now: ', volume);
+        chrome.runtime.sendMessage({
+            type: "change-volume",
+            newVolume: volume,
+        });
+    }, [volume]);
 
   return (
       <>

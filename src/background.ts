@@ -55,15 +55,7 @@ Promise.all([
     snackbarStoreBackendReady(),
     volumeStoreBackendReady(),
 ]).then(([browsemStore, channelsStore, settingsStore, snackbarStore, volumeStore]) => {
-    volumeStore.subscribe(async state => {
-        await setupOffscreenDocument("offscreen.html");
-        console.log('new state: ', state);
-        chrome.runtime.sendMessage({
-            type: 'offscreen',
-            action: 'change-volume',
-            newVolume: state.volume
-        });
-    });
+    console.log(volumeStore);
     try {
         chrome.storage.session.setAccessLevel({
             accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS"
@@ -140,6 +132,8 @@ Promise.all([
         }
         else if (message.type === "create-channel") {
             socket?.send(message.contents);
+            // go back to connected screen
+            // browsemStore.getState().setCurrentSelection("Connected");
         }
         else if (message.type === "get-browsem-stats") {
             await getBrowsemStats();
@@ -193,8 +187,16 @@ Promise.all([
                 path: message.path,
             });
         }
-        else if (message.type === "console-log") {
-            console.log(message.logs);
+        else if (message.type === "change-volume") {
+            console.log('its a change volume')
+            await setupOffscreenDocument("offscreen.html");
+            console.log('one');
+            chrome.runtime.sendMessage({
+                type: 'offscreen',
+                action: 'change-volume',
+                newVolume: message.newVolume
+            });
+            console.log('two');
         }
         return true;
     });
@@ -286,7 +288,6 @@ Promise.all([
                         channelCreated.ChannelCreated,
                     ]);
                 }
-                browsemStore.getState().setCurrentSelection("Connected");
 
                 await setupOffscreenDocument("offscreen.html");
                 await chrome.runtime.sendMessage({
