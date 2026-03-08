@@ -25,13 +25,13 @@ function CallSidebar() {
             {
                 urlCalls.filter(urlCall => getDomainName(urlCall.urlName) === getDomainName(chatterChannel?.fullUrl ?? "")).map(urlCall => urlCall.channels.length).reduce((accumulator, currentValue) => accumulator + currentValue, 0) === 1
                 ?
-                    <p className="channels-on-origin">{urlCalls.filter(urlCall => getDomainName(urlCall.urlName) === getDomainName(chatterChannel?.fullUrl ?? "")).map(urlCall => urlCall.channels.length).reduce((accumulator, currentValue) => accumulator + currentValue, 0) } channel on {getDomainName(browsemStore.currentUrl)}</p>
+                    <p id="channels-on-origin" className="channels-on-origin">{urlCalls.filter(urlCall => getDomainName(urlCall.urlName) === getDomainName(chatterChannel?.fullUrl ?? "")).map(urlCall => urlCall.channels.length).reduce((accumulator, currentValue) => accumulator + currentValue, 0) } channel on {getDomainName(browsemStore.currentUrl)}</p>
                 :
-                    <p className="channels-on-origin">{urlCalls.filter(urlCall => getDomainName(urlCall.urlName) === getDomainName(chatterChannel?.fullUrl ?? "")).map(urlCall => urlCall.channels.length).reduce((accumulator, currentValue) => accumulator + currentValue, 0) } channels on {getDomainName(chatterChannel?.fullUrl ?? "")}</p>
+                    <p id="channels-on-origin" className="channels-on-origin">{urlCalls.filter(urlCall => getDomainName(urlCall.urlName) === getDomainName(chatterChannel?.fullUrl ?? "")).map(urlCall => urlCall.channels.length).reduce((accumulator, currentValue) => accumulator + currentValue, 0) } channels on {getDomainName(chatterChannel?.fullUrl ?? "")}</p>
             }
-            <p className="calls-header">Calls</p>
+            <p id="calls-header" className="calls-header">Calls</p>
             <Channels  urlForRenderingDomains={callUrl} currentUrlDropdown={currentUrlDropdown} setCurrentUrlDropdown={setCurrentUrlDropdown} />
-            <p className="chat-header">Chat</p>
+            <p id="chat-header" className="chat-header">Chat</p>
             <Chatroom />
             <CallButtons chatter={{
                 username: browsemStore.username,

@@ -18,3 +18,32 @@
     padding: 12px;
     border-bottom: 1px solid hsla(0, 0%, 90%, 0.2);
 }
+@media (prefers-color-scheme: light) {
+    #channels-on-origin {
+      color: var(--dark-text) !important;
+    }
+    #calls-header {
+      color: var(--dark-text) !important;
+
+    }
+    #chat-header {
+      color: var(--dark-text) !important;
+
+    }
+    .browsem-call {
+        .call-sidebar {
+            .channels-on-origin {
+            }
+            .calls-header {
+                p {
+                  color: var(--dark-text) !important;
+                }
+            }
+            .chat-header {
+                p {
+                  color: var(--dark-text) !important;
+                }
+            }
+        }
+    }
+}

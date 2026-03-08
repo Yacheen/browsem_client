@@ -196,11 +196,18 @@ function CallButtons(props: { chatter: Chatter }) {
                     <p className="rtc-status-text">{iceConnectionState}</p>
                 </div>
                 <Tooltip placement='top' title="Disconnect" arrow disableInteractive slotProps={{
+                    tooltip: {
+                        className: "light-tooltip dark-tooltip"
+                    },
                     popper: {
+                        disablePortal: true,
                         style: {
                             zIndex: 6942013383,
                         }
                     },
+                    arrow: {
+                        className: "light-tooltip-arrow dark-tooltip-arrow",
+                    }
                 }}>
                     <div onClick={handleDisconnectButtonClicked} className="rtc-disconnect-icon-container">
                         <CallEndIcon className="rtc-disconnect-icon" />
@@ -208,7 +215,20 @@ function CallButtons(props: { chatter: Chatter }) {
                 </Tooltip>
             </div>
             <div className="call-buttons-middle">
-                <Tooltip arrow disableInteractive title={props.chatter.settings.microphoneIsOn ? 'Mute' : 'Unmute'} placement="top" slotProps={{ popper: { style: { zIndex: 6942013383, } } }}>
+                <Tooltip arrow disableInteractive title={props.chatter.settings.microphoneIsOn ? 'Mute' : 'Unmute'} placement="top" slotProps={{
+                    tooltip: {
+                        className: "light-tooltip dark-tooltip"
+                    },
+                    popper: {
+                        disablePortal: true,
+                        style: {
+                            zIndex: 6942013383,
+                        }
+                    },
+                    arrow: {
+                        className: "light-tooltip-arrow dark-tooltip-arrow",
+                    }
+                }}>
                     <div onClick={handleSetMicrophone} className="mic-icon-container">
                         {
                             props.chatter.settings.microphoneIsOn
@@ -219,7 +239,20 @@ function CallButtons(props: { chatter: Chatter }) {
                         }
                     </div>
                 </Tooltip>
-                <Tooltip arrow disableInteractive title={props.chatter.settings.cameraIsOn ? 'Turn off camera' : 'Turn on camera'} placement="top" slotProps={{ popper: { style: { zIndex: 6942013383, } } }}>
+                <Tooltip arrow disableInteractive title={props.chatter.settings.cameraIsOn ? 'Turn off camera' : 'Turn on camera'} placement="top" slotProps={{
+                    tooltip: {
+                        className: "light-tooltip dark-tooltip"
+                    },
+                    popper: {
+                        disablePortal: true,
+                        style: {
+                            zIndex: 6942013383,
+                        }
+                    },
+                    arrow: {
+                        className: "light-tooltip-arrow dark-tooltip-arrow",
+                    }
+                }}>
                     <div onClick={handleSetVideo} className={`${props.chatter.settings.cameraIsOn ? 'green_background_for_camera' : ''} video-icon-container`}>
                         {
                             props.chatter.settings.cameraIsOn
@@ -230,7 +263,20 @@ function CallButtons(props: { chatter: Chatter }) {
                         }
                     </div>
                 </Tooltip>
-                <Tooltip arrow disableInteractive title={props.chatter.settings.deafened ? 'Undeafen' : 'Deafen'} placement="top" slotProps={{ popper: { style: { zIndex: 6942013383, } } }}>
+                <Tooltip arrow disableInteractive title={props.chatter.settings.deafened ? 'Undeafen' : 'Deafen'} placement="top" slotProps={{
+                    tooltip: {
+                        className: "light-tooltip dark-tooltip"
+                    },
+                    popper: {
+                        disablePortal: true,
+                        style: {
+                            zIndex: 6942013383,
+                        }
+                    },
+                    arrow: {
+                        className: "light-tooltip-arrow dark-tooltip-arrow",
+                    }
+                }}>
                     <div onClick={handleSetDeafen} className="deafen-icon-container">
                         {
                             props.chatter.settings.deafened
@@ -248,12 +294,20 @@ function CallButtons(props: { chatter: Chatter }) {
                     <p>{props.chatter.username}</p>
                 </div>
                 <Tooltip placement='top' title="Call Settings" arrow disableInteractive slotProps={{
+                    tooltip: {
+                        className: "light-tooltip dark-tooltip"
+                    },
                     popper: {
+                        disablePortal: true,
                         style: {
                             zIndex: 6942013383,
                         }
                     },
-                }}>
+                    arrow: {
+                        className: "light-tooltip-arrow dark-tooltip-arrow",
+                    }
+                }}
+                >
                 <div className="call-settings-container">
                     <SettingsIcon />
                 </div>

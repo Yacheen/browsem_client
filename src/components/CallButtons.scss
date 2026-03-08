@@ -32,7 +32,6 @@
                 }
                 .connected-state {
                     color: $light-green;
-
                 }
                 .checking-state {
                     color: $light-yellow;
@@ -136,6 +135,59 @@
 }
 @media (prefers-color-scheme: light) {
     .call-buttons-container {
-
+        background: hsl(0, 0%, 80%);
+        .call-buttons-top {
+            .rtc-status-container {
+                .connected-state {
+                    // color: hsl(120, 90%, 50%) !important;
+                    color: $light-green-hover !important;
+                }
+                .checking-state {
+                    color: $light-yellow-hover !important;
+                }
+                .rtc-status-text {
+                    color: var(--dark-text) !important;
+                }
+            }
+            .rtc-disconnect-icon-container {
+                border: 1px solid hsla(0, 0%, 10%, 0.5);
+                &:hover {
+                    background: hsl(0, 0%, 70%);
+                }
+            }
+        }
+        .call-buttons-middle {
+            .settings-icon {
+                border: 1px solid hsla(0, 0%, 10%, 0.5);
+                &:hover {
+                    background: hsl(0, 0%, 70%);
+                }
+            }
+            .green_background_for_camera {
+                background: hsl(130, 80%, 65%); 
+                svg {
+                    color: hsl(0, 0%, 90%) !important;
+                }
+                .settings-icon:hover {
+                    background: hsl(130, 60%, 30%);
+                }
+            }
+        }
+        .call-buttons-bottom {
+            .chatter-meta-container {
+                p {
+                    color: var(--dark-text) !important;
+                }
+                &:hover {
+                    background: hsl(0, 0%, 70%);
+                }
+            }
+            .call-settings-container {
+                border: 1px solid hsla(0, 0%, 10%, 0.5);
+                &:hover {
+                    background: hsl(0, 0%, 70%);
+                }
+            }
+        }
     }
 }

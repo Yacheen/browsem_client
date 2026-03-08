@@ -46,3 +46,15 @@
         max-width: 100%;
     }
 }
+@media (prefers-color-scheme: light) {
+    .chatters-board {
+        .MuiSvgIcon-root { 
+            color: var(--light-text) !important;
+        }
+    }
+    .chattersboard_with_focused_window {
+        .MuiSvgIcon-root { 
+            color: var(--light-text) !important;
+        }
+    }
+}

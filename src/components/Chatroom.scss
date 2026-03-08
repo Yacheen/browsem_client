@@ -91,7 +91,35 @@
     }
     .call-chatroom-container {
         .call-chatroom {
-            background: hsl(0, 0%, 80%);
+            background: hsl(0, 0%, 80%) !important;
+            .chat-message-container {
+                span {
+                    color: var(--dark-text) !important;
+                }
+            }
+        }
+        .chatroom-bottom {
+            .input-bottom {
+                .input-characters-remaining {
+                    color: var(--dark-text) !important;
+                }
+                .none-remaining {
+                    color: $light-red !important;
+                }
+                button {
+                    background: hsl(0, 0%, 80%) !important;
+                    &:hover {
+                        background: hsl(0, 0%, 70%) !important;
+                    }
+                }
+                .input-settings-icon-container {
+                    &:hover {
+                        background: hsl(0, 0%, 70%) !important;
+                    }
+                }
+
+            }
+
         }
     }
 }

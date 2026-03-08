@@ -6,7 +6,7 @@
 /*     --dark-background: hsl(0, 0%, 20%); */
 /*     --dark-background-hover: hsl(0, 0%, 25%); */
 /*     // text */
-/*     --dark-text: hsl(0, 0%, 10%); */
+/*     --dark-text: #213547; */
 /*     --light-text: hsl(0, 0%, 95%); */
 /*     // window handler */
 /*     --dark-window-handler-background: hsl(0, 0%, 15%); */
@@ -51,10 +51,10 @@
             user-select: none;
             max-width: 100%;;
         }
-        .homepage-text {
-            color: $light-yellow !important;
-            font-size: 16px;
-        }
+        /* .homepage-text { */
+        /*     color: $light-yellow !important; */
+        /*     font-size: 16px; */
+        /* } */
         .url-call-right {
             position: relative;
             display: flex;
@@ -223,6 +223,12 @@
     }
 }
 @media (prefers-color-scheme: light) {
+    .channel-meta-hover {
+        background: red;
+        &:hover {
+            background: red;
+        }
+    }
     .url-calls-container {
         background: hsl(0, 0%, 85%);
         .url-call-container {
@@ -230,6 +236,7 @@
                 color: hsl(0, 0%, 40%);
             }
             .url-call-name {
+                color: var(--dark-text) !important;
             }
             .url-call-right {
                 .url-call-channel-count {
@@ -240,12 +247,16 @@
         .channels-container {
             .channel {
                 .channel-meta {
+                    &:hover {
+                        background: hsl(0, 0%, 90%);
+                    }
                     .channel-meta-left {
                         .channel-voice-icon {
                             .channel-icon {
                             }
                         }
                         .channel-name {
+                            color: var(--dark-text) !important;
                         }
                     }
                     .channel-max-chatters {
@@ -256,13 +267,26 @@
                         }
                     }
                 }
-                .channel-meta:hover .channel-name, .channel-meta:hover .channel-icon, .channel-meta:hover .channel-max-chatters {
-                    background: hsl(0, 0%, 80%);
-                }
+                /* .channel-meta:hover .channel-name, .channel-meta:hover .channel-icon, .channel-meta:hover .channel-max-chatters { */
+                /*     background: hsl(0, 0%, 80%); */
+                /* } */
                 .channel-chatters {
                     .channel-chatter {
+                        .channel-chatter-right {
+                            &:hover {
+                                background: hsl(0, 0%, 90%);
+                            }
+                            .channel-chatter-meta {
+                                /* p { */
+                                /*     color: var(--dark-text) !important; */
+                                /* } */
+                            }
+                        }
+                        p {
+                            color: var(--dark-text) !important;
+                        }
                         img {
-                            color: var(--dark-text);
+                            color: var(--dark-text) !important;
                         }
                     }
                 }

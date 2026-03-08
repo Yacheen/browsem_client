@@ -12,7 +12,6 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
 a {
   font-weight: 500;
   color: #646cff;
@@ -75,7 +74,22 @@ button:focus-visible {
   text-align: center;
 }
 
+.dark-tooltip {
+  background-color: hsl(0, 0%, 40%) !important;
+  color: hsl(0, 0%, 90%) !important;
+}
+.dark-tooltip-arrow {
+    color: hsl(0, 0%, 40%) !important;
+}
 @media (prefers-color-scheme: light) {
+    .light-tooltip {
+      background-color: hsl(0, 0%, 90%) !important;
+      color: #213547 !important;
+      border: 1px solid #ccc !important;
+    }
+    .light-tooltip-arrow {
+      color: hsl(0, 0%, 90%) !important;
+    }
   :root {
     color: #213547;
     background-color: #ffffff;
@@ -87,6 +101,7 @@ button:focus-visible {
     background-color: hsl(0, 0%, 95%);
   }
 }
+
 @keyframes fadeAndSlideLeft {
     from {
         opacity: 0.5;
@@ -97,3 +112,4 @@ button:focus-visible {
         left: 0%;
     }
 }
+

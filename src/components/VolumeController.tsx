@@ -44,6 +44,20 @@ export default function VolumeController() {
                             <h4>Sound FX</h4>
                         </div>
                         <Tooltip
+                            slotProps={{
+                                tooltip: {
+                                    className: "light-tooltip dark-tooltip"
+                                },
+                                popper: {
+                                    disablePortal: true,
+                                    style: {
+                                        zIndex: 6942013383,
+                                    }
+                                },
+                                arrow: {
+                                    className: "light-tooltip-arrow dark-tooltip-arrow",
+                                }
+                            }}
                             componentsProps={{
                                 tooltip: {
                                     sx: {

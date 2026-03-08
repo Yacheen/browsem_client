@@ -92,11 +92,18 @@ function Chatroom() {
                             null
                     }
                     <Tooltip placement='top' title="Chat settings" arrow disableInteractive slotProps={{
+                        tooltip: {
+                            className: "light-tooltip dark-tooltip"
+                        },
                         popper: {
+                            disablePortal: true,
                             style: {
                                 zIndex: 6942013383,
                             }
                         },
+                        arrow: {
+                            className: "light-tooltip-arrow dark-tooltip-arrow",
+                        }
                     }}>
                         <div className="input-settings-icon-container">
                             <SettingsIcon  className="input-settings-icon"/>

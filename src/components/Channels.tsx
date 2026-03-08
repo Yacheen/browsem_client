@@ -130,14 +130,16 @@ export default function Channels({ urlForRenderingDomains, currentUrlDropdown, s
                                             <div key={channel.sessionId} className="channel">
                                                 <Tooltip placement='top' title="Join" arrow disableInteractive slotProps={{
                                                     popper: {
+                                                        disablePortal: true,
                                                         style: {
                                                             zIndex: 6942013383,
                                                         }
                                                     },
                                                     tooltip: {
-                                                        style: {
-                                                            color: textColor,
-                                                        }
+                                                        className: "light-tooltip dark-tooltip",
+                                                    },
+                                                    arrow: {
+                                                        className: "light-tooltip-arrow dark-tooltip-arrow"
                                                     }
                                                 }}>
                                                     <div onClick={() => handleConnectToCall(channel.channelName, channel.fullUrl)} className="channel-meta">
@@ -161,22 +163,36 @@ export default function Channels({ urlForRenderingDomains, currentUrlDropdown, s
                                                                     ?
                                                                         <div className="channel-chatter-kick-or-ban">
                                                                             <Tooltip placement='top' title="Kick" arrow disableInteractive slotProps={{
+                                                                                tooltip: {
+                                                                                    className: "light-tooltip dark-tooltip"
+                                                                                },
                                                                                 popper: {
+                                                                                    disablePortal: true,
                                                                                     style: {
                                                                                         zIndex: 6942013383,
                                                                                     }
                                                                                 },
+                                                                                arrow: {
+                                                                                    className: "light-tooltip-arrow dark-tooltip-arrow",
+                                                                                }
                                                                             }}>
                                                                                 <div onClick={() => handleKickChatter(chatter.username, channel.channelName, channel.fullUrl, channel.urlOrigin)} className="channel-chatter-kick-icon-container">
                                                                                     <ClearIcon />
                                                                                 </div>
                                                                             </Tooltip>
                                                                             <Tooltip placement='top' title="Ban" arrow disableInteractive slotProps={{
+                                                                                tooltip: {
+                                                                                    className: "light-tooltip dark-tooltip"
+                                                                                },
                                                                                 popper: {
+                                                                                    disablePortal: true,
                                                                                     style: {
                                                                                         zIndex: 6942013383,
                                                                                     }
                                                                                 },
+                                                                                arrow: {
+                                                                                    className: "light-tooltip-arrow dark-tooltip-arrow",
+                                                                                }
                                                                             }}>
                                                                                 <div onClick={() => handleBanChatter(chatter.username, channel.channelName, channel.fullUrl, channel.urlOrigin)} className="channel-chatter-ban-icon-container">
                                                                                     <BlockIcon />

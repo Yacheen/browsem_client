@@ -5,7 +5,7 @@
     --dark-background: hsl(0, 0%, 20%);
     --dark-background-hover: hsl(0, 0%, 25%);
     // text
-    --dark-text: hsl(0, 0%, 10%);
+    --dark-text: #213547;
     --light-text: hsl(0, 0%, 95%);
     // window handler
     --dark-window-handler-background: hsl(0, 0%, 20%);
@@ -62,6 +62,13 @@
     }
     p {
         font-size: 16px;
+    }
+    .dark-tooltip {
+      background-color: hsl(0, 0%, 40%) !important;
+      color: hsl(0, 0%, 90%) !important;
+    }
+    .dark-tooltip-arrow {
+        color: hsl(0, 0%, 40%) !important;
     }
 
     .window_handler {
@@ -165,8 +172,8 @@
 }
 @media (prefers-color-scheme: light) {
     :root {
-    color: #213547;
-    background-color: #ffffff;
+        color: #213547;
+        background-color: #ffffff;
     }
     .window_container {
         a:hover {
@@ -181,9 +188,20 @@
         .MuiSvgIcon-root { 
             color: var(--dark-text);
         }
+        .light-tooltip {
+          background-color: hsl(0, 0%, 90%) !important;
+          color: #213547 !important;
+          border: 1px solid #ccc !important;
+        }
+        .light-tooltip-arrow {
+          color: hsl(0, 0%, 90%) !important;
+        }
         .window_handler {
             background: var(--light-window-handler-background);
             .top_right_window {
+                p {
+                    color: var(--dark-text) !important;
+                }
                 .top_right_window_buttons {
                     > * {
                         &:hover {
