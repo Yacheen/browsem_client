@@ -15,13 +15,14 @@ import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
 import HeadsetIcon from '@mui/icons-material/Headset';
 
-import aniviaUltAsset from "../assets/aniviault.png";
 import "./CallButtons.scss";
 import { Tooltip } from '@mui/material';
 import { useSettingsStore } from '@/hooks/settingsStore';
 import { useCurrentCallStore } from '@/hooks/currentCallStore';
 import { Chatter } from '@/utils/types';
-const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
+import { useSnackbarStore } from '@/hooks/snackbarStore';
+import pfpPath from "../assets/chatter_default_pfp.png";
+const defaultPfp = chrome.runtime.getURL(pfpPath);
 
 function CallButtons(props: { chatter: Chatter }) {
     // const settings = useSettingsStore(state => state.settings);
@@ -35,6 +36,7 @@ function CallButtons(props: { chatter: Chatter }) {
     const turnOffCamera = useCurrentCallStore(state => state.turnOffCamera);
     const iceConnectionState = useCurrentCallStore(state => state.connection);
     const disconnectFromCall = useCurrentCallStore(state => state.disconnectFromCall);
+    const setSnackbar = useSnackbarStore(state => state.setSnackbar);
     const handleDisconnectButtonClicked = () => {
         disconnectFromCall(true);
     }
@@ -49,7 +51,7 @@ function CallButtons(props: { chatter: Chatter }) {
                 });
             }
             else {
-                let camStream = await handleGetCamera(props.chatter.username);
+                let camStream = await handleGetCamera(props.chatter.username, setSnackbar);
                 if (camStream) {
                     setSettings({
                         ...props.chatter.settings,
@@ -61,7 +63,7 @@ function CallButtons(props: { chatter: Chatter }) {
             }
         }
         else {
-            let camStream = await handleGetCamera(props.chatter.username);
+            let camStream = await handleGetCamera(props.chatter.username, setSnackbar);
             if (camStream) {
                 setSettings({
                     ...props.chatter.settings,
@@ -78,10 +80,25 @@ function CallButtons(props: { chatter: Chatter }) {
                     microphoneIsOn: false
                 });
                 muteMic();
+                await chrome.runtime.sendMessage({
+                    type: "play-sound",
+                    action: "play",
+                    path: "src/assets/sounds/click_sound.wav",
+                });
             }
             else {
+                await chrome.runtime.sendMessage({
+                    type: "play-sound",
+                    action: "play",
+                    path: "src/assets/sounds/click_sound.wav",
+                });
                 if (props.chatter.settings.deafened === true) {
                     // play undeafened sound
+                    await chrome.runtime.sendMessage({
+                        type: "play-sound",
+                        action: "play",
+                        path: "src/assets/sounds/deafen_false.wav",
+                    });
                 }
                 unmuteMic();
                 setSettings({
@@ -92,10 +109,20 @@ function CallButtons(props: { chatter: Chatter }) {
             }
         }
         else {
-            let possibleMediaStreamWithMicrophone = await handleGetMicrophone(props.chatter.username, useSettingsStore);
+            let possibleMediaStreamWithMicrophone = await handleGetMicrophone(props.chatter.username, useSettingsStore, setSnackbar);
             if (possibleMediaStreamWithMicrophone !== null) {
+                await chrome.runtime.sendMessage({
+                    type: "play-sound",
+                    action: "play",
+                    path: "src/assets/sounds/click_sound.wav",
+                });
                 if (props.chatter.settings.deafened === true) {
                     // play undeafened sound
+                    await chrome.runtime.sendMessage({
+                        type: "play-sound",
+                        action: "play",
+                        path: "src/assets/sounds/deafen_false.wav",
+                    });
                 }
                 setSettings({
                     ...props.chatter.settings,
@@ -105,9 +132,14 @@ function CallButtons(props: { chatter: Chatter }) {
             }
         }
     }
-    const handleSetDeafen = () => {
+    const handleSetDeafen = async () => {
         if (props.chatter.settings !== undefined) {
             if (props.chatter.settings.deafened) {
+                await chrome.runtime.sendMessage({
+                    type: "play-sound",
+                    action: "play",
+                    path: "src/assets/sounds/deafen_false.wav",
+                });
                 setSettings({
                     ...props.chatter.settings,
                     deafened: false,
@@ -118,6 +150,11 @@ function CallButtons(props: { chatter: Chatter }) {
                 // }
             }
             else {
+                await chrome.runtime.sendMessage({
+                    type: "play-sound",
+                    action: "play",
+                    path: "src/assets/sounds/deafen_true.wav",
+                });
                 setSettings({
                     ...props.chatter.settings,
                     deafened: true,
@@ -207,7 +244,7 @@ function CallButtons(props: { chatter: Chatter }) {
             </div>
             <div className="call-buttons-bottom">
                 <div className="chatter-meta-container">
-                    <img src={aniviaUlt} alt="pfp" />
+                    <img src={defaultPfp} alt="pfp" />
                     <p>{props.chatter.username}</p>
                 </div>
                 <Tooltip placement='top' title="Call Settings" arrow disableInteractive slotProps={{

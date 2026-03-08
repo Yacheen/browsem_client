@@ -7,14 +7,14 @@ import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
 import MonitorIcon from '@mui/icons-material/Monitor';
-import aniviaUltAsset from "../assets/aniviault.png";
 import { useEffect, useRef } from 'react';
 import { useSettingsStore } from '@/hooks/settingsStore';
 import { useBrowsemStore } from '@/hooks/browsemStore';
 import { CircularProgress } from '@mui/material';
 import { ChatterSetting, useChatterSettingsStore } from '@/hooks/chatterSettingsStore';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
+import pfpPath from "../assets/chatter_default_pfp.png";
+const defaultPfp = chrome.runtime.getURL(pfpPath);
 
 export type QuickchatterWindow = {
     chatter: Chatter, 
@@ -157,7 +157,7 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
     return (
         <div className={`chatter-container ${props.isFocused ? 'focused_window' : null} ${props.focusedWindow !== null && !props.isFocused ? 'non_focused_window' : null}`}>
             { /*<div onClick={handleSetFocusedWindow} className="chatter-camera-off">
-                <img className="chatter-pfp" src={aniviaUlt} alt="pfp" />
+                <img className="chatter-pfp" src={defaultPfp} alt="pfp" />
             </div> */}
             {
                 props.isFocused
@@ -180,17 +180,17 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
                             </div>
                             :
                             <div id={`chatter_camera_off_${props.chatter.username}`} onClick={() => handleClickedWindow(undefined)} className='chatter_camera_off'>
-                                <img className="chatter-pfp" src={aniviaUlt} alt="pfp" />
+                                <img className="chatter-pfp" src={defaultPfp} alt="pfp" />
                             </div>
                         :
                         <div onClick={() => handleClickedWindow(undefined)} className="chatter_camera_off focused_window_tint">
-                            <img className="chatter-pfp" src={aniviaUlt} alt="pfp" />
+                            <img className="chatter-pfp" src={defaultPfp} alt="pfp" />
                         </div>
                     :
                 props.focusedWindow?.chatter.username === props.chatter.username && (props.focusedWindow.stream?.type === "video" || props.focusedWindow.stream === undefined)
                 ?
                     <div onClick={() => handleClickedWindow(undefined)} className="chatter_camera_off focused_window_tint">
-                        <img className="chatter-pfp" src={aniviaUlt} alt="profile picture" /> 
+                        <img className="chatter-pfp" src={defaultPfp} alt="profile picture" /> 
                     </div>
                 :
                 props.chatter.settings.cameraIsOn && peerConnection !== null
@@ -209,7 +209,7 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
                     </div>
                 :
                     <div id={`chatter_camera_off_${props.chatter.username}`} onClick={() => handleClickedWindow(undefined)} className="chatter_camera_off">
-                        <img className="chatter-pfp" src={aniviaUlt} alt="pfp" /> 
+                        <img className="chatter-pfp" src={defaultPfp} alt="pfp" /> 
                     </div>
             }
             {
@@ -225,7 +225,7 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
                     />
             }
             <div className="chatter-bottom">
-                <p>{props.chatter.username}</p> 
+                <p className={`chatter-bottom-username`}>{props.chatter.username}</p> 
 
                 {
                     props.chatter.username === yourUsername

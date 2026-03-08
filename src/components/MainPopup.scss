@@ -1,6 +1,6 @@
 .main-content {
     text-align: left;
-    /* height: 100%; */
+    height: 100%;
     width: 100%;
     position: relative;
     animation: fadeAndSlideLeft 0.3s;
@@ -47,6 +47,10 @@
         gap: 1rem;
         .main-buttons {
             width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100%;
             .new-channel-btn {
                 transition: all ease 0.2s;
                 min-width: 100%;

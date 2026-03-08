@@ -10,6 +10,7 @@ type BrowsemErrors = {
     noChannelName: string | null,
     channelNameTooLong: string | null,
     channelNameExists: string | null,
+    bannedFromChannel: string | null,
 };
 type PendingReconnection = {
     channelName: string,
@@ -33,7 +34,7 @@ interface BrowsemStoreState {
     pendingReconnectionFromRefresh: PendingReconnection | null,
     disconnect: () => void,
     disconnected: (message: Disconnected) => void,
-    connect: () => void,
+    connect: (username: string) => void,
     connected: (message: Connected) => void,
     setUsername: (username: string) => void,
     setCurrentSelection: (currentSelection: CurrentSelection) => void,
@@ -57,7 +58,8 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             errors: {
                 noChannelName: null,
                 channelNameTooLong: null,
-                channelNameExists: null
+                channelNameExists: null,
+                bannedFromChannel: null,
             },
             sessionsOnline: 0,
             sessionsInYourOrigin: 0,
@@ -76,9 +78,10 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
             setCurrentSelection: (currentSelection: CurrentSelection) => {
                 set({ currentSelection })
             },
-            connect: () => {
+            connect: (username: string) => {
                 chrome.runtime.sendMessage({
-                    "type": "connect"
+                    "type": "connect",
+                    username: username,
                 });
                 set({ socketState: 'Connecting' });
             },
@@ -98,7 +101,12 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
                     });
                 }
             },
-            disconnected: (message: Disconnected) => {
+            disconnected: async (message: Disconnected) => {
+                await chrome.runtime.sendMessage({
+                    type: "play-sound",
+                    action: "play",
+                    path: "src/assets/sounds/screenshare_stopped_sound.wav",
+                });
                 let state = get().socketState;
                 if (state !== 'Disconnected') {
                     if (message.Disconnected.reason === "manual disconnect") {
@@ -122,7 +130,7 @@ export const useBrowsemStore = create<BrowsemStoreState>()(
                 set({ currentUrl });
             },
             setErrors: (errors: BrowsemErrors) => {
-                set({ errors });
+                set(state => ({ ...state, errors }));
             },
             setUrlsOpened: (urlsOpened: string[]) => {
                 set({ urlsOpened });

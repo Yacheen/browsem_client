@@ -18,7 +18,14 @@ export default function CreateChannel() {
   const handleCreateChannel = () => {
       createChannelStore.create(browsemStore.currentUrl);
       browsemStore.setErrors({ ...browsemStore.errors, channelNameTooLong: null, noChannelName: null });
+      browsemStore.setCurrentSelection("Connected");
   }
+    const handleKeyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            handleCreateChannel();
+        }
+    }
 
   return (
     <div className="create-channel-container">
@@ -30,7 +37,7 @@ export default function CreateChannel() {
             <div className="create-channel-form">
                 <div className="channelname-container">
                     <label htmlFor="channelname" className="channelname-label">Channel name: </label>
-                    <input onChange={handleChannelNameChange} type="text" name="channelname" id="channelname" value={createChannelStore.channelName} />
+                    <input onKeyDown={handleKeyPress} onChange={handleChannelNameChange} type="text" name="channelname" id="channelname" value={createChannelStore.channelName} />
                 </div>
                 <div className="max-chatters-container">
                     <label htmlFor="max-chatters" className="max-chatters-label">Max chatters: {createChannelStore.maxChatters}</label>

@@ -13,6 +13,7 @@ import { BackgroundMessage, IceCandidate } from '../utils/types.ts';
 import { Alert, Snackbar } from '@mui/material';
 import Slide from '@mui/material/Slide';
 import { useSnackbarStore } from '@/hooks/snackbarStore.tsx';
+import { useVolumeStore } from '@/hooks/volumeStore.tsx';
 
 export default function App() {
     const messageListenerExists = useRef(false);
@@ -22,9 +23,13 @@ export default function App() {
     const open = useSnackbarStore(state => state.open);
     const type = useSnackbarStore(state => state.type);
     const setSnackbar = useSnackbarStore(state => state.setSnackbar);
+    const username = useBrowsemStore(state => state.username);
+    const setUsername = useBrowsemStore(state => state.setUsername);
+    const volume = useVolumeStore(state => state.volume);
+    const setVolume = useVolumeStore(state => state.setVolume);
 
-    const handleConnectToServer = () => {
-        browsemStore.connect();
+    const handleConnectToServer = (username: string) => {
+        browsemStore.connect(username);
     }
     const handleDisconnectFromServer = async () => {
         // this wont need to be called when u appropriately leave all related areas (like channels and what-not)
@@ -72,6 +77,14 @@ export default function App() {
             });
         }
     }, []);
+
+    useEffect(() => {
+        console.log('volume is now: ', volume);
+        chrome.runtime.sendMessage({
+            type: "change-volume",
+            newVolume: volume,
+        });
+    }, [volume]);
 
   return (
       <>
@@ -122,7 +135,7 @@ export default function App() {
             :
             browsemStore.currentSelection === 'CreatingGuestUsername'
             ?
-                <CreateGuestUsernamePopup username={browsemStore.username} setUsername={browsemStore.setUsername} handleConnectToServer={handleConnectToServer} />
+                <CreateGuestUsernamePopup username={username} setUsername={setUsername} handleConnectToServer={handleConnectToServer} />
             :
 
             browsemStore.currentSelection === 'Connected'

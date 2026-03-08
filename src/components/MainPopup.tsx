@@ -2,42 +2,21 @@ import { useBrowsemStore } from '@/hooks/browsemStore';
 import { useEffect, useState } from 'react'
 import './MainPopup.scss'
 import Channels from './Channels';
-import somePfp from "../../public/logo.png";
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import RedditIcon from '@mui/icons-material/Reddit';
 import XIcon from '@mui/icons-material/X';
 import twitchIcon from '../assets/twitch_logo.svg';
 import kickIcon from '../assets/kick_logo.svg';
 import { useCreatingChannelStore } from '@/hooks/CreatingChannelStore';
-const channelsDummy = [
-    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
-    ]},
-    {
-        channelName: "KoolKidsKlub",
-        chatters: [
-            {sessionId: "69420", username: "yassin", pfpS3Key: somePfp },
-            {sessionId: "69420", username: "alan", pfpS3Key: somePfp },
-        ]
-    },
-    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
-    ]},
-    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
-    ]},
-    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
-    ]},
-    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
-    ]},
-];
+import VolumeController from './VolumeController';
+import { useSnackbarStore } from '@/hooks/snackbarStore';
 
 export default function MainPopup() {
     const browsemStore = useBrowsemStore();
     const [error, setError] = useState<{ urlError: string }>({ urlError: "" });
     const urlForRenderingDomains = useBrowsemStore(state => state.currentUrl);
+    const [currentUrlDropdown, setCurrentUrlDropdown] = useState<string[]>([]);
+    const setSnackbar = useSnackbarStore(state => state.setSnackbar);
     // const [colorschemePreference, setColorschemePreference] = useState<'light' | 'dark'>(() => {
     //     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     //     if (mediaQuery.matches) {
@@ -80,6 +59,7 @@ export default function MainPopup() {
                 }
             }
             catch (err) {
+                setSnackbar(true, "Could not get current url for Browsem.", "error");
                 console.log('problem getting tabs: ', err);
                 browsemStore.setCurrentUrl(`Could not get url: ${err}`);
             }
@@ -140,9 +120,10 @@ export default function MainPopup() {
                 <input title={browsemStore.currentUrl} className="where-am-i-input" type="text" disabled value={browsemStore.currentUrl} />
                 <p className="calls-header">Calls</p>
                 <div className="channels-and-buttons">
-                    <Channels urlForRenderingDomains={urlForRenderingDomains} />
+                    <Channels currentUrlDropdown={currentUrlDropdown} setCurrentUrlDropdown={setCurrentUrlDropdown} urlForRenderingDomains={urlForRenderingDomains} />
                     <div className="main-buttons">
                         <button onClick={handleStartCreatingChannel} className="new-channel-btn">New channel</button>
+                        <VolumeController />
                     </div>
                 </div>
             </div>

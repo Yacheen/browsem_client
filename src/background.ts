@@ -9,10 +9,45 @@ import { isConnected, isOriginCalls, isUrlsUpdated, isBrowsemStats, isDisconnect
     isReconnectedToCall,
     ReconnectedToCall,
     isChannelMessageSent,
-    ChannelMessageSent, 
+    ChannelMessageSent,
+    isBannedFromChannel,
+    isChannelMessageTooLong,
+    isChannelFull, 
 } from "./utils/types.ts";
 import { snackbarStoreBackendReady } from './hooks/snackbarStore.tsx';
 import { AlertColor } from '@mui/material';
+import { volumeStoreBackendReady } from './hooks/volumeStore.tsx';
+
+// ripped lines 17-29 from chrome offscreen docs
+let creating: any; // A global promise to avoid concurrency issues
+async function setupOffscreenDocument(path: string) {
+  // Check all windows controlled by the service worker to see if one
+  // of them is the offscreen document with the given path
+  const offscreenUrl = chrome.runtime.getURL(path);
+  const existingContexts = await chrome.runtime.getContexts({
+    contextTypes: ['OFFSCREEN_DOCUMENT'],
+    documentUrls: [offscreenUrl]
+  });
+
+  if (existingContexts.length > 0) {
+    return;
+  }
+
+  // create offscreen document
+  if (creating) {
+    await creating;
+  } else {
+    creating = chrome.offscreen.createDocument({
+      url: path,
+      reasons: ['AUDIO_PLAYBACK'],
+      justification: 'Audio SFX',
+    });
+    await creating;
+    creating = null;
+  }
+  // for some reason its not actually ready after being awaited so i put this in here.
+  await new Promise(resolve => setTimeout(resolve, 100));
+}
 
 initPegasusTransport();
 
@@ -21,8 +56,9 @@ Promise.all([
     channelsStoreBackendReady(),
     settingsStoreBackendReady(),
     snackbarStoreBackendReady(),
-]).then(([browsemStore, channelsStore, settingsStore, snackbarStore]) => {
-    console.log(snackbarStore);
+    volumeStoreBackendReady(),
+]).then(([browsemStore, channelsStore, settingsStore, snackbarStore, volumeStore]) => {
+    console.log(volumeStore);
     try {
         chrome.storage.session.setAccessLevel({
             accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS"
@@ -36,9 +72,56 @@ Promise.all([
     let socket: WebSocket | null = null;
 
     chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+        console.log('message on bg script received: ', message);
         if (message.type === "connect") {
             if (socket === null) {
-                connect();
+                if (message.username.length > 30) {
+                    snackbarStore.getState().setSnackbar(true, "Username exceeds 30 characters", "warning");
+                    await setupOffscreenDocument("offscreen.html");
+                    await chrome.runtime.sendMessage({
+                        type: "offscreen",
+                        action: "play",
+                        path: "src/assets/sounds/chat_error_msg_sound.wav",
+                    });
+                }
+                else if (message.username.length === 0) {
+                    snackbarStore.getState().setSnackbar(true, "Username must be at least 1 character", "warning");
+                    await setupOffscreenDocument("offscreen.html");
+                    await chrome.runtime.sendMessage({
+                        type: "offscreen",
+                        action: "play",
+                        path: "src/assets/sounds/chat_error_msg_sound.wav",
+                    });
+                }
+                else {
+                    // request. if response returns exists or catches an err, dont do connect();
+                    try {
+                        const response = await fetch("http://127.0.0.1:6969/checkUsernameExists", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                username: message.username
+                            }),
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.exists) {
+                                snackbarStore.getState().setSnackbar(true, `Someone is online with that username`, "info");
+                            }
+                            else {
+                                connect();
+                            }
+                        }
+                        else {
+                            snackbarStore.getState().setSnackbar(true, `Internal server error. Please try again later.`, "error");
+                        }
+                    }
+                    catch (err) {
+                        snackbarStore.getState().setSnackbar(true, `Internal server error: ${err}`, "error");
+                    }
+                }
             }
         }
         else if (message.type === "disconnect") {
@@ -52,6 +135,8 @@ Promise.all([
         }
         else if (message.type === "create-channel") {
             socket?.send(message.contents);
+            // go back to connected screen
+            // browsemStore.getState().setCurrentSelection("Connected");
         }
         else if (message.type === "get-browsem-stats") {
             await getBrowsemStats();
@@ -97,6 +182,45 @@ Promise.all([
         else if (message.type === "send-channel-message") {
             socket?.send(JSON.stringify(message.contents));
         }
+        else if (message.type === "play-sound") {
+            await setupOffscreenDocument("offscreen.html");
+            await chrome.runtime.sendMessage({
+                type: "offscreen",
+                action: "play",
+                path: message.path,
+            });
+        }
+        else if (message.type === "change-volume") {
+            console.log('its a change volume')
+            await setupOffscreenDocument("offscreen.html");
+            console.log('one');
+            chrome.runtime.sendMessage({
+                type: 'offscreen',
+                action: 'change-volume',
+                newVolume: message.newVolume
+            });
+            console.log('two');
+        }
+        else if (message.type === "kick-chatter") {
+            socket?.send(JSON.stringify({
+                KickChatter: {
+                  username: message.username,
+                  channelName: message.channelName,
+                  urlName: message.urlName,
+                  urlOrigin: message.urlOrigin,
+                }
+            }))
+        }
+        else if (message.type === "ban-chatter") {
+            socket?.send(JSON.stringify({
+                BanChatter: {
+                  username: message.username,
+                  channelName: message.channelName,
+                  urlName: message.urlName,
+                  urlOrigin: message.urlOrigin,
+                }
+            }))
+        }
         return true;
     });
     // (tabId, changeInfo, updatedTab)
@@ -105,7 +229,11 @@ Promise.all([
             await sendUpdateUrlsMessage();
         }
     })
-    chrome.tabs.onRemoved.addListener(async () => {
+    chrome.tabs.onRemoved.addListener(async (tabId) => {
+        if (tabId === browsemStore.getState().callTabId) {
+            // u closed the tab that was of the call, send a disconnectfromcall msg
+            socket?.send(JSON.stringify("DisconnectFromCall"));
+        }
         await sendUpdateUrlsMessage();
     })
     // onclicked is handled on the components within the useEffect after messagelistener
@@ -118,13 +246,13 @@ Promise.all([
         socket = new WebSocket('http://127.0.0.1:6969/ws');
 
         socket.onopen = async () => {
-            chrome.action.setIcon({ path: '../public/logo.png' });
         }
 
         socket.onmessage = async (event) => {
             let message: ClientMessage = JSON.parse(event.data);
             console.log('got message: ', message);
             if (isConnected(message)) {
+                chrome.action.setIcon({ path: "browsem_logo_48_connected.png" });
                 browsemStore.getState().connected(message);
                 browsemStore.getState().setCurrentSelection("Connected");
                 socket?.send(JSON.stringify({
@@ -138,13 +266,26 @@ Promise.all([
                         }
                 }));
                 sendUpdateUrlsMessage();
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/notification_sound.wav",
+                });
             }
             else if (isUrlsUpdated(message)) {
                 getChannelsByOrigins();
                 getBrowsemStats();
             }
             else if (isDisconnected(message)) {
+                chrome.action.setIcon({ path: "browsem_logo_48_disconnected.png" });
                 browsemStore.getState().disconnected(message);
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/screenshare_stopped_sound.wav",
+                });
             }
             else if (isChannelCreated(message)) {
                 let channelCreated = message;
@@ -171,7 +312,13 @@ Promise.all([
                         channelCreated.ChannelCreated,
                     ]);
                 }
-                browsemStore.getState().setCurrentSelection("Connected");
+
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/click_sound.wav",
+                });
             }
             // error msges
             else if (isErrorMessage(message)) {
@@ -179,7 +326,7 @@ Promise.all([
                 let msg = "Unknown Error...";
                 if (isNoChannelName(message.ErrorMessage)) {
                     browsemStore.getState().setErrors({ ...browsemStore.getState().errors, noChannelName: message.ErrorMessage.NoChannelName });
-                    severity = "warning";
+                    severity = "error";
                     msg = message.ErrorMessage.NoChannelName;
                 }
                 else if (isChannelNameTooLong(message.ErrorMessage)) {
@@ -192,12 +339,33 @@ Promise.all([
                     severity = "warning";
                     msg = message.ErrorMessage.ChannelNameExists;
                 }
+                else if (isBannedFromChannel(message.ErrorMessage)) {
+                    browsemStore.getState().setErrors({ ...browsemStore.getState().errors, bannedFromChannel: message.ErrorMessage.BannedFromChannel });
+                    severity = "error";
+                    msg = message.ErrorMessage.BannedFromChannel;
+                }
+                else if (isChannelMessageTooLong(message.ErrorMessage)) {
+                    browsemStore.getState().setErrors({ ...browsemStore.getState().errors, bannedFromChannel: message.ErrorMessage.ChannelMessageTooLong });
+                    severity = "warning";
+                    msg = message.ErrorMessage.ChannelMessageTooLong;
+                }
+                else if (isChannelFull(message.ErrorMessage)) {
+                    browsemStore.getState().setErrors({ ...browsemStore.getState().errors, bannedFromChannel: message.ErrorMessage.ChannelFull });
+                    severity = "warning";
+                    msg = message.ErrorMessage.ChannelFull;
+                }
                 // active, message, type
                 snackbarStore.getState().setSnackbar(true, msg, severity);
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/chat_error_msg_sound.wav",
+                });
             }
             else if (isBrowsemStats(message)) {
                 let { sessionsOnline, sessionsInYourUrl, sessionsInYourOrigin } = message.BrowsemStats;
-                browsemStore.getState().setBrowsemStats(sessionsOnline, sessionsInYourOrigin, sessionsInYourUrl);
+                browsemStore.getState().setBrowsemStats(sessionsOnline, sessionsInYourUrl, sessionsInYourOrigin);
             }
             else if (isOriginCalls(message)) {
                 channelsStore.getState().setUrlCalls(message.OriginCalls.urls);
@@ -243,15 +411,27 @@ Promise.all([
 
                 if (chatterChannelHandle) {
                     if (msg.ConnectedToCall.connectedChatter.username === browsemStore.getState().username) {
+                        await setupOffscreenDocument("offscreen.html");
+                        await chrome.runtime.sendMessage({
+                            type: "offscreen",
+                            action: "play",
+                            path: "src/assets/sounds/joined_call_sound.wav",
+                        });
                         let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
                         if (activeTab[0].id) {
                             browsemStore.getState().setChatterChannel(chatterChannelHandle, activeTab[0].id);
                             browsemStore.getState().setPendingReconnectionFromRefresh(null);
                         }
                     }
-                    else {
+                    else { 
                         const yourChatterChannel = browsemStore.getState().chatterChannel;
                         if (yourChatterChannel?.channelName === chatterChannelHandle.channelName) {
+                            await setupOffscreenDocument("offscreen.html");
+                            await chrome.runtime.sendMessage({
+                                type: "offscreen",
+                                action: "play",
+                                path: "src/assets/sounds/joined_call_sound.wav",
+                            });
                             browsemStore.getState().setChatterChannel({
                                 ...yourChatterChannel,
                                 chatters: [...yourChatterChannel.chatters, msg.ConnectedToCall.connectedChatter],
@@ -285,7 +465,6 @@ Promise.all([
                         ...urlCall,
                         channels: urlCall.channels.map(channel => {
                             if (channel.channelName !== msg.DisconnectedFromCall.channelName) return channel;
-                            console.log('the channelName and urlName is the same, filtering...');
                             return {
                                 ...channel,
                                 chatters: channel.chatters.filter(chatter => chatter.username !== msg.DisconnectedFromCall.disconnectedChatter.username),
@@ -297,7 +476,6 @@ Promise.all([
 
 
                 if (msg.DisconnectedFromCall.disconnectedChatter.username === browsemStore.getState().username) {
-                    console.log('YOU ARE THE ONE THAT DISCONNECTED GET DOWN!!!!!!!!!!!!');
                     settingsStore.getState().setSettings({
                         ...settingsStore.getState().settings,
                         cameraIsOn: false,
@@ -315,11 +493,25 @@ Promise.all([
                         browsemStore.getState().setChatterChannel(null, null);
                     }
                     browsemStore.getState().setPendingReconnectionFromRefresh(null);
+                    await setupOffscreenDocument("offscreen.html");
+                    await chrome.runtime.sendMessage({
+                        type: "offscreen",
+                        action: "play",
+                        path: "src/assets/sounds/joined_call_sound.wav",
+                    });
                 }
                 else {
                     console.log('they are the one that disconnected----------');
                     const chatterChannel = browsemStore.getState().chatterChannel;
                     if (chatterChannel) {
+                        if (message.DisconnectedFromCall.channelName === chatterChannel.channelName) {
+                            await setupOffscreenDocument("offscreen.html");
+                            await chrome.runtime.sendMessage({
+                                type: "offscreen",
+                                action: "play",
+                                path: "src/assets/sounds/joined_call_sound.wav",
+                            });
+                        }
                         browsemStore.getState().setChatterChannel({
                             ...chatterChannel,
                             chatters: chatterChannel.chatters.filter(chatter => chatter.username !== msg.DisconnectedFromCall.disconnectedChatter.username),
@@ -400,6 +592,12 @@ Promise.all([
                 channelsStore.getState().setUrlCalls(newUrlCalls);
 
                 browsemStore.getState().setChatterChannel(msg.ReconnectedToCall.chatterChannel, browsemStore.getState().callTabId);
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/joined_call_sound.wav",
+                });
             }
             else if (isChannelMessageSent(message)) {
                 // set the chatterchannel, and channelsstore chatmessage.
@@ -419,6 +617,12 @@ Promise.all([
 
                 const chatterChannel = browsemStore.getState().chatterChannel;
                 if (chatterChannel && chatterChannel.sessionId === msg.ChannelMessageSent.channelSessionId) {
+                    await setupOffscreenDocument("offscreen.html");
+                    await chrome.runtime.sendMessage({
+                        type: "offscreen",
+                        action: "play",
+                        path: "src/assets/sounds/chat_general_msg_sound.wav",
+                    });
                     browsemStore.getState().setChatterChannel({
                         ...chatterChannel,
                         channelMessages: [...browsemStore.getState().chatterChannel!.channelMessages, msg.ChannelMessageSent.message],
@@ -438,10 +642,15 @@ Promise.all([
                 // }));
             }
         }
-        socket.onclose = (event) => {
-            console.log('onclosed. reason: ', event.reason);
+        socket.onclose = async (event) => {
             if (event.reason !== "manual disconnect") {
                 socket = null;
+                await setupOffscreenDocument("offscreen.html");
+                await chrome.runtime.sendMessage({
+                    type: "offscreen",
+                    action: "play",
+                    path: "src/assets/sounds/screenshare_stopped_sound.wav",
+                });
                 chrome.runtime.sendMessage({
                     "type": "disconnected",
                     "contents": {
@@ -457,6 +666,7 @@ Promise.all([
         if (socket) {
             socket.close(1000, "manual disconnect");
             socket = null;
+            chrome.action.setIcon({ path: "browsem_logo_48_disconnected.png" });
         }
     }
     const sendUpdateUrlsMessage = async () => {
