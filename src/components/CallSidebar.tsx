@@ -6,10 +6,10 @@ import { getDomainName } from '@/utils/functions';
 import Channels from './Channels';
 import Chatroom from './Chatroom';
 import CallButtons from './CallButtons';
-import aniviaUltAsset from "../assets/aniviault.png";
 import { useSettingsStore } from '@/hooks/settingsStore';
 import { useState } from 'react';
-const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
+import pfpPath from "../assets/chatter_default_pfp.png";
+const defaultPfp = chrome.runtime.getURL(pfpPath);
 
 function CallSidebar() {
     const browsemStore = useBrowsemStore();
@@ -37,7 +37,7 @@ function CallSidebar() {
                 username: browsemStore.username,
                 sessionId: browsemStore.sessionId ?? "",
                 settings: settings,
-                pfpS3Key: aniviaUlt,
+                pfpS3Key: defaultPfp,
             }} />
         </div>
     )

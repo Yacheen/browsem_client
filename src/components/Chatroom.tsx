@@ -4,8 +4,8 @@
 // import { getDomainName } from '@/utils/functions';
 // import Channels from './Channels';
 import './Chatroom.scss';
-import aniviaUltAsset from "../assets/aniviault.png";
-const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
+import pfpPath from "../assets/chatter_default_pfp.png";
+const defaultPfp = chrome.runtime.getURL(pfpPath);
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Tooltip } from '@mui/material';
 import { ChannelMessage } from '@/utils/types';
@@ -21,7 +21,7 @@ import { useBrowsemStore } from '@/hooks/browsemStore';
 //             sharingScreen: false
 //         },
 //         username: "yassin",
-//         pfpS3Key: aniviaUlt
+//         pfpS3Key: defaultPfp
 //     },
 //     message: "erhm      hi.asdfidfjhawsgdfasjhdfgasskjdhfasdfasdadfklsadfefsdcnxcv",
 //     timestamp: 694201337,
@@ -72,7 +72,7 @@ function Chatroom() {
                     :
                         chatterChannel.channelMessages.map(chatMessage => (
                             <div className="chat-message-container">
-                                <img src={aniviaUlt} alt="pfp" />
+                                <img src={defaultPfp} alt="pfp" />
                                 <span className="chat-message-username">{chatMessage.chatter.username}: </span>
                                 <span className="chat-message-content">{chatMessage.message}</span>
                             </div>

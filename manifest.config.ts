@@ -13,10 +13,7 @@ export default defineManifest({
   },
   action: {
     default_icon: {
-        16: 'public/browsem_logo_16.png',
-        32: 'public/browsem_logo_32.png',
-        48: 'public/browsem_logo_48.png',
-        128: 'public/browsem_logo_128.png'
+        48: 'public/browsem_logo_48_disconnected.png',
     },
     default_popup: 'src/popup/index.html',
   },

@@ -245,13 +245,13 @@ Promise.all([
         socket = new WebSocket('http://127.0.0.1:6969/ws');
 
         socket.onopen = async () => {
-            // chrome.action.setIcon({ path: '../public/logo.png' });
         }
 
         socket.onmessage = async (event) => {
             let message: ClientMessage = JSON.parse(event.data);
             console.log('got message: ', message);
             if (isConnected(message)) {
+                chrome.action.setIcon({ path: "browsem_logo_48_connected.png" });
                 browsemStore.getState().connected(message);
                 browsemStore.getState().setCurrentSelection("Connected");
                 socket?.send(JSON.stringify({
@@ -277,6 +277,7 @@ Promise.all([
                 getBrowsemStats();
             }
             else if (isDisconnected(message)) {
+                chrome.action.setIcon({ path: "browsem_logo_48_disconnected.png" });
                 browsemStore.getState().disconnected(message);
                 await setupOffscreenDocument("offscreen.html");
                 await chrome.runtime.sendMessage({
@@ -659,6 +660,7 @@ Promise.all([
         if (socket) {
             socket.close(1000, "manual disconnect");
             socket = null;
+            chrome.action.setIcon({ path: "browsem_logo_48_disconnected.png" });
         }
     }
     const sendUpdateUrlsMessage = async () => {

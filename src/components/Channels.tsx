@@ -10,8 +10,8 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import PersonIcon from '@mui/icons-material/Person';
 import { useCurrentCallStore } from '@/hooks/currentCallStore';
-import aniviaUltAsset from "../assets/aniviault.png";
-const aniviaUlt = chrome.runtime.getURL(aniviaUltAsset);
+import pfpPath from "../assets/chatter_default_pfp.png";
+const defaultPfp = chrome.runtime.getURL(pfpPath);
 // mic
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
@@ -188,7 +188,7 @@ export default function Channels({ urlForRenderingDomains, currentUrlDropdown, s
                                                                 }
                                                                 <div className="channel-chatter-right">
                                                                     <div className="channel-chatter-meta">
-                                                                        <img src={aniviaUlt} alt="pfp" />
+                                                                        <img src={defaultPfp} alt="pfp" />
                                                                         <p>{chatter.username}</p>
                                                                     </div>
                                                                     <div className="chatter-settings-icon-container">
