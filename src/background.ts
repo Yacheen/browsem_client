@@ -11,7 +11,8 @@ import { isConnected, isOriginCalls, isUrlsUpdated, isBrowsemStats, isDisconnect
     isChannelMessageSent,
     ChannelMessageSent,
     isBannedFromChannel,
-    isChannelMessageTooLong, 
+    isChannelMessageTooLong,
+    isChannelFull, 
 } from "./utils/types.ts";
 import { snackbarStoreBackendReady } from './hooks/snackbarStore.tsx';
 import { AlertColor } from '@mui/material';
@@ -325,7 +326,7 @@ Promise.all([
                 let msg = "Unknown Error...";
                 if (isNoChannelName(message.ErrorMessage)) {
                     browsemStore.getState().setErrors({ ...browsemStore.getState().errors, noChannelName: message.ErrorMessage.NoChannelName });
-                    severity = "warning";
+                    severity = "error";
                     msg = message.ErrorMessage.NoChannelName;
                 }
                 else if (isChannelNameTooLong(message.ErrorMessage)) {
@@ -345,8 +346,13 @@ Promise.all([
                 }
                 else if (isChannelMessageTooLong(message.ErrorMessage)) {
                     browsemStore.getState().setErrors({ ...browsemStore.getState().errors, bannedFromChannel: message.ErrorMessage.ChannelMessageTooLong });
-                    severity = "error";
+                    severity = "warning";
                     msg = message.ErrorMessage.ChannelMessageTooLong;
+                }
+                else if (isChannelFull(message.ErrorMessage)) {
+                    browsemStore.getState().setErrors({ ...browsemStore.getState().errors, bannedFromChannel: message.ErrorMessage.ChannelFull });
+                    severity = "warning";
+                    msg = message.ErrorMessage.ChannelFull;
                 }
                 // active, message, type
                 snackbarStore.getState().setSnackbar(true, msg, severity);

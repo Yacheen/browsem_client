@@ -20,6 +20,9 @@ export const isChannelNameExists = (msg: ErrorType): msg is ChannelNameExists =>
 export const isBannedFromChannel = (msg: ErrorType): msg is BannedFromChannel => {
     return (msg as BannedFromChannel).BannedFromChannel !== undefined;
 };
+export const isChannelFull = (msg: ErrorType): msg is ChannelFull => {
+    return (msg as ChannelFull).ChannelFull !== undefined;
+};
 export const isChannelMessageTooLong = (msg: ErrorType): msg is ChannelMessageTooLong => {
     return (msg as ChannelMessageTooLong).ChannelMessageTooLong !== undefined;
 };
@@ -100,7 +103,7 @@ export type Disconnected = {
 export type ErrorMessage = {
     ErrorMessage: ErrorType
 };
-export type ErrorType = NoChannelName | ChannelNameTooLong | ChannelNameExists | BannedFromChannel | ChannelMessageTooLong;
+export type ErrorType = NoChannelName | ChannelNameTooLong | ChannelNameExists | BannedFromChannel | ChannelMessageTooLong | ChannelFull;
 
 export type ChannelMessageTooLong = {
     ChannelMessageTooLong: string,
@@ -116,6 +119,9 @@ export type ChannelNameTooLong = {
 };
 export type BannedFromChannel = {
     BannedFromChannel: string,
+}
+export type ChannelFull = {
+    ChannelFull: string,
 }
 export type OriginCalls = {
     OriginCalls: {
