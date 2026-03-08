@@ -6,11 +6,17 @@ export default defineManifest({
   name: pkg.name,
   version: pkg.version,
   icons: {
-    48: 'public/logo.png',
+    16: 'public/browsem_logo_16.png',
+    32: 'public/browsem_logo_32.png',
+    48: 'public/browsem_logo_48.png',
+    128: 'public/browsem_logo_128.png'
   },
   action: {
     default_icon: {
-      48: 'public/logo.png',
+        16: 'public/browsem_logo_16.png',
+        32: 'public/browsem_logo_32.png',
+        48: 'public/browsem_logo_48.png',
+        128: 'public/browsem_logo_128.png'
     },
     default_popup: 'src/popup/index.html',
   },
@@ -25,11 +31,7 @@ export default defineManifest({
   content_scripts: [{
     js: ['src/content/main.tsx'],
     matches: ['<all_urls>'],
-    // run_at: "document_start"
   }],
-  // side_panel: {
-  //   default_path: 'src/sidepanel/index.html',
-  // },
   background: {
     "service_worker": "src/background.ts",
     "type": "module"

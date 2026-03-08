@@ -2,7 +2,6 @@ import { useBrowsemStore } from '@/hooks/browsemStore';
 import { useEffect, useState } from 'react'
 import './MainPopup.scss'
 import Channels from './Channels';
-import somePfp from "../../public/logo.png";
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import RedditIcon from '@mui/icons-material/Reddit';
 import XIcon from '@mui/icons-material/X';
@@ -11,30 +10,6 @@ import kickIcon from '../assets/kick_logo.svg';
 import { useCreatingChannelStore } from '@/hooks/CreatingChannelStore';
 import VolumeController from './VolumeController';
 import { useSnackbarStore } from '@/hooks/snackbarStore';
-const channelsDummy = [
-    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
-    ]},
-    {
-        channelName: "KoolKidsKlub",
-        chatters: [
-            {sessionId: "69420", username: "yassin", pfpS3Key: somePfp },
-            {sessionId: "69420", username: "alan", pfpS3Key: somePfp },
-        ]
-    },
-    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
-    ]},
-    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
-    ]},
-    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
-    ]},
-    {channelName: "blablablablablablablabla blablablablablablablabla blablablablablablablabla   ", chatters: [
-        {sessionId: "69420", username: "jeff", pfpS3Key: somePfp },
-    ]},
-];
 
 export default function MainPopup() {
     const browsemStore = useBrowsemStore();

@@ -245,7 +245,7 @@ Promise.all([
         socket = new WebSocket('http://127.0.0.1:6969/ws');
 
         socket.onopen = async () => {
-            chrome.action.setIcon({ path: '../public/logo.png' });
+            // chrome.action.setIcon({ path: '../public/logo.png' });
         }
 
         socket.onmessage = async (event) => {
