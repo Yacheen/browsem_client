@@ -15,7 +15,6 @@ function ChattersBoard() {
     const chatterSettings = useChatterSettingsStore(state => state.chatterSettings)
 
     const handleSetFocusedWindow = (windowToBeFocused: QuickchatterWindow | null) => {
-        console.log('window to be focused: ', windowToBeFocused);
         // multiple scenarios:
         // if none focused, focus it
         // if its someone else's window, set it regardless

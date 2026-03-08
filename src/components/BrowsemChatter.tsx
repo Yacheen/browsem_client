@@ -91,12 +91,10 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
         if (yourUsername === props.chatter.username) {
             if (micStream !== null) {
                 if (audioRef !== null && audioRef.current !== null) {
-                    console.log('NEGATIVEONENEGATIVEONE');
                 }
             }
             if (camStream !== null) {
                 if (videoRef.current !== null) {
-                    console.log('CAM STREAM ISNT NULL AND NEITHER IS SRCOBJECT');
                     videoRef.current.srcObject = camStream;
                 }
             }
@@ -114,11 +112,9 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
             //if its you
             if (yourUsername === props.chatter.username) {
                 if (audioRef.current && micStream) {
-                    console.log('ONEONEONEONEONE');
                     audioRef.current.srcObject = micStream;
                 }
                 if (videoRef.current && camStream) {
-                    console.log('TWOTWOTWOTWOTWO');
                     videoRef.current.srcObject = camStream;
                 }
             }
@@ -130,13 +126,11 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
                         stream.getTracks().forEach(track => {
                             if (track.kind === "audio") {
                                 if (audioRef.current) {
-                                    console.log('THREETHREETHREETHREE');
                                     audioRef.current.srcObject = stream!;
                                 }
                             }
                             if (track.kind === "video") {
                                 if (videoRef.current) {
-                                    console.log('FOURFOURFOURFOURFOUR');
                                     videoRef.current.srcObject = stream!;
                                 }
                             }

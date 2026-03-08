@@ -30,7 +30,6 @@ export default function App() {
 
     useEffect(() => {
         chrome.runtime.sendMessage({ type: "get-tab-id" }, (response) => {
-            console.log('content script got a response: ', response);
             if (response?.tabId) {
                 setCurrentTabId(response.tabId);
             }
@@ -61,7 +60,6 @@ export default function App() {
     // handling messages, opens when browsemstore gets username from storage session,
     // which happens when popup is opened.
     const messageListener = async (message: BackgroundMessage) => {
-        console.log('got a message from background server: ', message);
         if (isOfferFromServer(message.contents)) {
             currentCallStore.handleOfferFromServer(message.contents);
         }
@@ -72,7 +70,6 @@ export default function App() {
             currentCallStore.handleIceCandidateFromServer(message.contents);
         }
         else if (isDisconnectedFromCall(message.contents)) {
-            console.log('received isdisconnectedfromcall on content script, dcing..');
             await currentCallStore.disconnectedFromCall(message.contents);
         }
     }

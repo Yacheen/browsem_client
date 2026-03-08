@@ -44,7 +44,6 @@ export default function App() {
     // useEffect(() => {
     //     chrome.runtime.sendMessage({ type: "get-tab-id" }, (response) => {
     //         if (response?.tabId) {
-    //             console.log('setting currenttabid in popup: ', response);
     //             useBrowsemStore.getState().setCurrentTabId(response.tabId);
     //         }
     //     });
@@ -79,7 +78,6 @@ export default function App() {
     }, []);
 
     useEffect(() => {
-        console.log('volume is now: ', volume);
         chrome.runtime.sendMessage({
             type: "change-volume",
             newVolume: volume,

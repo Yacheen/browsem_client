@@ -57,22 +57,21 @@ Promise.all([
     settingsStoreBackendReady(),
     snackbarStoreBackendReady(),
     volumeStoreBackendReady(),
-]).then(([browsemStore, channelsStore, settingsStore, snackbarStore, volumeStore]) => {
-    console.log(volumeStore);
+]).then(([browsemStore, channelsStore, settingsStore, snackbarStore]) => {
     try {
         chrome.storage.session.setAccessLevel({
             accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS"
         });
     }
     catch (err) {
-        console.log('Problem trying to access Storage Session in content script: ', err);
+        snackbarStore.getState().setSnackbar(true, `Problem accessing content script's session storage: ${err}, please report this bug.`, "error");
+        console.error('Problem trying to access Storage Session in content script: ', err);
     }
     const TEN_SECONDS_MS = 10 * 1000;
 
     let socket: WebSocket | null = null;
 
     chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-        console.log('message on bg script received: ', message);
         if (message.type === "connect") {
             if (socket === null) {
                 if (message.username.length > 30) {
@@ -191,15 +190,12 @@ Promise.all([
             });
         }
         else if (message.type === "change-volume") {
-            console.log('its a change volume')
             await setupOffscreenDocument("offscreen.html");
-            console.log('one');
             chrome.runtime.sendMessage({
                 type: 'offscreen',
                 action: 'change-volume',
                 newVolume: message.newVolume
             });
-            console.log('two');
         }
         else if (message.type === "kick-chatter") {
             socket?.send(JSON.stringify({
@@ -250,7 +246,6 @@ Promise.all([
 
         socket.onmessage = async (event) => {
             let message: ClientMessage = JSON.parse(event.data);
-            console.log('got message: ', message);
             if (isConnected(message)) {
                 chrome.action.setIcon({ path: "browsem_logo_48_connected.png" });
                 browsemStore.getState().connected(message);
@@ -448,7 +443,6 @@ Promise.all([
                 //         ...urlCall,
                 //         channels: urlCall.channels.map(channel => {
                 //             if (channel.channelName !== msg.DisconnectedFromCall.channelName) return channel;
-                //             console.log('the channelName and urlName is the same, filtering...');
                 //             return {
                 //                 ...channel,
                 //                 chatters: channel.chatters.filter(chatter => chatter.username !== msg.DisconnectedFromCall.disconnectedChatter.username),
@@ -501,7 +495,6 @@ Promise.all([
                     });
                 }
                 else {
-                    console.log('they are the one that disconnected----------');
                     const chatterChannel = browsemStore.getState().chatterChannel;
                     if (chatterChannel) {
                         if (message.DisconnectedFromCall.channelName === chatterChannel.channelName) {
@@ -670,7 +663,6 @@ Promise.all([
         }
     }
     const sendUpdateUrlsMessage = async () => {
-        console.log('yeah this works.');
         const tabs = await chrome.tabs.query({ });
         let urls = tabs.map(tab => (tab.url as string));
         let urlOrigins = urls.map(url => new URL((url as string)).origin);

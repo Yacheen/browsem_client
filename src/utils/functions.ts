@@ -10,7 +10,6 @@ export const getDomainName = (urlString: string) => {
 
     }
     catch (err) {
-        console.log('problem parsing url: ', err);
         return urlString;
     }
 }

@@ -60,7 +60,6 @@ export default function MainPopup() {
             }
             catch (err) {
                 setSnackbar(true, "Could not get current url for Browsem.", "error");
-                console.log('problem getting tabs: ', err);
                 browsemStore.setCurrentUrl(`Could not get url: ${err}`);
             }
         }

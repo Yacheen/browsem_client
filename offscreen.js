@@ -7,7 +7,7 @@ chrome.runtime.onMessage.addListener((msg) => {
       audio.pause();
       audio.currentTime = 0; // Reset for quick consecutive sounds
     }
-    if (volume) {
+    if (volume !== null) {
         const fetchedUrl = chrome.runtime.getURL(msg.path);
         audio = new Audio(fetchedUrl);
         audio.volume = volume / 100;

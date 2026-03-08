@@ -174,14 +174,12 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             let audioContext = new AudioContext();
             
             peerConnection.oniceconnectionstatechange = () => {
-                console.log('ICE CONNECTION STATE CHANGE-------------------------');
                 // handleICEConnectionStateChangeEvent(sessionId, socket);
                 let micStream = get().micStream;
                 let camStream = get().camStream;
 
                 let handleCreateOffer = get().handleCreateOffer;
                 if (peerConnection) {
-                    console.log(peerConnection.iceConnectionState);
                     if (peerConnection.iceConnectionState === "failed") {
                         // retry in x amount of seconds instead of this if disonnected and not failed?
                         //await handleCreateOffer(sessionId, socket)
@@ -222,7 +220,6 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 }
             }
             peerConnection.ontrack = ({ track, streams }: { track: MediaStreamTrack, streams: readonly MediaStream[] }) => {
-                console.log('ONTRACK HAPPENED: ', track, streams);
                 // handleTrackEvent(track, streams);
                 // stream id format:
                 // uuid_username_kind
@@ -267,7 +264,6 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                             // get chatter_camera_on and chatter_camera_off with id of said person
                             // if theres a chatter_camera_on, highlight that
                             // else, highlight chatter camera off
-                            console.log('THEYRE SPEAKING');
                             let chatterCameraOnElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_on_${username}`);
                             let chatterCameraOffElement = document.querySelector('#browsem-host')?.shadowRoot?.getElementById(`chatter_camera_off_${username}`);
                             if (chatterCameraOnElement !== null) {
@@ -298,7 +294,6 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                         }
                     }
                     if (type === "video") {
-                        console.log(username,' VIDEO TRACK UNMUTED' );
                         let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
                         if (videoElement) {
                             videoElement.srcObject = stream;
@@ -309,7 +304,6 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     if (type === "audio") {
                     } 
                     if (type === "video") {
-                        console.log(username,' VIDEO TRACK MUTED' );
                         let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
                         if (videoElement) {
                             videoElement.srcObject = null;
@@ -321,7 +315,6 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 // stream.onremovetrack = () => {}
             }
             // peerConnection.onnegotiationneeded = async () => {
-            //     console.log('ON NEGOTIATION NEEDED HHAPPENED');
             //     // handleNegotiationNeededEvent(sessionId, socket)
             //     let handleCreateOffer = get().handleCreateOffer;
             //     await handleCreateOffer();
@@ -344,26 +337,20 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             let pendingIceCandidates = get().pendingIceCandidates;
             if (peerConnection) {
                 if (peerConnection.remoteDescription !== null) {
-                    console.log('my peer conns remote desc isnt null. ');
                     await peerConnection?.addIceCandidate(message.IceCandidate);
                 }
                 else {
                     set({ pendingIceCandidates: [...pendingIceCandidates, message.IceCandidate]});
-                    console.log('my peer conns null. no addicecand.');
                 }
             }
         },
         handleCreateOffer: async () => {
             let peerConnection = get().peerConnection;
-            console.log('got here 1 -----------');
             try {
                 set({ makingOffer: true });
-                console.log('got here 2 -----------');
                 if (peerConnection) {
                     const offer = await peerConnection.createOffer();
-                    console.log('got here 3 -----------');
                     await peerConnection.setLocalDescription(offer);
-                    console.log('got here 4 -----------');
                     if (peerConnection.localDescription) {
                         let offerFromClient: OfferFromClient = {
                             OfferFromClient: peerConnection.localDescription
@@ -372,12 +359,10 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                             type: "create-offer",
                             contents: JSON.stringify(offerFromClient)
                         });
-                        console.log('send the offer.');
                     }
                 }
             }
             catch (err) {
-                console.log('handlecreateoffer error: ', err);
             }
             finally {
                 set({ makingOffer: false });
@@ -431,7 +416,6 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 checkVolume();
             }
             else {
-                console.log('THERES NO AUDIOCONTEXT!!!');
             }
         },
         handleAnswerFromServer: async (message: AnswerFromServer) => {
@@ -445,7 +429,6 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 set({ pendingIceCandidates: [] });
             }
             catch (err) {
-                console.log('problem handling answer from server: ', err);
             }
         },
         handleOfferFromServer: async (message: OfferFromServer) => {
@@ -472,7 +455,6 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 set({ pendingIceCandidates: [] });
             }
             catch (err) {
-                console.log('problem setting remote desc in handleofferfromserver: ', err);
             }
 
             if (peerConnection) {
@@ -559,11 +541,8 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
             let peerConnection = get().peerConnection;
             let audioTx = get().audioTx;
 
-            console.log('audio context is: ', audioContext);
             if (audioContext) {
-                console.log('audio context is: ', audioContext);
                 const source = audioContext.createMediaStreamSource(stream);
-                console.log('audio context is: ', audioContext);
                 const analyser = audioContext.createAnalyser();
                 analyser.fftSize = 512;
                 source.connect(analyser);
@@ -641,7 +620,6 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 }
             }
             else {
-                console.log('THERE IS NO AUDIO CONTEXT.');
             }
         },
         handleGetMicrophone: async (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>, setSnackbar: (active: boolean, message: string, type: AlertColor) => void) => {
@@ -667,13 +645,11 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 else {
                     setSnackbar(true, "Unknown error getting microphone", "error");
                 }
-                console.log('problem getting mic:', err);
                 set({ hasMicPermission: false });
                 return null;
             }
         },
         handleGetCamera: async (username: string, setSnackbar: (active: boolean, message: string, type: AlertColor) => void) => {
-            console.log(username);
             let peerConnection = get().peerConnection;
             let videoTx = get().videoTx;
             try {
@@ -698,7 +674,6 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     set({ hasCamPermission: true, camStream, pendingCamStream: true });
                 }
                 // let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
-                // console.log(videoElement);
                 // if (videoElement) {
                 //     videoElement.srcObject = camStream;
                 // }
@@ -711,7 +686,6 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 else {
                     setSnackbar(true, "Unknown error getting camera", "error");
                 }
-                console.log('problem getting camera: ', err);
                 set({ hasCamPermission: false });
                 return null;
             }
