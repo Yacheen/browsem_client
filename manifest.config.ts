@@ -18,13 +18,11 @@ export default defineManifest({
     default_popup: 'src/popup/index.html',
   },
   permissions: [
-    'contentSettings',
     'storage',
     'tabs',
-    'webNavigation',
     'offscreen'
   ],
-  host_permissions: ["<all_urls>"],
+  host_permissions: ["https://quickchatters.com/browsem"],
   content_scripts: [{
     js: ['src/content/main.tsx'],
     matches: ['<all_urls>'],

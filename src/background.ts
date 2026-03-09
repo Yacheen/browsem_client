@@ -1,5 +1,5 @@
 import { initPegasusTransport } from '@webext-pegasus/transport/background';
-import { browsemStoreBackendReady, useBrowsemStore } from "./hooks/browsemStore";
+import { browsemStoreBackendReady } from "./hooks/browsemStore";
 import { settingsStoreBackendReady} from './hooks/settingsStore';
 import { channelsStoreBackendReady, useChannelsStore} from './hooks/ChannelsStore';
 import { isConnected, isOriginCalls, isUrlsUpdated, isBrowsemStats, isDisconnected, isErrorMessage, isIceCandidate, isNoChannelName, isChannelCreated, isConnectedToCall, isOfferFromServer, isAnswerFromServer, isChannelNameExists,
@@ -46,7 +46,7 @@ async function setupOffscreenDocument(path: string) {
     creating = null;
   }
   // for some reason its not actually ready after being awaited so i put this in here.
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await new Promise(resolve => setTimeout(resolve, 25));
 }
 
 initPegasusTransport();
@@ -70,6 +70,7 @@ Promise.all([
     const TEN_SECONDS_MS = 10 * 1000;
 
     let socket: WebSocket | null = null;
+    let pendingOffer: any = null;
 
     chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         if (message.type === "connect") {
@@ -95,7 +96,7 @@ Promise.all([
                 else {
                     // request. if response returns exists or catches an err, dont do connect();
                     try {
-                        const response = await fetch("http://127.0.0.1:6969/checkUsernameExists", {
+                        const response = await fetch("https://quickchatters.com/browsem/checkUsernameExists", {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json"
@@ -239,7 +240,7 @@ Promise.all([
     //     socket?.send(JSON.stringify("GetBrowsemStats"));
     // })
     const connect = () => {
-        socket = new WebSocket('http://127.0.0.1:6969/ws');
+        socket = new WebSocket('https://quickchatters.com/browsem/ws');
 
         socket.onopen = async () => {
         }
@@ -406,31 +407,39 @@ Promise.all([
 
                 if (chatterChannelHandle) {
                     if (msg.ConnectedToCall.connectedChatter.username === browsemStore.getState().username) {
+                        let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+                        if (activeTab[0].id) {
+                            browsemStore.getState().setChatterChannel(chatterChannelHandle, activeTab[0].id);
+                            browsemStore.getState().setPendingReconnectionFromRefresh(null);
+                            // handling race conditions
+                            if (pendingOffer) {
+                                chrome.tabs.sendMessage(activeTab[0].id, {
+                                    type: "offer-from-server",
+                                    contents: pendingOffer, 
+                                });
+                                pendingOffer = null;
+                            }
+                        }
                         await setupOffscreenDocument("offscreen.html");
                         await chrome.runtime.sendMessage({
                             type: "offscreen",
                             action: "play",
                             path: "src/assets/sounds/joined_call_sound.wav",
                         });
-                        let activeTab = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-                        if (activeTab[0].id) {
-                            browsemStore.getState().setChatterChannel(chatterChannelHandle, activeTab[0].id);
-                            browsemStore.getState().setPendingReconnectionFromRefresh(null);
-                        }
                     }
                     else { 
                         const yourChatterChannel = browsemStore.getState().chatterChannel;
                         if (yourChatterChannel?.channelName === chatterChannelHandle.channelName) {
+                            browsemStore.getState().setChatterChannel({
+                                ...yourChatterChannel,
+                                chatters: [...yourChatterChannel.chatters, msg.ConnectedToCall.connectedChatter],
+                            }, browsemStore.getState().callTabId);
                             await setupOffscreenDocument("offscreen.html");
                             await chrome.runtime.sendMessage({
                                 type: "offscreen",
                                 action: "play",
                                 path: "src/assets/sounds/joined_call_sound.wav",
                             });
-                            browsemStore.getState().setChatterChannel({
-                                ...yourChatterChannel,
-                                chatters: [...yourChatterChannel.chatters, msg.ConnectedToCall.connectedChatter],
-                            }, browsemStore.getState().callTabId);
                         }
                     }
                 }
@@ -505,24 +514,35 @@ Promise.all([
                                 path: "src/assets/sounds/joined_call_sound.wav",
                             });
                         }
+                        let callTabId = browsemStore.getState().callTabId;
+                        if (callTabId) {
+                            chrome.tabs.sendMessage(callTabId, {
+                                type: "chatter-disconnected",
+                                username: message.DisconnectedFromCall.disconnectedChatter.username,
+                            });
+                        }
+                        //if they are the one ur currently focusing, set to null
                         browsemStore.getState().setChatterChannel({
-                            ...chatterChannel,
-                            chatters: chatterChannel.chatters.filter(chatter => chatter.username !== msg.DisconnectedFromCall.disconnectedChatter.username),
+                            ...browsemStore.getState().chatterChannel!,
+                            chatters: browsemStore.getState().chatterChannel!.chatters.filter(chatter => chatter.username !== msg.DisconnectedFromCall.disconnectedChatter.username),
                         }, browsemStore.getState().callTabId);
                     }
                 }
             }
             else if (isOfferFromServer(message)) {
-                let callTabId = useBrowsemStore.getState().callTabId;
+                let callTabId = browsemStore.getState().callTabId;
                 if (callTabId) {
                     chrome.tabs.sendMessage(callTabId, {
                         type: "offer-from-server",
                         contents: message
                     });
                 }
+                else {
+                    pendingOffer = message;
+                }
             }
             else if (isAnswerFromServer(message)) {
-                let callTabId = useBrowsemStore.getState().callTabId;
+                let callTabId = browsemStore.getState().callTabId;
                 if (callTabId) {
                     chrome.tabs.sendMessage(callTabId, {
                         type: "answer-from-server",
@@ -531,7 +551,7 @@ Promise.all([
                 }
             }
             else if (isIceCandidate(message)) {
-                let callTabId = useBrowsemStore.getState().callTabId;
+                let callTabId = browsemStore.getState().callTabId;
                 if (callTabId) {
                     chrome.tabs.sendMessage(callTabId, {
                         type: "ice-candidate",

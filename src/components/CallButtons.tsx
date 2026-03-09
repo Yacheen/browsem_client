@@ -51,7 +51,7 @@ function CallButtons(props: { chatter: Chatter }) {
                 });
             }
             else {
-                let camStream = await handleGetCamera(props.chatter.username, setSnackbar);
+                let camStream = await handleGetCamera(setSnackbar);
                 if (camStream) {
                     setSettings({
                         ...props.chatter.settings,
@@ -63,7 +63,7 @@ function CallButtons(props: { chatter: Chatter }) {
             }
         }
         else {
-            let camStream = await handleGetCamera(props.chatter.username, setSnackbar);
+            let camStream = await handleGetCamera(setSnackbar);
             if (camStream) {
                 setSettings({
                     ...props.chatter.settings,

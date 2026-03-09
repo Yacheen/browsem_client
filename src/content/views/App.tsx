@@ -20,13 +20,14 @@ export default function App() {
     const callTabId = useBrowsemStore(state => state.callTabId);
     const currentCallStore = useCurrentCallStore();
     const peerConnection = useCurrentCallStore(state => state.peerConnection);
-    const messageListenerExists = useRef(false);
     const [currentTabId, setCurrentTabId] = useState<number | null>(null);
     const [refreshPendingInfo, setRefreshPendingInfo] = useState<null | { urlName: string, channelName: string }>(null);
     const message = useSnackbarStore(state => state.message);
     const open = useSnackbarStore(state => state.open);
     const type = useSnackbarStore(state => state.type);
     const setSnackbar = useSnackbarStore(state => state.setSnackbar);
+    const focusedWindow = useCurrentCallStore(state => state.focusedWindow);
+    const setFocusedWindow = useCurrentCallStore(state => state.setFocusedWindow);
 
     useEffect(() => {
         chrome.runtime.sendMessage({ type: "get-tab-id" }, (response) => {
@@ -59,34 +60,28 @@ export default function App() {
 
     // handling messages, opens when browsemstore gets username from storage session,
     // which happens when popup is opened.
-    const messageListener = async (message: BackgroundMessage) => {
-        if (isOfferFromServer(message.contents)) {
-            currentCallStore.handleOfferFromServer(message.contents);
-        }
-        else if (isAnswerFromServer(message.contents)) {
-            currentCallStore.handleAnswerFromServer(message.contents);
-        }
-        else if (isIceCandidate(message.contents)) {
-            currentCallStore.handleIceCandidateFromServer(message.contents);
-        }
-        else if (isDisconnectedFromCall(message.contents)) {
-            await currentCallStore.disconnectedFromCall(message.contents);
-        }
-    }
+    // const messageListener = async (message: BackgroundMessage) => {
+    //     if (isOfferFromServer(message.contents)) {
+    //         currentCallStore.handleOfferFromServer(message.contents);
+    //     }
+    //     else if (isAnswerFromServer(message.contents)) {
+    //         currentCallStore.handleAnswerFromServer(message.contents);
+    //     }
+    //     else if (isIceCandidate(message.contents)) {
+    //         currentCallStore.handleIceCandidateFromServer(message.contents);
+    //     }
+    //     else if (isDisconnectedFromCall(message.contents)) {
+    //         await currentCallStore.disconnectedFromCall(message.contents);
+    //     }
+    // }
     const handleRefresh = () => {
         if (useBrowsemStore.getState().chatterChannel) {
             useBrowsemStore.getState().setPendingReconnectionFromRefresh({ channelName: useBrowsemStore.getState().chatterChannel!.channelName });
         }
     }
     useEffect(() => {
-        if (messageListenerExists.current === false) {
-            chrome.runtime.onMessage.addListener(messageListener)
-            messageListenerExists.current = true;
-            window.addEventListener('beforeunload', handleRefresh);
-        }
+        window.addEventListener('beforeunload', handleRefresh);
         return () => {
-            chrome.runtime.onMessage.removeListener(messageListener);
-            messageListenerExists.current = false;
             window.removeEventListener('beforeunload', handleRefresh);
         }
     }, []);

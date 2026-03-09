@@ -41,7 +41,7 @@ interface CurrentCallStoreState {
     stopMonitoringSpeakers: () => void,
     handleApplyMicSettings: (username: string, stream: MediaStream, settingsStore: UseBoundStore<StoreApi<SettingsStore>>) => void,
     handleGetMicrophone: (username: string, settingsStore: UseBoundStore<StoreApi<SettingsStore>>, setSnackbar: (active: boolean, message: string, type: AlertColor) => void) => Promise<MediaStream | null>,
-    handleGetCamera: (username: string, setSnackbar: (active: boolean, message: string, type: AlertColor) => void) => Promise<MediaStream | null>,
+    handleGetCamera: (setSnackbar: (active: boolean, message: string, type: AlertColor) => void) => Promise<MediaStream | null>,
     muteMic: () => void;
     unmuteMic: () => void;
     turnOffMicrophone: () => void;
@@ -335,13 +335,11 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
         handleIceCandidateFromServer: async (message: IceCandidate) => {
             let peerConnection = get().peerConnection;
             let pendingIceCandidates = get().pendingIceCandidates;
-            if (peerConnection) {
-                if (peerConnection.remoteDescription !== null) {
-                    await peerConnection?.addIceCandidate(message.IceCandidate);
-                }
-                else {
-                    set({ pendingIceCandidates: [...pendingIceCandidates, message.IceCandidate]});
-                }
+            if (!peerConnection || peerConnection.remoteDescription === null) {
+                set({ pendingIceCandidates: [...pendingIceCandidates, message.IceCandidate]});
+            }
+            else {
+                await peerConnection?.addIceCandidate(message.IceCandidate);
             }
         },
         handleCreateOffer: async () => {
@@ -453,60 +451,64 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     await peerConnection?.addIceCandidate(cand);
                 }
                 set({ pendingIceCandidates: [] });
+                // set both transceivers to sendonly so answer has a=sendonly instead of a=inactive
             }
             catch (err) {
             }
 
-            if (peerConnection) {
-                // attach pending camera
-                if (pendingCamStream && camStream) {
-                    const videoTx = peerConnection.getTransceivers().find(tx => {
-                        const mid = tx.mid;
-                        const remoteDesc = peerConnection.remoteDescription?.sdp;
-                        if (!remoteDesc || !mid) return false;
-                        // find the m-section for this mid and check if server said recvonly
-                        const section = remoteDesc.split('\r\nm=').find(s => s.includes(`a=mid:${mid}`));
-                        return tx.receiver.track.kind === 'video' && section?.includes('a=recvonly');
-                    });
-                    if (videoTx) {
-                        await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
-                        videoTx.direction = 'sendonly';
-                        set({ videoTx, pendingCamStream: false });
-                    }
-                    // const transceivers = peerConnection?.getTransceivers()
-                    // const videoTx = transceivers[transceivers.length - 1];
-                    // if (videoTx) {
-                    //     await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
-                    //     videoTx.direction = "sendonly";
-                    // }
-                    // set({ videoTx, pendingCamStream: false });
-                }
-                // attach pending mic
-                if (pendingMicStream && micStream) {
-                    const audioTx = peerConnection.getTransceivers().find(tx => {
-                        const mid = tx.mid;
-                        const remoteDesc = peerConnection.remoteDescription?.sdp;
-                        if (!remoteDesc || !mid) return false;
-                        // find the m-section for this mid and check if server said recvonly
-                        const section = remoteDesc.split('\r\nm=').find(s => s.includes(`a=mid:${mid}`));
-                        return tx.receiver.track.kind === 'audio' && section?.includes('a=recvonly');
-                    });
-                    if (audioTx) {
-                        await audioTx.sender.replaceTrack(micStream.getAudioTracks()[0]);
-                        audioTx.direction = 'sendonly';
-                        set({ audioTx, pendingCamStream: false });
-                    }
+            // if (peerConnection) {
+            //     // attach pending camera
+            //     if (pendingCamStream && camStream) {
+            //         const videoTx = peerConnection.getTransceivers().find(tx => {
+            //             const mid = tx.mid;
+            //             const remoteDesc = peerConnection.remoteDescription?.sdp;
+            //             if (!remoteDesc || !mid) return false;
+            //             // find the m-section for this mid and check if server said recvonly
+            //             const section = remoteDesc.split('\r\nm=').find(s => s.includes(`a=mid:${mid}`));
+            //             return tx.receiver.track.kind === 'video' && section?.includes('a=recvonly');
+            //         });
+            //         if (videoTx) {
+            //             await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
+            //             videoTx.direction = 'sendonly';
+            //             set({ videoTx, pendingCamStream: false });
+            //         }
+            //         // const transceivers = peerConnection?.getTransceivers()
+            //         // const videoTx = transceivers[transceivers.length - 1];
+            //         // if (videoTx) {
+            //         //     await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
+            //         //     videoTx.direction = "sendonly";
+            //         // }
+            //         // set({ videoTx, pendingCamStream: false });
+            //     }
+            //     // attach pending mic
+            //     if (pendingMicStream && micStream) {
+            //         const audioTx = peerConnection.getTransceivers().find(tx => {
+            //             const mid = tx.mid;
+            //             const remoteDesc = peerConnection.remoteDescription?.sdp;
+            //             if (!remoteDesc || !mid) return false;
+            //             // find the m-section for this mid and check if server said recvonly
+            //             const section = remoteDesc.split('\r\nm=').find(s => s.includes(`a=mid:${mid}`));
+            //             return tx.receiver.track.kind === 'audio' && section?.includes('a=recvonly');
+            //         });
+            //         if (audioTx) {
+            //             await audioTx.sender.replaceTrack(micStream.getAudioTracks()[0]);
+            //             audioTx.direction = 'sendonly';
+            //             set({ audioTx, pendingCamStream: false });
+            //         }
+            //
+            //         // const transceivers = peerConnection.getTransceivers()
+            //         // const audioTx = transceivers[transceivers.length - 1];
+            //         // if (audioTx) {
+            //         //     await audioTx.sender.replaceTrack(micStream.getAudioTracks()[0]);
+            //         //     audioTx.direction = "sendonly";
+            //         // }
+            //         // set({ audioTx, pendingMicStream: false });
+            //     }
+            // }
 
-                    // const transceivers = peerConnection.getTransceivers()
-                    // const audioTx = transceivers[transceivers.length - 1];
-                    // if (audioTx) {
-                    //     await audioTx.sender.replaceTrack(micStream.getAudioTracks()[0]);
-                    //     audioTx.direction = "sendonly";
-                    // }
-                    // set({ audioTx, pendingMicStream: false });
-                }
+            for (const tx of peerConnection.getTransceivers()) {
+                tx.direction = 'sendrecv';
             }
-
             const answer = await peerConnection?.createAnswer();
             await peerConnection?.setLocalDescription(answer);
 
@@ -610,14 +612,15 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                     }
                 }
                 applyMicSettings();
-                if (audioTx && audioTx.sender) {
+                const audioTx = peerConnection?.getTransceivers().find(tx => tx.receiver.track.kind === 'audio');
+                if (audioTx) {
                     audioTx.sender.replaceTrack(destNode.stream.getAudioTracks()[0]);
-                    set({ hasMicPermission: true, micStream: destNode.stream });
+                    set({ hasMicPermission: true, micStream: destNode.stream, audioTx });
                 }
-                else {
-                    chrome.runtime.sendMessage({ type: "enable-mic" });
-                    set({ hasMicPermission: true, micStream: destNode.stream, pendingMicStream: true });
-                }
+                // else {
+                //     chrome.runtime.sendMessage({ type: "enable-mic" });
+                //     set({ hasMicPermission: true, micStream: destNode.stream, pendingMicStream: true });
+                // }
             }
             else {
             }
@@ -649,7 +652,7 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                 return null;
             }
         },
-        handleGetCamera: async (username: string, setSnackbar: (active: boolean, message: string, type: AlertColor) => void) => {
+        handleGetCamera: async (setSnackbar: (active: boolean, message: string, type: AlertColor) => void) => {
             let peerConnection = get().peerConnection;
             let videoTx = get().videoTx;
             try {
@@ -665,14 +668,20 @@ export const useCurrentCallStore = create<CurrentCallStoreState>()(
                         // deviceId: {}
                     }
                 })
-                if (videoTx !== null) {
+                const peerConnection = get().peerConnection;
+                const videoTx = peerConnection?.getTransceivers().find(tx => tx.receiver.track.kind === 'video');
+                if (videoTx) {
                     await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
-                    set({ hasCamPermission: true, camStream, videoTx, pendingCamStream: true });
+                    set({ hasCamPermission: true, camStream, videoTx, pendingCamStream: false });
                 }
-                else {
-                    chrome.runtime.sendMessage({ type: "enable-camera" });
-                    set({ hasCamPermission: true, camStream, pendingCamStream: true });
-                }
+                // if (videoTx !== null) {
+                //     await videoTx.sender.replaceTrack(camStream.getVideoTracks()[0]);
+                //     set({ hasCamPermission: true, camStream, videoTx, pendingCamStream: true });
+                // }
+                // else {
+                //     chrome.runtime.sendMessage({ type: "enable-camera" });
+                //     set({ hasCamPermission: true, camStream, pendingCamStream: true });
+                // }
                 // let videoElement: HTMLVideoElement | null | undefined = document.querySelector('#browsem-host')?.shadowRoot?.querySelector(`#${username}_video`);
                 // if (videoElement) {
                 //     videoElement.srcObject = camStream;

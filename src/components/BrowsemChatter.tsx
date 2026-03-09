@@ -139,7 +139,7 @@ function BrowsemChatter(props: { chatter: Chatter, handleSetFocusedWindow: (wind
                 }
             }
         }
-    }, [props.isFocused, yourUsername, remoteStreams, props.focusedWindow, props.chatter.settings?.cameraIsOn])
+    }, [props.isFocused, yourUsername, remoteStreams, props.focusedWindow, props.chatter.settings.cameraIsOn])
 
     useEffect(() => {
         // set audio elements volume to the volume number

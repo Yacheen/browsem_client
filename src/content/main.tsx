@@ -8,7 +8,7 @@ import { browsemStoreReady } from '@/hooks/browsemStore.tsx';
 import { channelsStoreReady } from '@/hooks/ChannelsStore.tsx';
 import { settingsStoreReady } from '@/hooks/settingsStore.tsx';
 import { snackbarStoreReady } from '@/hooks/snackbarStore.tsx';
-
+import { useCurrentCallStore } from '@/hooks/currentCallStore';
 try {
     initPegasusTransport({
         allowWindowMessagingForNamespace: "694201337"
@@ -21,8 +21,27 @@ Promise.all([
     channelsStoreReady(),
     settingsStoreReady(),
     snackbarStoreReady(),
-    
 ]).then(() => {
+    chrome.runtime.onMessage.addListener((message) => {
+        const store = useCurrentCallStore.getState();
+        if (message.type === "chatter-disconnected") {
+            if (message.username === store.focusedWindow?.chatter.username) {
+                store.setFocusedWindow(null);
+            }
+        }
+        if (message.type === "offer-from-server") {
+            store.handleOfferFromServer(message.contents).catch(console.error);
+        }
+        else if (message.type === "answer-from-server") {
+            store.handleAnswerFromServer(message.contents).catch(console.error);
+        }
+        else if (message.type === "ice-candidate") {
+            store.handleIceCandidateFromServer(message.contents).catch(console.error);
+        }
+        else if (message.type === "disconnected-from-call") {
+            store.disconnectedFromCall(message.contents).catch(console.error);
+        }
+    });
 
     const mount = () => {
         const existingHost = document.getElementById('browsem-host');

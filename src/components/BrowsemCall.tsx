@@ -4,7 +4,7 @@ import CallSidebar from './CallSidebar'
 import { useSnackbarStore } from '@/hooks/snackbarStore';
 import { Alert, Snackbar } from '@mui/material';
 import Slide from '@mui/material/Slide';
-import ChattersBoard from './Chattersboard';
+import ChattersBoard from './ChattersBoard';
 
 function BrowsemCall() {
     const message = useSnackbarStore(state => state.message);
